@@ -1,0 +1,344 @@
+---
+// La Fortaleza del Asesor. Presentacion de las dos direcciones visuales (Fase 3).
+// Una sola pantalla fija: al hacer scroll no se mueve la pagina, cambian los elementos
+// (crossfade de imagen y texto) con pausa de lectura. Imagenes de referencia, no definitivas.
+
+const elements = [
+  { key: 'mapa', title: 'La fortaleza es tu despacho', lines: [
+    'Un castro de piedra sobre la colina, frente al mar.',
+    'Sigue en pie, pero algunas zonas han dejado de funcionar conectadas.',
+    'Cada acción real vuelve a encenderlas.',
+  ]},
+  { key: 'nara', title: 'Nara, la guardiana', lines: [
+    'Una meiga que conoce cada sala y cada grieta.',
+    'No resuelve por ti: te muestra dónde mirar.',
+    'Te recuerda que la fortaleza solo se fortalece cuando actúas.',
+  ]},
+  { key: 'trasno', title: 'El Rebelde', lines: [
+    'Un trasno que no destruye, enreda.',
+    'Posterga, esconde los recursos y desordena los mapas.',
+    'Aparece justo cuando vas a convertir lo que sabes en acción.',
+  ]},
+  { key: 'triskel', title: 'Tres sendas', lines: [
+    'Un mismo centro y tres caminos: orden, valor y crecimiento.',
+    'Cada mes eliges por dónde seguir fortaleciendo tu asesoría.',
+  ]},
+  { key: 'biblio', title: 'La biblioteca', lines: [
+    'No es un almacén de cursos.',
+    'Es la sala donde encuentras la herramienta y la aplicas.',
+    'Cada recurso que usas se enciende y deja de acumular polvo.',
+  ]},
+];
+
+const icons = ['triskel', 'llave', 'mapa', 'torre', 'libro', 'brujula', 'faro', 'arbol'];
+const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const abc = 'abcdefghijklmnopqrstuvwxyz';
+const nums = '0123456789';
+
+const dirMeta: Record<string, any> = {
+  a: {
+    name: 'Castro vivo', essence: 'Cálida y cercana',
+    mood: ['La piedra al atardecer, el fuego y la luz de hogar.', 'Una fortaleza que recupera vida a medida que la habitas.'],
+    palette: [['#6B5A48','Piedra'],['#C9A24B','Dorado'],['#E0B95C','Ámbar'],['#E8743B','Fuego'],['#4A5A3A','Musgo']],
+    fonts: { display: 'Cormorant Garamond', body: 'Hanken Grotesk' },
+  },
+  b: {
+    name: 'Criterio', essence: 'Fría y envolvente',
+    mood: ['La noche, la niebla y la luz de la luna sobre la piedra.', 'Una fortaleza que impone respeto.'],
+    palette: [['#14202E','Noche'],['#3A4654','Acero'],['#3FA9C9','Cian'],['#5FD0E0','Aqua'],['#AEC6D8','Luna']],
+    fonts: { display: 'Cinzel', body: 'Hanken Grotesk' },
+  },
+};
+
+const slides: any[] = [
+  { kind: 'hero', img: '/placeholder/hero.jpg', dim: false },
+  { kind: 'intro', dir: 'a', img: '/placeholder/mapa-a.jpg', dim: true },
+  ...elements.map((el) => ({ kind: 'panel', dir: 'a', img: `/placeholder/${el.key}-a.jpg`, dim: false, el })),
+  { kind: 'intro', dir: 'b', img: '/placeholder/mapa-b.jpg', dim: true },
+  ...elements.map((el) => ({ kind: 'panel', dir: 'b', img: `/placeholder/${el.key}-b.jpg`, dim: false, el })),
+  { kind: 'closing', img: '/placeholder/hero.jpg', dim: true },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>La Fortaleza del Asesor</title>
+    <meta name="description" content="La Fortaleza del Asesor, dos atmósferas visuales." />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="deck" data-deck>
+      {slides.map((s) => (
+        <article class={`slide slide--${s.kind}${s.dir ? ' dir-' + s.dir : ''}`} data-slide>
+          <div class={`shot__img${s.dim ? ' is-dim' : ''}`} style={`background-image:url('${s.img}')`}></div>
+          <div class="shot__veil"></div>
+
+          {s.kind === 'hero' && (
+            <div class="txt">
+              <div class="wrap wrap--hero">
+                <p class="hero__kicker line">Club de Asesores</p>
+                <h1 class="display hero__title line">La Fortaleza<br />del Asesor</h1>
+                <p class="hero__sub line">Tu despacho convertido en fortaleza. Estas son las dos atmósferas que puede tener; al final, eliges la tuya.</p>
+              </div>
+              <div class="scrollcue" aria-hidden="true"><span>Desliza</span><i></i></div>
+            </div>
+          )}
+
+          {s.kind === 'intro' && (
+            <div class="txt">
+              <div class="wrap wrap--intro">
+                <div class="intro__lead">
+                  <p class="intro__essence line">{dirMeta[s.dir].essence}</p>
+                  <h2 class="display intro__name line">{dirMeta[s.dir].name}</h2>
+                  {dirMeta[s.dir].mood.map((l: string) => <p class="intro__mood line">{l}</p>)}
+                </div>
+                <div class="intro__system">
+                  <div class="sys line">
+                    <span class="sys__label">Paleta</span>
+                    <div class="palette">
+                      {dirMeta[s.dir].palette.map((c: string[]) => (
+                        <span class="swatch"><span class="swatch__chip" style={`background:${c[0]}`}></span><span class="swatch__name">{c[1]}</span></span>
+                      ))}
+                    </div>
+                  </div>
+                  <div class="sys line">
+                    <span class="sys__label">Tipografía</span>
+                    <div class="font">
+                      <span class="font__name">{dirMeta[s.dir].fonts.display}</span>
+                      <p class="font__row display">{ABC}</p>
+                      <p class="font__row font__row--sm display">{abc} {nums}</p>
+                    </div>
+                    <div class="font">
+                      <span class="font__name">{dirMeta[s.dir].fonts.body}</span>
+                      <p class="font__row sans">{ABC}</p>
+                      <p class="font__row font__row--sm sans">{abc} {nums}</p>
+                    </div>
+                  </div>
+                  <div class="sys line">
+                    <span class="sys__label">Símbolos</span>
+                    <div class="iconrow">
+                      {icons.map((ic) => (
+                        <span class="ico" style={`-webkit-mask-image:url('/icons/${ic}.svg');mask-image:url('/icons/${ic}.svg')`}></span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {s.kind === 'panel' && (
+            <div class="txt">
+              <div class="wrap wrap--panel">
+                <h3 class="display panel__title line">{s.el.title}</h3>
+                {s.el.lines.map((l: string) => <p class="panel__text line">{l}</p>)}
+              </div>
+            </div>
+          )}
+
+          {s.kind === 'closing' && (
+            <div class="txt">
+              <div class="wrap wrap--closing">
+                <h2 class="display closing__title line">Elige el alma de tu fortaleza</h2>
+                <div class="paths line">
+                  <div class="path">
+                    <span class="path__dot path__dot--a"></span>
+                    <span class="path__name" style="font-family:'Cormorant Garamond',serif">Castro vivo</span>
+                    <span class="path__essence">Cálida y cercana</span>
+                  </div>
+                  <div class="path">
+                    <span class="path__dot path__dot--b"></span>
+                    <span class="path__name" style="font-family:'Cinzel',serif">Criterio</span>
+                    <span class="path__essence">Fría y envolvente</span>
+                  </div>
+                </div>
+                <p class="closing__note line">
+                  Las imágenes que has visto son una referencia de la dirección visual, no las imágenes
+                  definitivas del prototipo. Las finales se crearán después, ya con la dirección elegida.
+                </p>
+              </div>
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+
+    <div class="progress" aria-hidden="true"><span class="progress__fill"></span></div>
+
+    <script>
+      import gsap from 'gsap';
+      import ScrollTrigger from 'gsap/ScrollTrigger';
+
+      gsap.registerPlugin(ScrollTrigger);
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const deck = document.querySelector('.deck') as HTMLElement;
+      const slidesEl = gsap.utils.toArray<HTMLElement>('[data-slide]');
+
+      if (reduce) {
+        deck.classList.add('is-static');
+        gsap.set(slidesEl, { autoAlpha: 1 });
+        gsap.set('.line', { autoAlpha: 1, y: 0 });
+      } else {
+        // Estado inicial: solo la primera escena visible; su texto ya puesto.
+        gsap.set(slidesEl, { autoAlpha: 0 });
+        gsap.set(slidesEl[0], { autoAlpha: 1 });
+        slidesEl.forEach((s, i) => {
+          gsap.set(s.querySelectorAll('.line'), i === 0 ? { autoAlpha: 1, y: 0 } : { autoAlpha: 0, y: 60 });
+        });
+
+        const IN = 1.0, HOLD = 3.0, OUT = 1.0, GAP = 0.2;
+        const perSlide = 1.25; // altura de scroll por escena (en viewports)
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: deck,
+            start: 'top top',
+            end: () => '+=' + Math.round(slidesEl.length * window.innerHeight * perSlide),
+            pin: true,
+            scrub: 0.6,
+          },
+        });
+
+        let t = 0;
+        slidesEl.forEach((slide, i) => {
+          const img = slide.querySelector('.shot__img');
+          const lines = slide.querySelectorAll('.line');
+          const isFirst = i === 0;
+          const isLast = i === slidesEl.length - 1;
+          const inDur = isFirst ? 0 : IN;
+          const blockDur = inDur + HOLD + OUT;
+
+          // La imagen crece poco a poco mientras la escena esta activa
+          tl.fromTo(img, { scale: 1.05 }, { scale: 1.16, ease: 'none', duration: blockDur }, t);
+
+          // El texto entra de abajo (la primera ya esta puesta al cargar)
+          if (!isFirst) {
+            tl.fromTo(lines, { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ease: 'power2.out', stagger: 0.18, duration: inDur }, t);
+          }
+
+          // Pausa de lectura (HOLD), luego el texto sale y la imagen se funde con la siguiente
+          tl.to(lines, { y: -42, autoAlpha: 0, ease: 'power1.in', stagger: 0.1, duration: OUT }, t + inDur + HOLD);
+          if (!isLast) {
+            tl.to(slide, { autoAlpha: 0, ease: 'none', duration: OUT }, t + inDur + HOLD + 0.2);
+            tl.to(slidesEl[i + 1], { autoAlpha: 1, ease: 'none', duration: OUT }, t + inDur + HOLD + 0.2);
+          }
+
+          t += blockDur + GAP;
+        });
+
+        window.addEventListener('load', () => ScrollTrigger.refresh());
+      }
+
+      // Marcador de progreso (barra vertical de la derecha)
+      ScrollTrigger.create({
+        start: 0,
+        end: 'max',
+        onUpdate: (self) => gsap.set('.progress__fill', { scaleY: self.progress }),
+      });
+    </script>
+
+    <style is:global>
+      :root { --ink: #07070a; --bone: #efe9dd; --mist: #a6a3ac; --gold: #c9a24b; }
+      * { box-sizing: border-box; }
+      html { scrollbar-width: none; }
+      html::-webkit-scrollbar { display: none; }
+      body { margin: 0; background: var(--ink); color: var(--bone); font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+      ::selection { background: var(--gold); color: var(--ink); }
+
+      .display { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; line-height: 1.0; letter-spacing: 0.005em; }
+      .dir-b .display, .dir-b .intro__name { font-family: 'Cinzel', Georgia, serif; font-weight: 600; letter-spacing: 0.03em; line-height: 1.08; }
+      .sans { font-family: 'Hanken Grotesk', sans-serif; }
+
+      .dir-a { --accent: #e0b95c; --tint: #e0b95c; }
+      .dir-b { --accent: #5fd0e0; --tint: #5fd0e0; }
+
+      /* Una sola pantalla fija; las escenas se apilan y se cruzan */
+      .deck { position: relative; height: 100svh; overflow: hidden; }
+      .slide { position: absolute; inset: 0; overflow: hidden; }
+      .js .slide { opacity: 0; }
+      .js .slide:first-of-type { opacity: 1; }
+
+      .shot__img { position: absolute; inset: -6%; background-size: cover; background-position: center; will-change: transform; }
+      .shot__img.is-dim { filter: brightness(0.5) saturate(1.05); }
+      .shot__veil { position: absolute; inset: 0; z-index: 1; }
+      .slide--hero .shot__veil { background: linear-gradient(to top, var(--ink) 4%, rgba(7,7,10,0.15) 50%, rgba(7,7,10,0.5) 100%); }
+      .slide--panel .shot__veil { background: linear-gradient(to top, rgba(7,7,10,0.94) 4%, transparent 52%), linear-gradient(to right, rgba(7,7,10,0.8) 0%, transparent 62%); }
+      .slide--intro .shot__veil { background: radial-gradient(70% 80% at 78% 50%, color-mix(in srgb, var(--tint) 16%, transparent), transparent 70%), linear-gradient(to right, rgba(7,7,10,0.92) 30%, rgba(7,7,10,0.55) 100%); }
+      .slide--closing .shot__veil { background: linear-gradient(to top, var(--ink), rgba(7,7,10,0.82) 50%, var(--ink)); }
+
+      .txt { position: absolute; inset: 0; z-index: 2; display: flex; }
+      .slide--hero .txt, .slide--panel .txt { align-items: flex-end; }
+      .slide--intro .txt { align-items: center; }
+      .slide--closing .txt { align-items: center; justify-content: center; text-align: center; }
+      .wrap { width: 100%; margin: 0 auto; }
+
+      /* HERO */
+      .wrap--hero { max-width: 1200px; padding: 0 clamp(22px, 5vw, 64px) clamp(9vh, 13vh, 170px); }
+      .hero__kicker { margin: 0 0 1.2rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.32em; color: var(--gold); }
+      .hero__title { margin: 0; font-size: clamp(3.4rem, 10.5vw, 9.5rem); }
+      .hero__sub { margin: 1.8rem 0 0; max-width: 40ch; font-size: clamp(1.15rem, 1.7vw, 1.55rem); color: var(--mist); line-height: 1.55; }
+      .scrollcue { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--mist); }
+      .scrollcue i { width: 1px; height: 48px; background: linear-gradient(var(--gold), transparent); transform-origin: top; animation: cue 2.2s ease-in-out infinite; }
+      @keyframes cue { 0%,100% { transform: scaleY(0.4); opacity: 0.4; } 50% { transform: scaleY(1); opacity: 1; } }
+
+      /* INTRO / IDENTIDAD */
+      .wrap--intro { max-width: 1220px; padding: 0 clamp(22px, 5vw, 72px); display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(32px, 5vw, 84px); align-items: center; }
+      .intro__essence { margin: 0 0 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--accent); }
+      .intro__name { margin: 0; font-size: clamp(3rem, 7vw, 6.2rem); line-height: 0.95; }
+      .intro__mood { margin: 1.1rem 0 0; max-width: 32ch; font-size: clamp(1.15rem, 1.7vw, 1.6rem); color: var(--mist); line-height: 1.45; }
+      .intro__system { display: flex; flex-direction: column; gap: clamp(18px, 2.4vw, 30px); }
+      .sys__label { display: block; margin-bottom: 0.7rem; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.26em; color: var(--mist); }
+      .palette { display: flex; gap: 12px; flex-wrap: wrap; }
+      .swatch { display: flex; flex-direction: column; gap: 6px; }
+      .swatch__chip { width: 44px; height: 44px; border-radius: 7px; border: 1px solid rgba(236,230,218,0.16); }
+      .swatch__name { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
+      .font { margin-bottom: 0.9rem; }
+      .font:last-child { margin-bottom: 0; }
+      .font__name { display: block; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--bone); margin-bottom: 0.2rem; }
+      .font__row { margin: 0; font-size: 1.35rem; line-height: 1.25; color: var(--bone); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; }
+      .font__row--sm { font-size: 1.02rem; color: var(--mist); }
+      .iconrow { display: flex; gap: 15px; flex-wrap: wrap; }
+      .ico { width: 28px; height: 28px; background: var(--accent); -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+
+      /* PANEL */
+      .wrap--panel { max-width: 880px; margin: 0; padding: 0 clamp(22px, 5vw, 72px) clamp(9vh, 12vh, 130px); }
+      .panel__title { margin: 0 0 1.4rem; font-size: clamp(2.8rem, 6.5vw, 6rem); }
+      .panel__text { margin: 0 0 0.6rem; max-width: 42ch; font-size: clamp(1.3rem, 1.9vw, 1.9rem); line-height: 1.45; color: var(--bone); opacity: 0.92; }
+
+      /* CIERRE */
+      .wrap--closing { max-width: 1100px; padding: 0 clamp(22px, 5vw, 72px); }
+      .closing__title { margin: 0 0 3rem; font-size: clamp(3rem, 7vw, 6.5rem); }
+      .paths { display: flex; justify-content: center; gap: clamp(40px, 8vw, 120px); flex-wrap: wrap; margin-bottom: 3rem; }
+      .path { display: flex; flex-direction: column; align-items: center; gap: 0.55rem; }
+      .path__dot { width: 14px; height: 14px; border-radius: 50%; }
+      .path__dot--a { background: #e0b95c; box-shadow: 0 0 22px #e0b95c; }
+      .path__dot--b { background: #5fd0e0; box-shadow: 0 0 22px #5fd0e0; }
+      .path__name { font-size: clamp(2rem, 4vw, 3.2rem); color: var(--bone); font-weight: 600; }
+      .path__essence { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.24em; color: var(--mist); }
+      .closing__note { margin: 0 auto; max-width: 60ch; font-size: clamp(1.05rem, 1.5vw, 1.3rem); color: var(--mist); line-height: 1.6; }
+
+      /* Marcador de progreso vertical */
+      .progress { position: fixed; top: 50%; right: clamp(14px, 2vw, 28px); transform: translateY(-50%); width: 3px; height: 44vh; background: rgba(236,230,218,0.12); border-radius: 3px; z-index: 60; overflow: hidden; }
+      .progress__fill { display: block; width: 100%; height: 100%; background: linear-gradient(180deg, var(--gold), #e6c079); transform: scaleY(0); transform-origin: top; border-radius: 3px; }
+
+      /* Modo sin animacion: escenas apiladas en scroll normal */
+      .deck.is-static { height: auto; overflow: visible; }
+      .is-static .slide { position: relative; inset: auto; height: 100svh; opacity: 1 !important; }
+
+      @media (max-width: 860px) { .wrap--intro { grid-template-columns: 1fr; gap: 30px; } .font__row { font-size: 1.1rem; } }
+      @media (prefers-reduced-motion: reduce) {
+        .scrollcue i { animation: none; }
+        .line { opacity: 1 !important; transform: none !important; }
+      }
+    </style>
+  </body>
+</html>

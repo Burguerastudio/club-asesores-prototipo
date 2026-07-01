@@ -1,0 +1,23 @@
+# interno Sepia (no va al repo público)
+CLAUDE.md
+inputs/
+docs/
+references/
+key-visuals/
+
+# Astro / Node
+node_modules/
+dist/
+.astro/
+
+# Vercel
+.vercel/
+
+# entorno y secretos
+.env*
+
+# macOS
+.DS_Store
+
+# logs
+*.log
