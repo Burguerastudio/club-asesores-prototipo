@@ -1,0 +1,362 @@
+---
+// Pagina oculta (no enlazada en nav); se comparte por URL: /assets
+// Deck cinematico de todos los assets del prototipo (La Fortaleza del Asesor).
+// Direccion B (fria y envolvente). Mismo motor GSAP que el key visual.
+
+const A = '/assets';
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const escenas = [
+  { id: 'mapa', img: `${A}/mapa-escenas/mapa-fortaleza.webp`, kicker: 'El mundo', title: 'El Mapa de la Fortaleza', line: 'El castro completo a vista de pajaro. Cada edificio es una sala, y su estado cuenta como va tu asesoria.' },
+  { id: 'sala-mandos', img: `${A}/mapa-escenas/sala-mandos.webp`, kicker: 'Sala 01', title: 'Sala de Mandos', line: 'Donde se deciden precios, servicios y organizacion. No se consulta, se decide.' },
+  { id: 'biblioteca', img: `${A}/mapa-escenas/biblioteca.webp`, kicker: 'Sala 02', title: 'Biblioteca de Recursos', line: 'Encontrar la herramienta y aplicarla. Cada recurso que usas se enciende.' },
+  { id: 'consejo', img: `${A}/mapa-escenas/consejo.webp`, kicker: 'Sala 03', title: 'El Consejo', line: 'Criterio estrategico. La puerta pesa hasta que te decides a preguntar.' },
+  { id: 'mirador', img: `${A}/mapa-escenas/mirador.webp`, kicker: 'Sala 04', title: 'Mirador de la Fortaleza', line: 'Otras fortalezas en el horizonte. La comunidad, no un foro.' },
+  { id: 'torre', img: `${A}/mapa-escenas/torre-retos.webp`, kicker: 'Sala 05', title: 'Torre de Retos', line: 'La accion y la implementacion. Cada reto completado enciende un tramo.' },
+  { id: 'patio', img: `${A}/mapa-escenas/patio-entrada.webp`, kicker: 'Umbral', title: 'Patio de Entrada', line: 'La llegada a la fortaleza. Fondo del acceso y del onboarding.' },
+];
+
+const interv = [
+  'Sube tus precios', 'Reestructura servicios', 'Escala la rentabilidad', 'Organiza el despacho',
+  'Hazte visible', 'Convierte y reten', 'Delega y desconecta', 'Conoce tus numeros',
+  'Percepcion de valor', 'Posicionate', 'Consigue clientes', 'Cierra y planifica',
+];
+const insigniaItems = (folder: string, suffix: string) =>
+  interv.map((name, i) => ({ img: `${A}/emblemas-insignias/insignias-intervencion/${folder}/insignia-i${pad(i + 1)}-${suffix}.webp`, cap: `${i + 1}. ${name}` }));
+
+const pieces = [
+  { grid: 'duo', w: 'clamp(150px,20vw,300px)', kicker: 'Guias del universo', title: 'Nara y El Rebelde', line: 'La meiga que te muestra donde mirar. El trasno que enreda y posterga.', items: [
+    { img: `${A}/personajes/nara.webp`, cap: 'Nara, la guardiana' },
+    { img: `${A}/personajes/rebelde.webp`, cap: 'El Rebelde' },
+  ]},
+  { grid: 'avatares', w: 'clamp(150px,16vw,232px)', kicker: 'El asesor', title: 'El Asesor, cinco rangos', line: 'La evolucion se lee en la vestimenta: de Base a Fortalecido.', items: [
+    { img: `${A}/avatares/asesor-r1.webp`, cap: 'Base' }, { img: `${A}/avatares/asesor-r2.webp`, cap: 'En Guardia' },
+    { img: `${A}/avatares/asesor-r3.webp`, cap: 'Constructor' }, { img: `${A}/avatares/asesor-r4.webp`, cap: 'Estratega' },
+    { img: `${A}/avatares/asesor-r5.webp`, cap: 'Fortalecido' },
+  ]},
+  { grid: 'avatares', w: 'clamp(150px,16vw,232px)', kicker: 'La asesora', title: 'La Asesora, cinco rangos', line: 'La misma evolucion, en su version femenina.', items: [
+    { img: `${A}/avatares/asesora-r1.webp`, cap: 'Base' }, { img: `${A}/avatares/asesora-r2.webp`, cap: 'En Guardia' },
+    { img: `${A}/avatares/asesora-r3.webp`, cap: 'Constructora' }, { img: `${A}/avatares/asesora-r4.webp`, cap: 'Estratega' },
+    { img: `${A}/avatares/asesora-r5.webp`, cap: 'Fortalecida' },
+  ]},
+  { grid: 'duo', w: 'clamp(120px,15vw,230px)', kicker: 'Simbolos', title: 'Triskel y Sello de Conchi', line: 'Las tres sendas del ciclo. El criterio de Conchi, representado sin rostro.', items: [
+    { img: `${A}/emblemas-insignias/triskel-sello/triskel-sendas.webp`, cap: 'Triskel de las tres sendas' },
+    { img: `${A}/emblemas-insignias/triskel-sello/sello-conchi.webp`, cap: 'Sello de Conchi' },
+  ]},
+  { grid: 'medallones', w: 'clamp(116px,12.5vw,180px)', kicker: 'Test de Player', title: 'Los cuatro arquetipos', line: 'El tipo de asesor que eres, segun como actuas cuando la fortaleza corre peligro.', items: [
+    { img: `${A}/emblemas-insignias/arquetipos/arquetipo-conseguidor.webp`, cap: 'Conseguidor' },
+    { img: `${A}/emblemas-insignias/arquetipos/arquetipo-explorador.webp`, cap: 'Explorador' },
+    { img: `${A}/emblemas-insignias/arquetipos/arquetipo-socializador.webp`, cap: 'Socializador' },
+    { img: `${A}/emblemas-insignias/arquetipos/arquetipo-killer.webp`, cap: 'Desafio' },
+  ]},
+  { grid: 'crests', w: 'clamp(108px,11.5vw,168px)', kicker: 'Hitos del ciclo', title: 'Seis logros globales', line: 'Los grandes hitos del primer ano en la fortaleza.', items: [
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-entrada.webp`, cap: 'Entrada en la Fortaleza' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-mapa-revelado.webp`, cap: 'Mapa Revelado' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primera-reparacion.webp`, cap: 'Primera Reparacion' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primera-grieta.webp`, cap: 'Primera Grieta Sellada' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primer-tramo.webp`, cap: 'Primer Tramo en Marcha' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-cierre-ciclo.webp`, cap: 'Cierre del Ciclo' },
+  ]},
+  { grid: 'runas', w: 'clamp(76px,7.8vw,116px)', kicker: 'Habilidades', title: 'Doce habilidades desbloqueadas', line: 'Una capacidad nueva por cada intervencion fortalecida.', items: [
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-defensa-valor.webp`, cap: 'Defensa del valor' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-arquitectura-oferta.webp`, cap: 'Arquitectura de oferta' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-gobierno-margen.webp`, cap: 'Gobierno del margen' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-orden-operativo.webp`, cap: 'Orden operativo' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-visibilidad-estrategica.webp`, cap: 'Visibilidad estrategica' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-experiencia-entrada.webp`, cap: 'Experiencia de entrada' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-delegacion-consciente.webp`, cap: 'Delegacion consciente' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-datos.webp`, cap: 'Direccion por datos' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-valor-visible.webp`, cap: 'Valor visible' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-autoridad-mercado.webp`, cap: 'Autoridad de mercado' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-iniciativa-comercial.webp`, cap: 'Iniciativa comercial' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-estrategica.webp`, cap: 'Direccion estrategica' },
+  ]},
+  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignias de Progresion', title: 'Progresion (acero)', line: 'Se gana al recorrer el contenido clave de cada intervencion.', items: insigniaItems('progresion', 'progresion') },
+  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignias de Accion', title: 'Accion (plata)', line: 'Se gana al ejecutar la accion o el reto de la intervencion.', items: insigniaItems('accion', 'accion') },
+  { grid: 'insignias sello', w: 'clamp(78px,8.2vw,118px)', kicker: 'Sello de Fortaleza', title: 'Sello de Fortaleza (oro)', line: 'La implementacion validada. La sala recupera funcionamiento y sube el rango.', items: insigniaItems('sellos', 'sello') },
+  { grid: 'monedas', w: 'clamp(120px,14vw,200px)', kicker: 'Moneda', title: 'Puntos de Fortaleza', line: 'La energia que reactiva la fortaleza. Como fragmento suelto y como cumulo para el medidor.', items: [
+    { img: `${A}/moneda/puntos-fortaleza.webp`, cap: 'Fragmento' },
+    { img: `${A}/moneda/puntos-fortaleza-cumulo.webp`, cap: 'Cumulo' },
+  ]},
+  { grid: 'objetos', w: 'clamp(110px,12vw,178px)', kicker: 'Tienda', title: 'Seis recompensas', line: 'Se canjean por Puntos de Fortaleza. Utiles, nunca decorativas.', items: [
+    { img: `${A}/recompensas/recompensa-kit-entrada.webp`, cap: 'Kit de Entrada' },
+    { img: `${A}/recompensas/recompensa-plantilla-reparacion.webp`, cap: 'Plantilla de Reparacion' },
+    { img: `${A}/recompensas/recompensa-mapa-prioridades.webp`, cap: 'Mapa de Prioridades' },
+    { img: `${A}/recompensas/recompensa-caso-consejo.webp`, cap: 'Caso de Consejo' },
+    { img: `${A}/recompensas/recompensa-biblioteca-herramientas.webp`, cap: 'Biblioteca de Herramientas' },
+    { img: `${A}/recompensas/recompensa-sesion-premium.webp`, cap: 'Sesion Premium' },
+  ]},
+  { grid: 'texturas', w: 'clamp(96px,10vw,150px)', kicker: 'Materiales', title: 'Nueve texturas base', line: 'Piedra, madera, metal, niebla, plata y mas, para fondos y superficies.', items: [
+    { img: `${A}/texturas/textura-piedra.webp`, cap: 'Piedra' },
+    { img: `${A}/texturas/textura-piedra-celta.webp`, cap: 'Piedra celta' },
+    { img: `${A}/texturas/textura-madera.webp`, cap: 'Madera' },
+    { img: `${A}/texturas/textura-metal.webp`, cap: 'Metal' },
+    { img: `${A}/texturas/textura-niebla.webp`, cap: 'Niebla' },
+    { img: `${A}/texturas/textura-pergamino.webp`, cap: 'Pergamino' },
+    { img: `${A}/texturas/textura-estandarte.webp`, cap: 'Estandarte' },
+    { img: `${A}/texturas/textura-plata.webp`, cap: 'Plata' },
+    { img: `${A}/texturas/textura-mar.webp`, cap: 'Mar nocturno' },
+  ]},
+];
+
+const slides: any[] = [
+  { kind: 'hero', img: `${A}/mapa-escenas/patio-entrada.webp`, dim: true },
+  ...escenas.map((e) => ({ kind: 'image', dim: true, ...e })),
+  ...pieces.map((p) => ({ kind: 'pieces', ...p })),
+  { kind: 'closing', emblem: `${A}/emblemas-insignias/triskel-sello/triskel-sendas.webp` },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Assets, La Fortaleza del Asesor</title>
+    <meta name="description" content="Los assets del prototipo de La Fortaleza del Asesor." />
+    <meta name="robots" content="noindex, nofollow" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="deck" data-deck>
+      {slides.map((s) => (
+        <article class={`slide slide--${s.kind}`} data-slide>
+          <div class={`shot__img${s.img ? (s.dim ? ' is-dim' : '') : ' tono-frio'}`} style={s.img ? `background-image:url('${s.img}')` : ''}></div>
+          <div class="shot__veil"></div>
+
+          {s.kind === 'hero' && (
+            <div class="txt">
+              <div class="wrap wrap--hero">
+                <p class="hero__kicker line">Club de Asesores</p>
+                <h1 class="display hero__title line">La Fortaleza<br />del Asesor</h1>
+                <p class="hero__sub line">Todos los assets del prototipo, generados en la direccion elegida. Desliza para verlos por familias.</p>
+              </div>
+              <div class="scrollcue" aria-hidden="true"><span>Desliza</span><i></i></div>
+            </div>
+          )}
+
+          {s.kind === 'image' && (
+            <div class="txt txt--abajo">
+              <div class="wrap wrap--panel">
+                <p class="kicker line">{s.kicker}</p>
+                <h2 class="display line">{s.title}</h2>
+                <p class="pie-line line">{s.line}</p>
+              </div>
+            </div>
+          )}
+
+          {s.kind === 'pieces' && (
+            <div class="txt txt--center">
+              <div class="wrap wrap--pieces">
+                <p class="kicker line">{s.kicker}</p>
+                <h2 class="display line">{s.title}</h2>
+                {s.groups ? (
+                  <div class="grupos line">
+                    {s.groups.map((g: any) => (
+                      <div class="grupo">
+                        <p class="grupo__label">{g.label}</p>
+                        <div class={`galeria g-${s.grid}`} style={`--pza-w:${s.w}`}>
+                          {g.items.map((it: any) => (
+                            <figure class="pza"><img src={it.img} alt={it.cap} loading="lazy" /><figcaption>{it.cap}</figcaption></figure>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div class={`galeria g-${s.grid} line`} style={`--pza-w:${s.w}`}>
+                    {s.items.map((it: any) => (
+                      <figure class="pza"><img src={it.img} alt={it.cap} loading="lazy" /><figcaption>{it.cap}</figcaption></figure>
+                    ))}
+                  </div>
+                )}
+                <p class="pie-line line">{s.line}</p>
+              </div>
+            </div>
+          )}
+
+          {s.kind === 'closing' && (
+            <div class="txt txt--center">
+              <div class="wrap wrap--closing">
+                <img class="cierre-emblema line" src={s.emblem} alt="" aria-hidden="true" />
+                <h2 class="display line">Assets listos para validar</h2>
+                <p class="pie-line line">Estas son las piezas del prototipo. Con tu visto bueno montamos las pantallas y animamos las escenas que lo necesiten.</p>
+              </div>
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+
+    <div class="progress" aria-hidden="true"><span class="progress__fill"></span></div>
+
+    <script>
+      import gsap from 'gsap';
+      import ScrollTrigger from 'gsap/ScrollTrigger';
+
+      gsap.registerPlugin(ScrollTrigger);
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const deck = document.querySelector('.deck') as HTMLElement;
+      const slidesEl = gsap.utils.toArray<HTMLElement>('[data-slide]');
+
+      if (reduce) {
+        deck.classList.add('is-static');
+        gsap.set(slidesEl, { autoAlpha: 1 });
+        gsap.set('.line', { autoAlpha: 1, y: 0 });
+      } else {
+        gsap.set(slidesEl, { autoAlpha: 0 });
+        gsap.set(slidesEl[0], { autoAlpha: 1 });
+        slidesEl.forEach((s, i) => {
+          gsap.set(s.querySelectorAll('.line'), i === 0 ? { autoAlpha: 1, y: 0 } : { autoAlpha: 0, y: 60 });
+        });
+
+        const IN = 1.0, HOLD = 3.0, OUT = 1.0, GAP = 0.2;
+        const perSlide = 1.25;
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: deck,
+            start: 'top top',
+            end: () => '+=' + Math.round(slidesEl.length * window.innerHeight * perSlide),
+            pin: true,
+            scrub: 0.6,
+          },
+        });
+
+        let t = 0;
+        slidesEl.forEach((slide, i) => {
+          const img = slide.querySelector('.shot__img');
+          const lines = slide.querySelectorAll('.line');
+          const isFirst = i === 0;
+          const isLast = i === slidesEl.length - 1;
+          const inDur = isFirst ? 0 : IN;
+          const blockDur = inDur + HOLD + OUT;
+
+          tl.fromTo(img, { scale: 1.05 }, { scale: 1.14, ease: 'none', duration: blockDur }, t);
+          if (!isFirst) {
+            tl.fromTo(lines, { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ease: 'power2.out', stagger: 0.16, duration: inDur }, t);
+          }
+          tl.to(lines, { y: -42, autoAlpha: 0, ease: 'power1.in', stagger: 0.09, duration: OUT }, t + inDur + HOLD);
+          if (!isLast) {
+            tl.to(slide, { autoAlpha: 0, ease: 'none', duration: OUT }, t + inDur + HOLD + 0.2);
+            tl.to(slidesEl[i + 1], { autoAlpha: 1, ease: 'none', duration: OUT }, t + inDur + HOLD + 0.2);
+          }
+          t += blockDur + GAP;
+        });
+
+        window.addEventListener('load', () => ScrollTrigger.refresh());
+      }
+
+      ScrollTrigger.create({
+        start: 0,
+        end: 'max',
+        onUpdate: (self) => gsap.set('.progress__fill', { scaleY: self.progress }),
+      });
+    </script>
+
+    <style is:global>
+      :root {
+        --ink: #090D14; --night: #0C1019; --night2: #14202E; --steel: #3A4654;
+        --cyan: #3FA9C9; --aqua: #5FD0E0; --silver: #C2CDD6; --moon: #AEC6D8;
+        --gold: #C9A24B; --gold2: #E0B95C;
+        --bone: #EAF1F6; --mist: #8CA0B0;
+      }
+      * { box-sizing: border-box; }
+      html { scrollbar-width: none; }
+      html::-webkit-scrollbar { display: none; }
+      body { margin: 0; background: var(--ink); color: var(--bone); font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+      ::selection { background: var(--cyan); color: var(--ink); }
+
+      .display { font-family: 'Cinzel', Georgia, serif; font-weight: 600; letter-spacing: 0.03em; line-height: 1.08; }
+      img { max-width: 100%; }
+
+      .deck { position: relative; height: 100svh; overflow: hidden; }
+      .slide { position: absolute; inset: 0; overflow: hidden; }
+      .js .slide { opacity: 0; }
+      .js .slide:first-of-type { opacity: 1; }
+
+      .shot__img { position: absolute; inset: -6%; background-size: cover; background-position: center; will-change: transform; }
+      .shot__img.is-dim { filter: brightness(0.52) saturate(1.02); }
+      .tono-frio { background:
+        radial-gradient(ellipse 66% 56% at 50% 40%, rgba(63,169,201,0.10), transparent 62%),
+        radial-gradient(ellipse 120% 70% at 50% 0%, rgba(58,70,84,0.36), transparent 60%),
+        linear-gradient(180deg, #0E1622, #0A0F18 58%, #0C1019); }
+      .shot__veil { position: absolute; inset: 0; z-index: 1; }
+      .slide--hero .shot__veil { background: linear-gradient(to top, var(--ink) 4%, rgba(9,13,20,0.2) 50%, rgba(9,13,20,0.55) 100%); }
+      .slide--image .shot__veil { background: linear-gradient(to top, rgba(9,13,20,0.95) 4%, transparent 54%), linear-gradient(to right, rgba(9,13,20,0.82) 0%, transparent 60%); }
+      .slide--pieces .shot__veil { background: radial-gradient(85% 75% at 50% 45%, transparent 42%, rgba(9,13,20,0.38)); }
+      .slide--closing .shot__veil { background: linear-gradient(to top, var(--ink), rgba(9,13,20,0.85) 50%, var(--ink)); }
+
+      .txt { position: absolute; inset: 0; z-index: 2; display: flex; }
+      .txt--abajo { align-items: flex-end; }
+      .slide--hero .txt { align-items: flex-end; }
+      .txt--center { align-items: center; justify-content: center; text-align: center; }
+      .wrap { width: 100%; margin: 0 auto; }
+
+      .kicker { margin: 0 0 1rem; font-size: clamp(0.66rem, 0.9vw, 0.8rem); text-transform: uppercase; letter-spacing: 0.28em; color: var(--cyan); }
+      .pie-line { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; color: var(--moon); line-height: 1.5; }
+
+      /* HERO */
+      .wrap--hero { max-width: 1200px; padding: 0 clamp(22px, 5vw, 64px) clamp(9vh, 13vh, 170px); }
+      .hero__kicker { margin: 0 0 1.2rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.32em; color: var(--cyan); }
+      .hero__title { margin: 0; font-size: clamp(3rem, 9.5vw, 8.4rem); color: var(--bone); }
+      .hero__sub { margin: 1.6rem 0 0; max-width: 46ch; font-size: clamp(1.08rem, 1.6vw, 1.5rem); color: var(--moon); line-height: 1.55; }
+      .scrollcue { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--mist); }
+      .scrollcue i { width: 1px; height: 48px; background: linear-gradient(var(--cyan), transparent); transform-origin: top; animation: cue 2.2s ease-in-out infinite; }
+      @keyframes cue { 0%,100% { transform: scaleY(0.4); opacity: 0.4; } 50% { transform: scaleY(1); opacity: 1; } }
+
+      /* IMAGE (escenas a sangre) */
+      .wrap--panel { max-width: 940px; margin: 0; padding: 0 clamp(22px, 5vw, 72px) clamp(8vh, 12vh, 120px); }
+      .wrap--panel .display { margin: 0 0 1rem; font-size: clamp(2.4rem, 6vw, 5rem); color: var(--bone); }
+      .wrap--panel .pie-line { margin: 0.5rem 0 0; max-width: 42ch; font-size: clamp(1.2rem, 1.9vw, 1.7rem); text-align: left; }
+
+      /* PIECES (recortes sobre panel) */
+      .wrap--pieces { max-width: min(1200px, 95vw); padding: clamp(1rem, 3vh, 2rem) clamp(20px, 4vw, 60px); }
+      .wrap--pieces .display { margin: 0 0 clamp(1.3rem, 3vh, 2.1rem); font-size: clamp(1.9rem, 4.4vw, 3.4rem); color: var(--bone); }
+      .wrap--pieces .pie-line { margin: clamp(1.1rem, 2.4vh, 1.7rem) auto 0; max-width: 60ch; font-size: clamp(1.02rem, 1.5vw, 1.35rem); }
+
+      .galeria { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: clamp(10px, 1.8vw, 26px); }
+      .pza { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: var(--pza-w, 120px); }
+      .pza img { width: 100%; height: auto; object-fit: contain; filter: drop-shadow(0 14px 30px rgba(0,0,0,0.55)); }
+      .pza figcaption { font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(0.56rem, 0.85vw, 0.72rem); letter-spacing: 0.02em; color: var(--mist); line-height: 1.2; }
+
+      .grupos { display: flex; flex-direction: column; gap: clamp(14px, 2.6vh, 30px); }
+      .grupo__label { margin: 0 0 0.7rem; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.24em; color: var(--silver); }
+
+      .g-crests .pza img, .sello .pza img { filter: drop-shadow(0 12px 26px rgba(201,162,75,0.30)); }
+      .g-texturas .pza img { aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 1px solid rgba(194,205,214,0.16); filter: none; box-shadow: 0 10px 24px rgba(0,0,0,0.5); }
+      .g-avatares { flex-wrap: nowrap; width: min(1160px, 95vw); margin-left: auto; margin-right: auto; }
+      .g-avatares .pza { flex: 1 1 0; width: auto; min-width: 0; }
+      .g-avatares .pza figcaption { color: var(--moon); }
+
+      /* CIERRE */
+      .wrap--closing { max-width: 900px; margin: 0 auto; padding: 0 clamp(22px, 5vw, 60px); }
+      .cierre-emblema { width: clamp(88px, 10vw, 150px); height: auto; margin: 0 auto 1.6rem; display: block; filter: drop-shadow(0 0 26px rgba(63,169,201,0.30)); }
+      .wrap--closing .display { margin: 0 0 1.5rem; font-size: clamp(2.4rem, 6vw, 4.6rem); color: var(--bone); }
+      .wrap--closing .pie-line { margin: 0 auto; max-width: 60ch; font-size: clamp(1.08rem, 1.6vw, 1.4rem); }
+
+      /* Progreso */
+      .progress { position: fixed; top: 50%; right: clamp(14px, 2vw, 28px); transform: translateY(-50%); width: 3px; height: 44vh; background: rgba(194,205,214,0.14); border-radius: 3px; z-index: 60; overflow: hidden; }
+      .progress__fill { display: block; width: 100%; height: 100%; background: linear-gradient(180deg, var(--cyan), var(--aqua)); transform: scaleY(0); transform-origin: top; border-radius: 3px; }
+
+      /* Sin animacion */
+      .deck.is-static { height: auto; overflow: visible; }
+      .is-static .slide { position: relative; inset: auto; height: 100svh; opacity: 1 !important; }
+
+      @media (max-width: 820px) {
+        .wrap--pieces .pie-line { max-width: 90%; }
+        .grupos { gap: 16px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .scrollcue i { animation: none; }
+        .line { opacity: 1 !important; transform: none !important; }
+      }
+    </style>
+  </body>
+</html>
