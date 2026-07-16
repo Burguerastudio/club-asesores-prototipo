@@ -1,0 +1,97 @@
+---
+// La pagina de las obras. Astro la genera como 404.html y Vercel (y el dev server)
+// la sirven solos para CUALQUIER ruta que no exista: las 12 pendientes del menu y
+// cualquier errata. Asi ningun clic prematuro cae en el 404 crudo delante del cliente.
+// Nara recibe, dice que sala esta en obras (leyendo la URL) y devuelve al Patio.
+import Fortaleza from '../layouts/Fortaleza.astro';
+---
+
+<Fortaleza title="En obras, Club de la Asesoría">
+  <section class="obras" aria-label="Espacio en construcción">
+    <span class="figura figura--luz obras__nara">
+      <img src="/assets/personajes/ui/nara.webp" alt="Nara, la guardiana de la fortaleza" width="184" height="580" />
+      <span class="aura" aria-hidden="true"></span>
+    </span>
+
+    <div class="obras__d">
+      <p class="cita obras__txt">
+        <span data-sala>Esta sala</span> sigue en obras: los canteros aún trabajan aquí.
+        Se abrirá en la siguiente fase de la construcción.
+      </p>
+      <p class="obras__firma">Nara, guardiana de la fortaleza</p>
+      <a class="btn" href="/dashboard" data-augmented-ui="l-clip-y r-clip-y">Volver al Patio</a>
+    </div>
+  </section>
+</Fortaleza>
+
+<script>
+  // La pagina es una sola (404.html), pero sabe donde estas: nombra la sala pedida
+  // y enciende su ranura en el HUD, como haria la pagina de verdad.
+  const SALAS: Record<string, string> = {
+    '/mapa': 'El Mapa',
+    '/sala-mandos': 'La Sala de Mandos',
+    '/biblioteca': 'La Biblioteca de Recursos',
+    '/consejo': 'El Consejo',
+    '/mirador': 'El Mirador',
+    '/torre-retos': 'La Torre de Retos',
+    '/intervencion': 'La página de intervención',
+    '/asesor': 'Tu página de asesor',
+    '/recompensas': 'La sala de Recompensas',
+    '/calendario': 'El Calendario',
+    '/ajustes': 'La página de Ajustes',
+  };
+  const ruta = location.pathname.replace(/\/$/, '');
+  const nombre = SALAS[ruta];
+  if (nombre) {
+    const span = document.querySelector('[data-sala]');
+    if (span) span.textContent = nombre;
+    document.querySelectorAll<HTMLAnchorElement>('.shell__nav a, .menu a').forEach((a) => {
+      if (new URL(a.href).pathname.replace(/\/$/, '') === ruta) {
+        a.classList.add('is-activa');
+        a.setAttribute('aria-current', 'page');
+        if (a.closest('.shell__nav')) a.setAttribute('data-augmented-ui', 'tl-clip br-clip border');
+      }
+    });
+  }
+</script>
+
+<style is:global>
+  /* La escena: Nara y su aviso, centrados en el hueco de la fortaleza.
+     Flota (persona y voz, no objeto): sin placa, como manda el sistema. */
+  .obras {
+    min-height: min(62vh, 640px);
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(26px, 4vw, 64px);
+    padding: clamp(24px, 5vh, 56px) 0;
+  }
+  .obras__nara img {
+    width: auto; height: clamp(220px, 30vh, 320px);
+    object-fit: contain; filter: drop-shadow(0 18px 30px rgba(0,0,0,0.7));
+  }
+  .obras .aura { left: 51%; top: 44.5%; width: 30%; }
+
+  .obras__d { max-width: 44ch; }
+  .obras__txt { margin: 0; font-size: clamp(1.15rem, 1.5vw, 1.5rem); }
+  .obras__firma { margin: 0.8rem 0 0; font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
+  .obras__d .btn { margin-top: clamp(20px, 3vh, 30px); }
+
+  /* Entrada suave, como el resto de la casa; sin la preferencia, servido en su sitio */
+  @media (prefers-reduced-motion: no-preference) {
+    .obras__nara, .obras__txt, .obras__firma, .obras__d .btn {
+      animation: umbral-obras 0.5s ease-out both;
+    }
+    .obras__txt { animation-delay: 90ms; }
+    .obras__firma { animation-delay: 160ms; }
+    .obras__d .btn { animation-delay: 240ms; }
+    @keyframes umbral-obras {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  @media (max-width: 760px) {
+    .obras { flex-direction: column; text-align: center; }
+    .obras__nara img { height: 190px; }
+    .obras__d { display: flex; flex-direction: column; align-items: center; }
+  }
+</style>
