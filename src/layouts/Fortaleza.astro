@@ -1,0 +1,315 @@
+---
+// Shell persistente de la plataforma: cabecera + fondo + tokens.
+// Lo heredan todas las pantallas de dentro (el Login no, que va sin navegacion).
+import '../styles/tokens.css';
+import { asesora } from '../data/demo.js';
+
+const { title = 'Club de la Asesoría', activa = '' } = Astro.props;
+
+// La cabecera es un HUD: cada pieza es una ranura, con el mismo chaflan en diagonal
+// que los azulejos de sala (ver docs/DESIGN.md). El filo solo se dibuja donde hay
+// algo encendido o enmarcado; en las ranuras apagadas sobra.
+const RANURA = 'tl-clip br-clip';
+
+// El Patio es el Dashboard: el patio de armas del castro, donde caes al cruzar la Puerta
+// (el Login) y de donde salen los caminos a cada sala. El Mapa es otra cosa: el viaje.
+// Lo tuyo cuelga del avatar, no del menu de espacios: tu ficha, tus recompensas,
+// tus fechas y tus ajustes no son sitios de la fortaleza.
+// "El asesor" es P8 en CONTENIDO.md: rango, avatar, insignias, PF y los roles del
+// Test de Player. Ojo: la "Player Page" de CONTENIDO es otra cosa, el reproductor
+// de la Biblioteca. Y "Ajustes" y no "Mi cuenta", que se confundia con el perfil.
+const menuJugador = [
+  { href: '/asesor', label: 'El asesor' },
+  { href: '/recompensas', label: 'Recompensas' },
+  { href: '/calendario', label: 'Calendario' },
+  { href: '/ajustes', label: 'Ajustes' },
+];
+
+const nav = [
+  { href: '/dashboard', label: 'El Patio' },
+  { href: '/mapa', label: 'Mapa' },
+  { href: '/sala-mandos', label: 'Sala de Mandos' },
+  { href: '/biblioteca', label: 'Biblioteca' },
+  { href: '/consejo', label: 'El Consejo' },
+  { href: '/mirador', label: 'Mirador' },
+  { href: '/torre-retos', label: 'Torre de Retos' },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- La cara del enlace cuando se comparte (los gates van por URL de Vercel) -->
+    <meta name="theme-color" content="#090D14" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="La Fortaleza del Asesor, Club de la Asesoría" />
+    <meta property="og:description" content="Tu despacho es una fortaleza. Nara ya ha encontrado la primera grieta." />
+    <meta property="og:image" content="https://club-asesores-prototipo.vercel.app/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="saltar" href="#contenido" data-augmented-ui="tl-clip br-clip">Saltar al contenido</a>
+
+    <!-- El <i> lleva la niebla: la vineta del ::after tiene que pintarse encima de todo,
+         y un pseudo no puede quedar sobre el otro si ambos cuelgan del mismo elemento. -->
+    <div class="fondo" aria-hidden="true"><i></i></div>
+
+    <header class="shell">
+      <div class="shell__in">
+        <nav class="shell__nav" aria-label="Espacios de la fortaleza">
+          {nav.map((n) => (
+            <a
+              href={n.href}
+              class={activa === n.href ? 'is-activa' : ''}
+              data-augmented-ui={activa === n.href ? `${RANURA} border` : RANURA}
+              aria-current={activa === n.href ? 'page' : undefined}
+            >{n.label}</a>
+          ))}
+        </nav>
+
+        <div class="shell__yo">
+          <button class="sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui={RANURA}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
+              <g class="sonido__ondas">
+                <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
+                <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
+              </g>
+              <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
+            </svg>
+          </button>
+
+          <span class="pf" data-augmented-ui={`${RANURA} border`}>
+            <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
+            {asesora.pf.toLocaleString('es-ES')}
+            <span class="sr-only">Puntos de Fortaleza</span>
+            <!-- La pildora del sistema, no el tooltip gris del navegador -->
+            <span class="pista" role="tooltip" data-augmented-ui="tl-clip br-clip border">Puntos de Fortaleza</span>
+          </span>
+
+          <!-- Lo tuyo cuelga de tu avatar: tu ficha, tus recompensas, tus fechas y tus ajustes.
+               No son espacios de la fortaleza, asi que no van en el menu de la izquierda. -->
+          <div class="jugador">
+            <button class="chip" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-jugador">
+              <span class="chip__marco" data-augmented-ui={`${RANURA} border`}>
+                <img class="chip__av" src={asesora.retrato} alt="" aria-hidden="true" width="512" height="512" />
+              </span>
+              <span class="chip__txt"><b>{asesora.nombre}</b><i>{asesora.rango}</i></span>
+              <svg class="chip__flecha" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
+
+            <div class="menu" id="menu-jugador" hidden data-augmented-ui="tl-clip br-clip border">
+              {menuJugador.map((m) => (
+                <a href={m.href} class={activa === m.href ? 'is-activa' : ''} aria-current={activa === m.href ? 'page' : undefined}>{m.label}</a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="contenido" id="contenido" tabindex="-1"><slot /></main>
+
+    <script>
+      import { montarCursor } from '../scripts/cursor.js';
+      import { cablearInterfaz, arrancarMusica, alternarSonido, estaSilenciado } from '../scripts/audio.js';
+
+      montarCursor();
+      cablearInterfaz();
+
+      // Dentro de la fortaleza la musica ya viene queriendose (se pulso Entrar en el Login).
+      // Si el navegador la bloquea, arrancarMusica la deja armada para el primer gesto.
+      // Diferida a la carga completa: su descarga (1.9MB) competia con el primer render,
+      // y el fundido de 1.6s disimula la entrada tardia.
+      if (document.readyState === 'complete') setTimeout(arrancarMusica, 250);
+      else addEventListener('load', () => setTimeout(arrancarMusica, 250), { once: true });
+
+      // Desplegable del jugador
+      const chip = document.querySelector<HTMLButtonElement>('.chip');
+      const menu = document.querySelector<HTMLDivElement>('.menu');
+      if (chip && menu) {
+        const abrir = (si: boolean) => {
+          menu.hidden = !si;
+          chip.setAttribute('aria-expanded', String(si));
+        };
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation(); // si no, el cierre de fuera lo volveria a cerrar al vuelo
+          abrir(menu.hidden === true);
+        });
+        document.addEventListener('click', (e) => {
+          if (!menu.hidden && !menu.contains(e.target as Node)) abrir(false);
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !menu.hidden) { abrir(false); chip.focus(); }
+        });
+        // Al tabular mas alla de Ajustes el menu se quedaba abierto sobre el contenido
+        const jugador = document.querySelector('.jugador');
+        jugador?.addEventListener('focusout', (e) => {
+          if (!jugador.contains(e.relatedTarget as Node)) abrir(false);
+        });
+      }
+
+      const boton = document.querySelector('.sonido');
+      if (boton) {
+        const pintar = () => {
+          const off = estaSilenciado();
+          boton.setAttribute('aria-pressed', String(off));
+          boton.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
+        };
+        pintar();
+        boton.addEventListener('click', () => { alternarSonido(); pintar(); });
+      }
+    </script>
+
+    <style is:global>
+      /* Fondo: piedra fria y niebla, sin escena. El panel manda, pero el fondo TRABAJA:
+         antes las capas estaban bajo el umbral perceptible y el Patio leia plano al lado
+         del Login. Piedra al 9, niebla al 14, luz alta mas ancha, y una vineta encima
+         de todo que oscurece los bordes para que el ojo caiga en la placa mayor. */
+      .fondo { position: fixed; inset: 0; z-index: -1; background:
+        radial-gradient(ellipse 85% 55% at 50% 0%, rgba(63,169,201,0.11), transparent 64%),
+        linear-gradient(180deg, #0B1220, #090D14 58%, #0C1019); }
+      .fondo::before { content: ''; position: absolute; inset: 0;
+        background-image: url('/assets/texturas/ui/textura-piedra.webp'); background-size: 640px;
+        opacity: 0.09; mix-blend-mode: soft-light; }
+      .fondo i { position: absolute; inset: 0;
+        background-image: url('/assets/texturas/ui/textura-niebla.webp'); background-size: cover; background-position: center;
+        opacity: 0.14; mix-blend-mode: screen; }
+      .fondo::after { content: ''; position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 50% 32%, transparent 55%, rgba(4, 7, 12, 0.5) 100%); }
+
+      /* HUD, no barra: las piezas flotan sobre la fortaleza y no hay franja ni canto.
+         En vez de fondo, un velo que se desvanece: el contenido pasa por debajo y se
+         apaga solo, sin cortar contra un borde. Que no haya linea es lo que lo integra. */
+      .shell {
+        position: sticky; top: 0; z-index: 50;
+        padding-bottom: 26px;
+        background: linear-gradient(to bottom,
+          rgba(9,13,20,0.95) 0%, rgba(9,13,20,0.86) 42%,
+          rgba(9,13,20,0.5) 74%, rgba(9,13,20,0) 100%);
+      }
+      /* En % y no en vw: vw cuenta la barra de scroll y la cabecera se desalineaba
+         del contenido por unos 7px. */
+      .shell__in { width: min(1400px, 94%); margin: 0 auto; height: var(--alto-shell); display: flex; align-items: center; gap: clamp(14px, 2.6vw, 38px); }
+      /* Menu de juego: los espacios son ranuras que se encienden, no enlaces subrayados.
+         Sin logo delante: dentro de la fortaleza ya sabes donde estas, y el HUD de un
+         juego no lleva la marca. Asi el menu manda desde el primer pixel. */
+      .shell__nav { display: flex; gap: clamp(2px, 0.4vw, 6px); margin-right: auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+      .shell__nav::-webkit-scrollbar { display: none; }
+      .shell__nav a {
+        --aug-tl: 7px; --aug-br: 7px;
+        --aug-border-all: 1px;
+        --aug-border-bg: rgba(63,169,201,0.6);
+        flex: none; padding: 11px clamp(10px, 1.05vw, 18px);
+        font-size: 0.8rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.085em;
+        color: var(--moon); text-decoration: none; white-space: nowrap;
+        background: transparent;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      .shell__nav a:hover { background: rgba(63,169,201,0.14); color: var(--bone); }
+      .shell__nav a:active, .menu a:active { background: rgba(63,169,201,0.24); }
+      /* La sala en la que estas: ranura encendida */
+      .shell__nav a.is-activa {
+        color: var(--bone);
+        background: linear-gradient(180deg, rgba(63,169,201,0.3), rgba(63,169,201,0.07));
+      }
+
+      /* Zona del jugador: el sonido, el cumulo de PF y su ficha, arriba a la derecha.
+         El boton .sonido es del sistema (tokens.css): tambien vive en el Login. */
+      .shell__yo { flex: none; display: flex; align-items: center; gap: clamp(10px, 1.2vw, 16px); }
+
+      /* Los PF son un contador de recurso: va en su ranura, como en cualquier HUD */
+      .pf {
+        position: relative; /* ancla de su pildora */
+        --aug-tl: 6px; --aug-br: 6px;
+        --aug-border-all: 1px;
+        --aug-border-bg: rgba(63,169,201,0.34);
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 13px 6px 9px;
+        background: linear-gradient(180deg, rgba(63,169,201,0.13), rgba(9,13,20,0.4));
+        font-size: 0.92rem; font-weight: 600; color: var(--aqua); letter-spacing: 0.02em;
+      }
+      .pf img { width: 20px; height: 20px; object-fit: contain; }
+
+      /* Ficha de personaje: el retrato va enmarcado y chaflanado, no en circulo.
+         El circulo dentro de una pildora es lo mas de web que hay. */
+      .jugador { position: relative; }
+      .chip { display: flex; align-items: center; gap: 11px; text-decoration: none; padding: 0; border: 0; background: transparent; }
+      .chip__flecha { width: 9px; height: 6px; flex: none; fill: none; stroke: var(--mist); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.22s ease, stroke 0.2s ease; }
+      .chip:hover .chip__flecha { stroke: var(--bone); }
+      .chip[aria-expanded='true'] .chip__flecha { transform: rotate(180deg); stroke: var(--aqua); }
+
+      /* El desplegable: una placa pequena, mismo material que las del Patio */
+      .menu {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
+        --aug-tl: 10px; --aug-br: 10px;
+        --aug-border-all: 1px;
+        --aug-border-bg: linear-gradient(150deg, rgba(194,205,214,0.5), rgba(63,169,201,0.22) 40%, rgba(58,70,84,0.36));
+        min-width: 190px; padding: 7px;
+        display: flex; flex-direction: column;
+        background-color: rgba(9,13,20,0.97);
+        background-image: var(--grano);
+        filter: drop-shadow(0 18px 34px rgba(0,0,0,0.9));
+      }
+      .menu[hidden] { display: none; opacity: 0; translate: 0 -6px; }
+      .menu {
+        opacity: 1; translate: 0 0;
+        transition: opacity 0.18s ease, translate 0.18s ease, display 0.18s allow-discrete;
+      }
+      @starting-style { .menu { opacity: 0; translate: 0 -6px; } }
+      .menu a {
+        --aug-tl: 5px; --aug-br: 5px;
+        padding: 10px 13px; font-size: 0.78rem; color: var(--moon); text-decoration: none; white-space: nowrap;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .menu a:hover { background: rgba(63,169,201,0.14); color: var(--bone); }
+      .menu a.is-activa { color: var(--bone); background: linear-gradient(180deg, rgba(63,169,201,0.26), rgba(63,169,201,0.06)); }
+      .chip__marco {
+        --aug-tl: 6px; --aug-br: 6px;
+        --aug-border-all: 1px;
+        --aug-border-bg: var(--linea-fuerte);
+        display: block; flex: none; padding: 2px; background: var(--night-2);
+        transition: none;
+      }
+      .chip:hover .chip__marco { --aug-border-bg: var(--cyan); }
+      .chip__av { display: block; width: 34px; height: 34px; object-fit: cover; background: var(--night-2); }
+      .chip__txt { display: flex; flex-direction: column; line-height: 1.2; }
+      .chip__txt b { font-size: 0.78rem; font-weight: 600; color: var(--bone); transition: color 0.2s ease; }
+      .chip__txt i { font-size: 0.7rem; font-style: normal; color: var(--mist); }
+      .chip:hover .chip__txt b { color: var(--aqua); }
+
+      /* Recorta a lo ancho de la pagina, no del contenedor: lo que se sale a proposito
+         (las motas del filo, el Rebelde) puede volar por el margen lateral y solo se
+         recorta en el borde del viewport, donde ya no se ve, y sin generar scroll.
+         Con margen de recorte sobre el contenedor no vale: por debajo de 1489px el
+         margen lateral es menor que el de recorte y la zona pintada se sale de la pagina.
+         Y clip en los dos ejes, no solo en x: con clip en uno y visible en el otro, el
+         visible computa a hidden, lo vuelve contenedor de scroll y ahi el recorte
+         se aplica a hueso (era lo que le cortaba la mano al Rebelde). */
+      .contenido {
+        overflow: clip;
+        padding: clamp(14px, 2.5vh, 28px) 0 clamp(48px, 8vh, 88px);
+      }
+      /* El ancho de lectura lo ponen los hijos, ya que el padre va a toda la pagina */
+      .contenido > * { width: min(1400px, 94%); margin-inline: auto; }
+
+      /* Con la septima entrada (El Patio) el menu ya no cabe entero por debajo de 1100:
+         se aprieta el cuerpo y el tracking antes que dejar que se corte. */
+      @media (max-width: 1100px) {
+        .shell__nav a { padding: 11px 8px; font-size: 0.74rem; letter-spacing: 0.05em; }
+      }
+      @media (max-width: 980px) {
+        .shell__in { gap: 12px; }
+        .chip__txt { display: none; }
+      }
+    </style>
+  </body>
+</html>
