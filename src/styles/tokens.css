@@ -97,9 +97,9 @@ a { color: inherit; }
   padding: clamp(22px, 2.3vw, 32px);
   background-color: rgba(11, 17, 27, 0.9);
   background-image: var(--grano), linear-gradient(180deg, rgba(104, 132, 162, 0.16), rgba(9, 13, 20, 0) 55%);
-  /* Con la forma recortada el box-shadow se pierde, asi que la elevacion va por filter */
+  /* Con la forma recortada el box-shadow se pierde, asi que la elevacion va por filter.
+     Estatica a proposito: transicionar filter re-rasteriza la placa entera por frame. */
   filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.8));
-  transition: filter 0.3s ease;
 }
 
 /* Banda de cabecera: sangra hasta el canto */
@@ -131,6 +131,8 @@ a { color: inherit; }
   background: var(--aqua); opacity: 0;
   /* El halo es lo que las hace leer como motas de luz y no como puntos muertos */
   box-shadow: 0 0 7px rgba(95, 208, 224, 0.75);
+  /* Capa propia: docenas de animaciones infinitas sin ella obligan a re-rasterizar */
+  will-change: transform, opacity;
   animation: mota-desprende var(--t) linear var(--d) infinite;
 }
 /* Las de refuerzo animan de fondo y solo se revelan al pasar por encima */

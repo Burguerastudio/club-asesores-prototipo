@@ -40,14 +40,13 @@ export function montarCursor() {
   let px = x, py = y;
   let visible = false;
 
+  // El pointermove dispara a mas de 60Hz: aqui solo se apunta el estado y el trabajo
+  // (closest sobre el DOM) se hace UNA vez por frame, en el mismo paso que ya corre.
+  let objetivo = null;
   addEventListener('pointermove', (e) => {
     x = e.clientX; y = e.clientY;
+    objetivo = e.target;
     if (!visible) { visible = true; capa.classList.add('is-viva'); px = x; py = y; cola.forEach((c) => { c.x = x; c.y = y; }); }
-    // sobre algo pulsable, la mota crece
-    const pulsable = e.target.closest('a, button, .sala, [role="button"]');
-    capa.classList.toggle('is-sobre', !!pulsable);
-    // sobre un campo de texto la mota se aparta: manda el caret, y dos cursores a la vez confunden
-    capa.classList.toggle('is-texto', !!e.target.closest('input, textarea'));
   }, { passive: true });
 
   addEventListener('pointerdown', () => capa.classList.add('is-pulsa'));
@@ -55,10 +54,16 @@ export function montarCursor() {
   document.addEventListener('pointerleave', () => { visible = false; capa.classList.remove('is-viva'); });
 
   const paso = () => {
-    // la punta va un pelin por detras del raton: eso es lo que da la sensacion de luz
-    px += (x - px) * 0.6;
-    py += (y - py) * 0.6;
+    // La punta va PEGADA al raton: con retardo, todo el sitio se leia como con lag.
+    // La sensacion de luz la pone la estela, que si persigue.
+    px = x; py = y;
     punta.style.transform = `translate3d(${px}px, ${py}px, 0) translate(-50%, -50%)`;
+
+    if (objetivo) {
+      capa.classList.toggle('is-sobre', !!objetivo.closest('a, button, .sala, [role="button"]'));
+      capa.classList.toggle('is-texto', !!objetivo.closest('input, textarea'));
+      objetivo = null;
+    }
 
     let ax = px, ay = py;
     for (const c of cola) {

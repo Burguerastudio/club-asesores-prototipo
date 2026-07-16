@@ -56,7 +56,7 @@ const F_BOTON = 'l-clip-y r-clip-y';
          El Rebelde va fuera de la placa y por encima: la forma recortada lo encerraria,
          y ademas asi se apoya en el marco y lo pisa, que es lo suyo para el villano. -->
     <div class="placa-caja m-activa-caja">
-      <Motas base={15} refuerzo={13} />
+      <Motas base={9} refuerzo={7} />
 
       <section class="placa forma-mayor m-activa" aria-label="Intervención activa" data-augmented-ui={F_MAYOR}>
         <div class="placa__cab">
@@ -142,7 +142,7 @@ const F_BOTON = 'l-clip-y r-clip-y';
       <div class="salas">
         {salas.map((s) => (
           <div class="placa-caja">
-            <Motas base={5} refuerzo={5} />
+            <Motas base={3} refuerzo={3} />
 
             <a class={`placa placa--foto forma-azulejo sala sala--${s.estado}`} href={s.href} aria-label={`${s.nombre}: ${ETIQUETA_ESTADO[s.estado as keyof typeof ETIQUETA_ESTADO]}. ${s.nota}`} data-augmented-ui={F_AZULEJO}>
               <img class="sala__img" src={s.img} alt="" aria-hidden="true" width="640" height="357" loading="lazy" decoding="async" />
@@ -183,7 +183,7 @@ const F_BOTON = 'l-clip-y r-clip-y';
          no un dato. Manda la fecha, que es lo que se viene a mirar. Enlace y no boton:
          el ambar se reserva para la accion principal de la pantalla. -->
     <div class="placa-caja m-evento-caja">
-      <Motas base={4} refuerzo={4} />
+      <Motas base={3} refuerzo={3} />
 
       <section class="placa forma-azulejo m-evento" aria-label="Próximo evento" data-augmented-ui={F_AZULEJO}>
         <p class="m-evento__c">{proximoEvento.cuando}</p>
@@ -457,15 +457,18 @@ const F_BOTON = 'l-clip-y r-clip-y';
 
   .tier.is-hecho .tier__im, .tier.is-toca .tier__im { filter: none; opacity: 1; }
 
-  /* LA tarea del dia late (regla 3: un solo halo y significa). El filter sigue la
-     forma recortada, igual que el drop-shadow del hover de las salas. */
+  /* LA tarea del dia late (regla 3: un solo halo y significa). El halo vive en un
+     ::after del li (sin recortar) y late SOLO por opacity: animar drop-shadow sobre
+     la ranura entera re-rasterizaba 900px en cada frame y se notaba como lag. */
+  .tiers__li:has(> .tier.is-toca) { position: relative; }
+  .tiers__li:has(> .tier.is-toca)::after {
+    content: ''; position: absolute; inset: -7px; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(232, 169, 63, 0.32), transparent);
+    filter: blur(9px); opacity: 0.55;
+  }
   @media (prefers-reduced-motion: no-preference) {
-    .tier.is-toca { animation: late 3.2s ease-in-out infinite alternate; }
-    @keyframes late {
-      from { filter: drop-shadow(0 0 5px rgba(232, 169, 63, 0.12)); }
-      to { filter: drop-shadow(0 0 11px rgba(232, 169, 63, 0.3)); }
-    }
-    a.tier.is-toca:hover { animation-play-state: paused; filter: drop-shadow(0 0 11px rgba(232, 169, 63, 0.34)); }
+    .tiers__li:has(> .tier.is-toca)::after { animation: late 3.2s ease-in-out infinite alternate; }
+    @keyframes late { from { opacity: 0.3; } to { opacity: 0.9; } }
   }
 
   /* Nara: la fila la manda ella, que es la voz que dice que pasa */
@@ -514,12 +517,12 @@ const F_BOTON = 'l-clip-y r-clip-y';
   .sala.is-viva .sala__vid { opacity: 0.92; }
   .sala--desconectada.is-viva .sala__vid { opacity: 0.75; filter: grayscale(0.35) brightness(0.78); }
 
+  /* El hover lo cuentan la imagen y el video: cambiar el drop-shadow de la placa
+     transicionaba filter y re-rasterizaba el azulejo entero en cada frame (lag) */
   .sala:hover .sala__img { transform: scale(1.06); opacity: 0.92; filter: none; }
-  .sala:hover { filter: drop-shadow(0 22px 32px rgba(0,0,0,0.9)); }
   .sala:active .sala__img { transform: scale(1.03); }
   /* La desconectada apenas despierta: ni se acerca ni se ilumina como las vivas */
   .sala--desconectada:hover .sala__img { transform: none; opacity: 0.78; filter: grayscale(0.35) brightness(0.78); }
-  .sala--desconectada:hover { filter: drop-shadow(0 12px 18px rgba(0,0,0,0.7)); }
   .sala__ov { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; height: 100%; justify-content: flex-end; padding: 13px; background: linear-gradient(to top, rgba(9,13,20,0.94) 30%, rgba(9,13,20,0.2)); }
   .sala__n { font-size: 0.8rem; color: var(--bone); line-height: 1.2; }
   .sala__nota { font-size: 0.72rem; color: var(--mist); line-height: 1.3; }
