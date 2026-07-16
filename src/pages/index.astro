@@ -199,21 +199,21 @@ const RANURA = 'tl-clip br-clip border';
       }
 
       /* Columna de acceso (no confundir con .panel de tokens, que es la superficie de los modulos) */
-      .acceso { padding: clamp(28px, 5vh, 56px) 0; }
-      .logo { width: clamp(120px, 12vw, 168px); height: auto; display: block; margin: 0 0 clamp(24px, 4vh, 40px); }
-      .titulo { margin: 0; font-size: clamp(2.1rem, 3.4vw, 3.1rem); color: var(--bone); }
-      .lead { margin: 0.9rem 0 0; font-family: var(--italic); font-style: italic; font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--moon); line-height: 1.45; }
-      .lead-firma { margin: 0.7rem 0 clamp(26px, 4vh, 40px); font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
+      .acceso { padding: clamp(14px, 3vh, 56px) 0; }
+      .logo { width: clamp(96px, min(12vw, 17vh), 168px); height: auto; display: block; margin: 0 0 clamp(14px, 3vh, 40px); }
+      .titulo { margin: 0; font-size: clamp(1.6rem, min(3.4vw, 4.4vh), 3.1rem); color: var(--bone); }
+      .lead { margin: clamp(8px, 1.4vh, 14px) 0 0; font-family: var(--italic); font-style: italic; font-size: clamp(1.05rem, min(1.5vw, 2.1vh), 1.35rem); color: var(--moon); line-height: 1.45; }
+      .lead-firma { margin: 0.7rem 0 clamp(16px, 3.2vh, 40px); font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
 
       /* Formulario: cada campo es una ranura del mecanismo de la puerta */
-      .form { display: flex; flex-direction: column; gap: 18px; }
+      .form { display: flex; flex-direction: column; gap: clamp(12px, 2vh, 18px); }
       .campo { display: flex; flex-direction: column; gap: 9px; }
       .campo label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--mist); }
       .campo input {
         --aug-tl: 10px; --aug-br: 10px;
         --aug-border-all: 1px;
         --aug-border-bg: rgba(194,205,214,0.42);
-        width: 100%; padding: 14px 16px; border: 0;
+        width: 100%; padding: clamp(11px, 1.8vh, 14px) 16px; border: 0;
         color: var(--bone); font-family: var(--sans); font-size: 1rem;
         /* Hendidura: arriba mas oscuro, como ranura tallada en la piedra */
         background: linear-gradient(180deg, rgba(9,13,20,0.8), rgba(20,32,46,0.55));
@@ -231,9 +231,9 @@ const RANURA = 'tl-clip br-clip border';
       .olvido { align-self: flex-start; margin-top: -2px; }
 
       /* El boton hereda de tokens.css; aqui solo su sitio en el formulario */
-      .btn { margin-top: 10px; padding: 15px 22px; font-size: 0.86rem; }
+      .btn { margin-top: clamp(6px, 1.2vh, 10px); padding: clamp(12px, 1.9vh, 15px) 22px; font-size: 0.86rem; }
 
-      .nota { margin: clamp(26px, 4vh, 38px) 0 0; max-width: 40ch; font-size: 0.82rem; line-height: 1.6; color: var(--mist); }
+      .nota { margin: clamp(14px, 2.6vh, 38px) 0 0; max-width: 40ch; font-size: 0.82rem; line-height: 1.55; color: var(--mist); }
 
       /* Nara en el umbral */
       .nara { position: relative; margin: 0; align-self: end; justify-self: center; pointer-events: none; }
