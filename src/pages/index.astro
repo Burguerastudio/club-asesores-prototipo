@@ -2,9 +2,16 @@
 // Login (Puerta de la Fortaleza). Primera pantalla del prototipo.
 // Solo estetica: los campos no envian nada y el boton lleva al Dashboard.
 // Mas adelante, al terminar el acceso, disparara el Onboarding.
+// Va sin el shell de Fortaleza.astro (aqui no hay navegacion todavia).
+import '../styles/tokens.css';
 
-const POSTER = '/assets/mapa-escenas/patio-entrada.webp';
+const POSTER = '/assets/mapa-escenas/ui/patio-entrada.webp';
 const VIDEO = '/assets/animaciones/patio-entrada.webm';
+
+// Los campos son el mecanismo de la puerta: ranuras chaflanadas con su filo, el mismo
+// lenguaje que las ranuras del Patio. Eran lo unico del producto que seguia siendo
+// un formulario web (una raya de 1px). Ver docs/DESIGN.md.
+const RANURA = 'tl-clip br-clip border';
 ---
 
 <!doctype html>
@@ -16,40 +23,60 @@ const VIDEO = '/assets/animaciones/patio-entrada.webm';
     <meta name="description" content="Acceso al Club de la Asesoría." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@1,400;1,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <!-- El poster es la escena entera: que llegue el primero -->
+    <link rel="preload" as="image" href={POSTER} fetchpriority="high" />
+    <!-- La cara del enlace cuando se comparte -->
+    <meta name="theme-color" content="#090D14" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="La Fortaleza del Asesor, Club de la Asesoría" />
+    <meta property="og:description" content="Tu despacho es una fortaleza. Nara ya ha encontrado la primera grieta." />
+    <meta property="og:image" content="https://club-asesores-prototipo.vercel.app/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <main class="login" style={`background-image:url('${POSTER}')`}>
-      <video class="bg" autoplay muted loop playsinline preload="auto" poster={POSTER} aria-hidden="true">
-        <source src={VIDEO} type="video/webm" />
-      </video>
+      <!-- El control de silencio, a la vista ANTES de que suene nada: aqui ya hay
+           efectos de hover y click, y la musica arranca al cruzar. -->
+      <button class="sonido login__sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui="tl-clip br-clip">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
+          <g class="sonido__ondas">
+            <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
+            <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
+          </g>
+          <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
+        </svg>
+      </button>
+      <video class="bg" muted loop playsinline preload="none" poster={POSTER} aria-hidden="true" data-src={VIDEO}></video>
       <div class="veil" aria-hidden="true"></div>
 
+      <!-- El velo del cruce: al pulsar Entrar funde a oscuro con el golpe de puerta,
+           y el Patio recibe emergiendo de ese mismo oscuro. -->
+      <div class="velo-cruce" aria-hidden="true"></div>
+
       <div class="wrap">
-        <section class="panel">
+        <section class="acceso">
           <img class="logo" src="/assets/marca/logo-club.webp" alt="Club de la Asesoría" />
 
           <h1 class="display titulo">Entra en tu fortaleza</h1>
-          <p class="lead">Nara ya ha encontrado la primera grieta.</p>
+          <p class="lead">La fortaleza sigue en pie, pero hay una grieta nueva. Pasa, te enseño dónde.</p>
+          <p class="lead-firma">Nara, guardiana de la fortaleza</p>
 
           <form class="form" action="/dashboard" method="get">
             <div class="campo">
               <label for="correo">Correo electrónico</label>
-              <input id="correo" type="email" autocomplete="username" placeholder="tu@asesoria.com" />
+              <input id="correo" type="email" name="email" required autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="tu@asesoria.com" data-augmented-ui={RANURA} />
             </div>
             <div class="campo">
               <label for="clave">Contraseña</label>
-              <input id="clave" type="password" autocomplete="current-password" placeholder="Tu contraseña" />
+              <!-- Sin name a proposito: el fallback GET sin JS meteria la contrasena en la URL.
+                   Los gestores la reconocen por type y autocomplete. -->
+              <input id="clave" type="password" required autocomplete="current-password" placeholder="Tu contraseña" data-augmented-ui={RANURA} />
             </div>
 
-            <a class="olvido" href="#">He olvidado mi contraseña</a>
+            <a class="enlace olvido" href="#">He olvidado mi contraseña</a>
 
-            <button class="btn" type="submit">Entrar</button>
+            <button class="btn" type="submit" data-sonido="entrar" data-augmented-ui="l-clip-y r-clip-y">Entrar</button>
           </form>
 
           <p class="nota">
@@ -58,28 +85,104 @@ const VIDEO = '/assets/animaciones/patio-entrada.webm';
         </section>
 
         <figure class="nara">
-          <img src="/assets/personajes/nara.webp" alt="Nara, la guardiana de la fortaleza" />
+          <img src="/assets/personajes/ui/nara-umbral.webp" alt="Nara, la guardiana de la fortaleza" width="1165" height="1560" />
+          <span class="aura" aria-hidden="true"></span>
         </figure>
       </div>
     </main>
 
-    <style is:global>
-      :root {
-        --ink: #090D14; --night: #0C1019; --night2: #14202E; --steel: #3A4654;
-        --cyan: #3FA9C9; --aqua: #5FD0E0; --silver: #C2CDD6; --moon: #AEC6D8;
-        --bone: #EAF1F6; --mist: #8CA0B0;
-        --amber: #E8A93F; --amber-2: #F2C471;
-        --serif: 'Cinzel', Georgia, serif;
-        --sans: 'Hanken Grotesk', system-ui, sans-serif;
-        --italic: 'Cormorant Garamond', Georgia, serif;
+    <script>
+      import { montarCursor } from '../scripts/cursor.js';
+      import { cablearInterfaz, alternarSonido, estaSilenciado, sonar } from '../scripts/audio.js';
+
+      montarCursor();
+      cablearInterfaz();
+
+      // El video de la escena solo se pide si hay movimiento permitido: antes, con
+      // prefers-reduced-motion, se descargaba 1.2MB de webm que nunca se veia.
+      const bg = document.querySelector<HTMLVideoElement>('.bg');
+      if (bg && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        bg.src = bg.dataset.src || '';
+        bg.play().catch(() => {});
       }
-      * { box-sizing: border-box; }
-      body { margin: 0; background: var(--ink); color: var(--bone); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-      ::selection { background: var(--amber); color: var(--ink); }
-      .display { font-family: var(--serif); font-weight: 600; letter-spacing: 0.03em; line-height: 1.08; }
+
+      // Entrar es EL gesto: desbloquea el audio, cierra el velo y deja la musica querida.
+      // preventDefault SIEMPRE: con los campos nombrados, el GET nativo ensuciaria la
+      // URL, y la rama silenciada tambien debe cruzar con su velo (antes navegaba en seco).
+      const form = document.querySelector('.form');
+      if (form) {
+        const btn = form.querySelector<HTMLButtonElement>('.btn');
+        // El golpe de puerta lo dispara el pointerdown del boton (data-sonido="entrar").
+        // Con Enter desde un campo no hay pointerdown: el submit lo repone.
+        let golpeDado = false;
+        btn?.addEventListener('pointerdown', () => { golpeDado = true; });
+
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const silencio = estaSilenciado();
+          if (!silencio) {
+            localStorage.setItem('fortaleza-audio', 'on');
+            if (!golpeDado) sonar('entrar', 0.4);
+          }
+          if (btn) { btn.disabled = true; btn.textContent = 'Abriendo la puerta'; }
+          document.querySelector('.velo-cruce')?.classList.add('is-cerrando');
+          // Con sonido, el velo acompana al golpe (~550ms); en silencio, cruce corto
+          setTimeout(() => { window.location.href = '/dashboard'; }, silencio ? 280 : 550);
+        });
+      }
+
+      // El mismo control de silencio del HUD, aqui a la vista desde el primer segundo
+      const sonido = document.querySelector('.sonido');
+      if (sonido) {
+        const pintar = () => {
+          const off = estaSilenciado();
+          sonido.setAttribute('aria-pressed', String(off));
+          sonido.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
+        };
+        pintar();
+        sonido.addEventListener('click', () => { alternarSonido(); pintar(); });
+      }
+    </script>
+
+    <style is:global>
+      /* Los tokens y los componentes base salen de src/styles/tokens.css */
 
       /* Escena de fondo: el porton del castro */
       .login { position: relative; min-height: 100svh; overflow: hidden; background-size: cover; background-position: center; }
+      /* El silencio flota sobre la escena, alineado con el margen del contenido */
+      .login__sonido { position: absolute; top: 20px; right: max(3vw, 20px); z-index: 3; }
+
+      /* El velo del cruce: por encima de todo, invisible hasta que se cruza */
+      .velo-cruce { position: fixed; inset: 0; z-index: 20; background: var(--ink); opacity: 0; pointer-events: none; }
+      .velo-cruce.is-cerrando { opacity: 1; }
+
+      /* La columna entra escalonada, como quien llega al umbral. Solo con movimiento
+         permitido: sin la preferencia, el estado servido ya es el final. El boton de
+         silencio queda fuera a proposito: el control se ve desde el primer frame. */
+      @media (prefers-reduced-motion: no-preference) {
+        .velo-cruce { transition: opacity 0.45s ease; }
+        .logo, .titulo, .lead, .lead-firma, .campo, .olvido, .form .btn, .nota, .nara {
+          animation: umbral 0.5s ease-out both;
+        }
+        .titulo { animation-delay: 70ms; }
+        .lead { animation-delay: 140ms; }
+        .lead-firma { animation-delay: 180ms; }
+        .campo:nth-of-type(1) { animation-delay: 210ms; }
+        .campo:nth-of-type(2) { animation-delay: 260ms; }
+        .olvido { animation-delay: 310ms; }
+        .form .btn { animation-delay: 360ms; }
+        .nota { animation-delay: 430ms; }
+        /* Nara no se desplaza: ella ya estaba en el umbral, solo se revela */
+        .nara { animation-name: revela; animation-duration: 0.9s; animation-delay: 150ms; }
+        @keyframes umbral {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes revela {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      }
       .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
       .veil {
         position: absolute; inset: 0; z-index: 1;
@@ -95,51 +198,53 @@ const VIDEO = '/assets/animaciones/patio-entrada.webm';
         align-items: center; gap: clamp(24px, 5vw, 72px);
       }
 
-      /* Panel de acceso */
-      .panel { padding: clamp(28px, 5vh, 56px) 0; }
+      /* Columna de acceso (no confundir con .panel de tokens, que es la superficie de los modulos) */
+      .acceso { padding: clamp(28px, 5vh, 56px) 0; }
       .logo { width: clamp(120px, 12vw, 168px); height: auto; display: block; margin: 0 0 clamp(24px, 4vh, 40px); }
       .titulo { margin: 0; font-size: clamp(2.1rem, 3.4vw, 3.1rem); color: var(--bone); }
-      .lead { margin: 0.9rem 0 clamp(26px, 4vh, 40px); font-family: var(--italic); font-style: italic; font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--moon); line-height: 1.45; }
+      .lead { margin: 0.9rem 0 0; font-family: var(--italic); font-style: italic; font-size: clamp(1.1rem, 1.5vw, 1.35rem); color: var(--moon); line-height: 1.45; }
+      .lead-firma { margin: 0.7rem 0 clamp(26px, 4vh, 40px); font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
 
-      /* Formulario */
+      /* Formulario: cada campo es una ranura del mecanismo de la puerta */
       .form { display: flex; flex-direction: column; gap: 18px; }
-      .campo { display: flex; flex-direction: column; gap: 8px; }
+      .campo { display: flex; flex-direction: column; gap: 9px; }
       .campo label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--mist); }
       .campo input {
-        width: 100%; padding: 13px 2px; color: var(--bone); font-family: var(--sans); font-size: 1rem;
-        background: transparent; border: 0; border-bottom: 1px solid rgba(194,205,214,0.28);
-        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        --aug-tl: 10px; --aug-br: 10px;
+        --aug-border-all: 1px;
+        --aug-border-bg: rgba(194,205,214,0.42);
+        width: 100%; padding: 14px 16px; border: 0;
+        color: var(--bone); font-family: var(--sans); font-size: 1rem;
+        /* Hendidura: arriba mas oscuro, como ranura tallada en la piedra */
+        background: linear-gradient(180deg, rgba(9,13,20,0.8), rgba(20,32,46,0.55));
+        transition: background 0.25s ease;
       }
       .campo input::placeholder { color: rgba(140,160,176,0.5); }
-      .campo input:hover { border-bottom-color: rgba(194,205,214,0.5); }
-      .campo input:focus { outline: none; border-bottom-color: var(--cyan); box-shadow: 0 1px 0 0 var(--cyan), 0 6px 22px -12px var(--cyan); }
-
-      .olvido { align-self: flex-start; margin-top: -2px; font-size: 0.82rem; color: var(--mist); text-decoration: none; border-bottom: 1px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
-      .olvido:hover { color: var(--moon); border-bottom-color: rgba(174,198,216,0.5); }
-
-      .btn {
-        margin-top: 10px; padding: 15px 22px; border: 0; border-radius: 3px; cursor: pointer;
-        background: linear-gradient(180deg, var(--amber-2), var(--amber));
-        color: #1B1206; font-family: var(--sans); font-weight: 600; font-size: 0.88rem;
-        text-transform: uppercase; letter-spacing: 0.2em; text-align: center; text-decoration: none;
-        box-shadow: 0 10px 30px -12px rgba(232,169,63,0.75);
-        transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.2s ease;
+      .campo input:hover { --aug-border-bg: rgba(194,205,214,0.5); }
+      /* Al escribir, la ranura se enciende: es el mismo cian que dice "esto esta vivo" */
+      .campo input:focus {
+        outline: none;
+        --aug-border-bg: var(--cyan);
+        background: linear-gradient(180deg, rgba(16,30,44,0.85), rgba(63,169,201,0.13));
       }
-      .btn:hover { filter: brightness(1.06); box-shadow: 0 14px 38px -12px rgba(232,169,63,0.9); transform: translateY(-1px); }
-      .btn:active { transform: translateY(0); }
-      .btn:focus-visible { outline: 2px solid var(--aqua); outline-offset: 3px; }
+
+      .olvido { align-self: flex-start; margin-top: -2px; }
+
+      /* El boton hereda de tokens.css; aqui solo su sitio en el formulario */
+      .btn { margin-top: 10px; padding: 15px 22px; font-size: 0.86rem; }
 
       .nota { margin: clamp(26px, 4vh, 38px) 0 0; max-width: 40ch; font-size: 0.82rem; line-height: 1.6; color: var(--mist); }
 
       /* Nara en el umbral */
-      .nara { margin: 0; align-self: end; justify-self: center; pointer-events: none; }
+      .nara { position: relative; margin: 0; align-self: end; justify-self: center; pointer-events: none; }
+      .nara .aura { left: 50%; top: 47%; width: 17%; }
       .nara img { display: block; height: clamp(380px, 72vh, 780px); width: auto; object-fit: contain; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.7)); }
 
       @media (max-width: 900px) {
         .wrap { grid-template-columns: 1fr; align-items: start; padding: clamp(28px, 6vh, 56px) 0; }
         .veil { background: linear-gradient(to top, rgba(9,13,20,0.96) 30%, rgba(9,13,20,0.72) 70%, rgba(9,13,20,0.5) 100%); }
         .nara { display: none; }
-        .panel { padding-top: clamp(16px, 4vh, 32px); }
+        .acceso { padding-top: clamp(16px, 4vh, 32px); }
       }
       @media (prefers-reduced-motion: reduce) { .bg { display: none; } }
     </style>
