@@ -1,0 +1,345 @@
+/* Sistema de diseno de La Fortaleza del Asesor. Direccion B (fria y envolvente).
+   Fijado con el Login y el Dashboard. Ver docs/DESIGN.md. */
+
+/* augmented-ui recorta la forma y, sobre todo, dibuja el borde siguiendo los chaflanes,
+   que es lo que clip-path a mano no sabe hacer. Va antes que todo lo que lo usa. */
+@import 'augmented-ui/augmented-ui.min.css';
+
+/* Fuentes autoalojadas (fontsource, solo los cortes usados): Google Fonts bloqueaba el
+   primer paint, colgaba de la red en cada demo y el head iba duplicado en dos ficheros. */
+@import '@fontsource/cinzel/latin-500.css';
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/hanken-grotesk/latin-400.css';
+@import '@fontsource/hanken-grotesk/latin-500.css';
+@import '@fontsource/hanken-grotesk/latin-600.css';
+@import '@fontsource/cormorant-garamond/latin-400-italic.css';
+@import '@fontsource/cormorant-garamond/latin-500-italic.css';
+
+:root {
+  /* Paleta */
+  --ink: #090D14;
+  --night: #0C1019;
+  --night-2: #14202E;
+  --steel: #3A4654;
+  --cyan: #3FA9C9;
+  --aqua: #5FD0E0;
+  --silver: #C2CDD6;
+  --moon: #AEC6D8;
+  --bone: #EAF1F6;
+  --mist: #8CA0B0;
+  --amber: #E8A93F;    /* ambar de marca: accion principal */
+  --amber-2: #F2C471;
+  --gold: #C9A24B;     /* oro de sellos y logros */
+
+  /* Superficies */
+  --panel: rgba(16, 24, 36, 0.66);
+  --panel-alto: rgba(22, 34, 50, 0.72);
+  --linea: rgba(194, 205, 214, 0.13);
+  --linea-fuerte: rgba(194, 205, 214, 0.28);
+
+  /* Tipografia */
+  --serif: 'Cinzel', Georgia, serif;
+  --sans: 'Hanken Grotesk', system-ui, sans-serif;
+  --italic: 'Cormorant Garamond', Georgia, serif;
+
+  /* Forma */
+  --radio: 3px;
+  --radio-panel: 6px;
+  --alto-shell: 72px;
+  --corte: 18px; /* el bisel de las esquinas cortadas */
+
+  /* Grano fino en SVG: da materia a las placas sin usar imagenes */
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='0.09'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; }
+/* Sin barra de scroll a la vista en todo el sitio: es una fortaleza, no un documento.
+   Se sigue pudiendo desplazar con rueda, trackpad y teclado. */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; }
+a { color: inherit; }
+::selection { background: var(--amber); color: var(--ink); }
+
+/* Tipografia */
+.display { font-family: var(--serif); font-weight: 600; letter-spacing: 0.03em; line-height: 1.08; }
+.kicker { margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--cyan); }
+.cita { font-family: var(--italic); font-style: italic; color: var(--moon); line-height: 1.45; }
+
+/* Rotulo de modulo: solo nombra. Sin regla ni adornos, que se repetian en los ocho modulos.
+   El cian queda reservado para lo que informa (estados, enlaces), no para etiquetar. */
+.rotulo {
+  margin: 0;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--mist);
+}
+
+/* PLACA: solo la llevan las cosas que son objeto (la intervencion, el mapa, las salas).
+   Piedra labrada con el canto metalico recorriendo el filo. La forma la pone cada modulo
+   segun lo que sea (ver FORMAS abajo); esto es la materia y el canto, comun a todas. */
+.placa {
+  --aug-tl: var(--corte); --aug-tr: var(--corte);
+  --aug-bl: var(--corte); --aug-br: var(--corte);
+  --aug-border-all: 2px;
+  --aug-border-bg: linear-gradient(150deg,
+    rgba(194, 205, 214, 0.5) 0%,
+    rgba(63, 169, 201, 0.22) 26%,
+    rgba(58, 70, 84, 0.36) 54%,
+    rgba(194, 205, 214, 0.32) 100%);
+
+  position: relative;
+  padding: clamp(22px, 2.3vw, 32px);
+  background-color: rgba(11, 17, 27, 0.9);
+  background-image: var(--grano), linear-gradient(180deg, rgba(104, 132, 162, 0.16), rgba(9, 13, 20, 0) 55%);
+  /* Con la forma recortada el box-shadow se pierde, asi que la elevacion va por filter */
+  filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.8));
+  transition: filter 0.3s ease;
+}
+
+/* Banda de cabecera: sangra hasta el canto */
+.placa__cab {
+  margin: calc(clamp(22px, 2.3vw, 32px) * -1) calc(clamp(22px, 2.3vw, 32px) * -1) clamp(18px, 1.8vw, 24px);
+  padding: 13px clamp(22px, 2.3vw, 32px);
+  background: linear-gradient(180deg, rgba(63, 169, 201, 0.13), rgba(9, 13, 20, 0));
+  border-bottom: 1px solid rgba(194, 205, 214, 0.12);
+}
+
+/* Placa que enmarca una foto: sin aire dentro */
+.placa--foto { padding: 0; }
+
+/* MOTAS: el filo de la placa desprende luz de la fortaleza. Ver src/components/Motas.astro.
+   La caja envuelve a la placa y deja que las motas salgan fuera (la forma recortada
+   las encerraria si fuesen hijas). Van detras: la placa tapa lo que deriva hacia dentro. */
+.placa-caja { position: relative; }
+
+/* Van por encima, no detras: la placa proyecta una sombra ancha alrededor y, por detras,
+   las motas saldrian apagadas justo en la banda por la que vuelan. Como nacen en el filo
+   y solo derivan hacia afuera, no llegan a taparle nada al contenido. */
+.motas {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  opacity: 0.8; transition: opacity 0.45s ease;
+}
+.motas > span {
+  position: absolute;
+  width: var(--s); height: var(--s); border-radius: 50%;
+  background: var(--aqua); opacity: 0;
+  /* El halo es lo que las hace leer como motas de luz y no como puntos muertos */
+  box-shadow: 0 0 7px rgba(95, 208, 224, 0.75);
+  animation: mota-desprende var(--t) linear var(--d) infinite;
+}
+/* Las de refuerzo animan de fondo y solo se revelan al pasar por encima */
+.motas > span.is-refuerzo { visibility: hidden; }
+
+.placa-caja:hover .motas { opacity: 1; }
+.placa-caja:hover .motas > span.is-refuerzo { visibility: visible; }
+
+@keyframes mota-desprende {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0; }
+  20% { opacity: var(--o); }
+  65% { opacity: var(--o); }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) { .motas { display: none; } }
+
+/* FORMAS. Cada cosa lleva la suya segun lo que es, no todas la misma.
+   De mas labrada a mas callada, que es el orden de importancia. */
+
+/* Placa mayor: doble chaflan horizontal. Placa conmemorativa, la esquina mas trabajada. */
+.forma-mayor {
+  --aug-tl1: 17px; --aug-tl2: 17px; --aug-tr1: 17px; --aug-tr2: 17px;
+  --aug-bl1: 17px; --aug-bl2: 17px; --aug-br1: 17px; --aug-br2: 17px;
+}
+/* Azulejo: un solo chaflan en diagonal. Se repite cinco veces, asi que va callado. */
+.forma-azulejo { --aug-tl: 12px; --aug-br: 12px; }
+
+/* Boton primario: el ambar es la accion de encender. Plano: el color ya destaca solo.
+   Puntas laterales (hex): la forma del boton de accion. Pide data-augmented-ui="l-clip-y r-clip-y".
+   El brillo del barrido va como capa de background del propio boton: los pseudos
+   son de augmented-ui y tocarlos rompe la forma. */
+.btn {
+  --aug-l: 11px; --aug-r: 11px;
+  display: inline-block; padding: 13px 26px; border: 0; cursor: pointer;
+  background-color: var(--amber);
+  background-image: linear-gradient(105deg, transparent 42%, rgba(255, 246, 224, 0.5) 50%, transparent 58%);
+  background-size: 240% 100%;
+  background-position: 130% 0;
+  background-repeat: no-repeat;
+  color: #1B1206; font-family: var(--sans); font-weight: 600; font-size: 0.82rem;
+  text-transform: uppercase; letter-spacing: 0.1em; text-align: center; text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+.btn:hover { background-color: var(--amber-2); }
+/* El barrido de luz, una pasada al posarse: solo con movimiento permitido */
+@media (prefers-reduced-motion: no-preference) {
+  .btn:hover { background-position: -60% 0; transition: background-color 0.2s ease, background-position 0.55s ease; }
+}
+/* El press: el golpe es instantaneo a proposito (sin transition) */
+.btn:active { transform: translateY(1px); }
+/* En estado de cruce (Abriendo la puerta...): claro y quieto, ya no se pulsa */
+.btn:disabled { background: var(--amber-2); pointer-events: none; }
+
+/* FOCO DE TECLADO. El clip-path de augmented-ui se come el outline normal (queda fuera
+   del recorte), asi que en lo recortado el anillo vive DENTRO (offset negativo).
+   En lo no recortado, anillo normal. Sobre el ambar del boton, anillo oscuro. */
+[data-augmented-ui]:is(a, button, input, [tabindex='0']):focus-visible {
+  outline: 2px solid var(--aqua); outline-offset: -4px;
+}
+:is(a, button, input, [tabindex='0']):focus-visible:not([data-augmented-ui]) {
+  outline: 2px solid var(--aqua); outline-offset: 2px;
+}
+.btn:focus-visible { outline-color: #1B1206; }
+
+/* Solo para lector de pantalla: el estado que el color cuenta a los ojos */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Saltar al contenido: la primera parada del tabulador. Invisible hasta que se enfoca
+   (el HUD son 9 paradas antes de llegar a la accion del dia, y el shell es comun). */
+.saltar {
+  --aug-tl: 6px; --aug-br: 6px;
+  position: fixed; top: 12px; left: 12px; z-index: 200;
+  padding: 11px 16px;
+  background: rgba(9, 13, 20, 0.97); color: var(--bone);
+  font-size: 0.8rem; text-decoration: none;
+  transform: translateY(-250%);
+}
+.saltar:focus-visible { transform: none; }
+
+/* Boton secundario: aqui el filo si va dibujado, que no tiene relleno.
+   Pide ademas "border" en el data-augmented-ui. */
+.btn--linea {
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--linea-fuerte);
+  background: transparent; color: var(--moon);
+}
+.btn--linea:hover { background: transparent; color: var(--bone); --aug-border-bg: var(--silver); }
+
+/* CURSOR: una mota de luz con estela, del mismo material que las de las placas.
+   Ver src/scripts/cursor.js. Solo se monta con raton y sin prefers-reduced-motion;
+   la clase .con-mota la pone el script, asi que sin JS queda el cursor del sistema. */
+.con-mota, .con-mota * { cursor: none !important; }
+/* El caret del texto si se respeta: escribir sin ver donde va es peor que no tener mota */
+.con-mota input, .con-mota textarea { cursor: text !important; }
+
+.mota-cursor { position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.25s ease; }
+.mota-cursor.is-viva { opacity: 1; }
+/* Sobre un campo de texto se aparta: manda el caret del sistema */
+.mota-cursor.is-viva.is-texto { opacity: 0; }
+
+.mota-cursor__punta,
+.mota-cursor__cola { position: fixed; top: 0; left: 0; border-radius: 50%; will-change: transform; }
+
+.mota-cursor__punta {
+  width: 9px; height: 9px;
+  background: var(--aqua);
+  box-shadow: 0 0 10px rgba(95, 208, 224, 0.9), 0 0 22px rgba(63, 169, 201, 0.5);
+  transition: width 0.18s ease, height 0.18s ease, background 0.18s ease;
+}
+.mota-cursor__cola {
+  width: calc(5px * var(--k)); height: calc(5px * var(--k));
+  background: var(--cyan);
+  opacity: calc(0.5 * var(--k));
+  box-shadow: 0 0 8px rgba(63, 169, 201, 0.6);
+}
+
+/* Sobre algo pulsable: crece y se enciende */
+.mota-cursor.is-sobre .mota-cursor__punta {
+  width: 20px; height: 20px;
+  background: rgba(95, 208, 224, 0.25);
+  box-shadow: 0 0 0 1px rgba(95, 208, 224, 0.9), 0 0 18px rgba(95, 208, 224, 0.55);
+}
+/* Al pulsar, se aprieta */
+.mota-cursor.is-pulsa .mota-cursor__punta { width: 13px; height: 13px; }
+
+/* El autofill del navegador pinta su fondo claro por encima de la ranura y rompe el
+   material (campo gris con texto oscuro sobre la escena). El box-shadow interior de
+   1000px lo tapa con un solido equivalente al campo enfocado, y la transition eterna
+   mata el flash amarillo de WebKit. Vale para todos los formularios que vengan. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: inset 0 0 0 1000px #101a26;
+  -webkit-text-fill-color: var(--bone);
+  caret-color: var(--bone);
+  transition: background-color 600000s ease;
+}
+
+/* SILENCIO: el control de sonido del sistema. Vive en el HUD y en el Login (que no usa
+   el shell): la musica y los efectos no se le imponen a nadie sin un boton a la vista. */
+.sonido {
+  --aug-tl: 6px; --aug-br: 6px;
+  flex: none; display: grid; place-items: center; width: 34px; height: 34px;
+  padding: 0; border: 0; background: transparent; color: var(--mist);
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.sonido:hover { color: var(--bone); background: rgba(63, 169, 201, 0.13); }
+.sonido svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sonido__bocina { fill: currentColor; stroke: none; }
+.sonido__tacha { opacity: 0; transition: opacity 0.2s ease; }
+.sonido__ondas { opacity: 1; transition: opacity 0.2s ease; }
+/* Silenciado: se apagan las ondas y aparece la tacha */
+.sonido[aria-pressed='true'] .sonido__ondas { opacity: 0; }
+.sonido[aria-pressed='true'] .sonido__tacha { opacity: 1; }
+
+/* AURA: la luz del orbe de Nara, que respira. Se anima la luz, no la figura.
+   Posicion y tamano los pone cada contexto (el recorte del Login y el del Patio
+   no coinciden). Con menos movimiento queda encendida fija a media luz. */
+.aura {
+  position: absolute; aspect-ratio: 1; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(95, 208, 224, 0.5), transparent 62%);
+  mix-blend-mode: screen; opacity: 0.45;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .aura { animation: respira 5.5s ease-in-out infinite alternate; }
+  @keyframes respira {
+    from { opacity: 0.28; transform: translate(-50%, -50%) scale(1); }
+    to { opacity: 0.62; transform: translate(-50%, -50%) scale(1.14); }
+  }
+}
+
+/* PILDORA: la historia de una pieza, solo bajo demanda (hover o foco). En reposo nada:
+   las insignias se reconocen solas y los pies visibles estan vetados. El padre necesita
+   position: relative. Pide data-augmented-ui="tl-clip br-clip border". */
+.pista {
+  --aug-tl: 6px; --aug-br: 6px;
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(194, 205, 214, 0.35);
+  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  padding: 7px 12px; width: max-content; max-width: 240px;
+  background-color: rgba(9, 13, 20, 0.97);
+  background-image: var(--grano);
+  font-family: var(--sans); font-size: 0.72rem; font-weight: 400; line-height: 1.35;
+  color: var(--moon); text-align: center; text-transform: none; letter-spacing: 0;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+  pointer-events: none; z-index: 30;
+}
+:hover > .pista,
+:focus-visible > .pista { opacity: 1; visibility: visible; }
+
+/* Enlace: la accion secundaria, cuando el boton pesaria demasiado */
+.enlace {
+  display: inline-block; font-size: 0.78rem; color: var(--cyan); text-decoration: none;
+  border-bottom: 1px solid rgba(63, 169, 201, 0.4);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.enlace:hover { color: var(--aqua); border-bottom-color: var(--aqua); }
+
+/* Estados de sala y de intervencion */
+.estado { display: inline-flex; align-items: center; gap: 7px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; }
+.estado::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.estado--fortalecida { color: var(--gold); }
+.estado--reparacion { color: var(--cyan); }
+.estado--desconectada { color: var(--mist); }
+.estado--desconectada::before { opacity: 0.55; }

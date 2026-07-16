@@ -10,7 +10,11 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@fontsource/cinzel": "^5.2.8",
+    "@fontsource/cormorant-garamond": "^5.2.11",
+    "@fontsource/hanken-grotesk": "^5.2.8",
     "astro": "^4.16.18",
+    "augmented-ui": "^2.0.0",
     "gsap": "^3.12.5"
   }
 }

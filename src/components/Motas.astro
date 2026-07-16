@@ -1,0 +1,52 @@
+---
+// Motas de luz: el filo de la placa las desprende hacia afuera y se apagan.
+// Al pasar por encima salen más y más vivas.
+//
+// Van FUERA de la placa (hermanas, no hijas): la forma recortada de augmented-ui
+// las encerraría. Por eso cada placa necesita envolverse en .placa-caja.
+// Y van detrás (z-index -1), así la placa tapa la parte que derivaría hacia dentro.
+//
+// Las de refuerzo ya animan de fondo (invisibles): al revelarse por opacidad no
+// reinician, que es lo que pasaría si tocase la duración en el hover.
+//
+// CSS puro, sin imágenes. El estilo vive en tokens.css (.motas) porque es del sistema.
+// Los bordes y las derivas se sortean en el build: cada placa tiene su patrón.
+interface Props {
+  base?: number;     // motas siempre visibles
+  refuerzo?: number; // motas que solo salen al pasar por encima
+}
+const { base = 9, refuerzo = 7 } = Astro.props;
+
+// Sin borde de abajo: la luz se desprende y sube, no cae.
+const BORDES = ['l', 'r', 't', 'l', 'r'] as const;
+const az = (min: number, max: number) => Math.random() * (max - min) + min;
+
+const sortea = (n: number, extra: boolean) =>
+  Array.from({ length: n }, () => {
+    const borde = BORDES[Math.floor(Math.random() * BORDES.length)];
+    const p = az(4, 96).toFixed(1); // posición a lo largo del filo
+    const fuera = az(22, 58); // cuánto se aleja del filo
+    return {
+      extra,
+      // Se planta sobre el filo; el resto lo hace la deriva.
+      pos: borde === 't' ? `left:${p}%; top:0` : `top:${p}%; left:${borde === 'l' ? '0' : '100%'}`,
+      dx: borde === 'l' ? -fuera : borde === 'r' ? fuera : az(-16, 16),
+      dy: borde === 't' ? -fuera : az(-34, -8), // siempre con algo de subida
+      s: az(2, 4.2).toFixed(1),
+      d: az(0, 14).toFixed(1),
+      t: az(7, 13).toFixed(1),
+      o: az(0.4, 0.8).toFixed(2),
+    };
+  });
+
+const motas = [...sortea(base, false), ...sortea(refuerzo, true)];
+---
+
+<span class="motas" aria-hidden="true">
+  {motas.map((m) => (
+    <span
+      class={m.extra ? 'is-refuerzo' : ''}
+      style={`${m.pos}; --s:${m.s}px; --d:-${m.d}s; --t:${m.t}s; --o:${m.o}; --dx:${Math.round(m.dx)}px; --dy:${Math.round(m.dy)}px`}
+    ></span>
+  ))}
+</span>
