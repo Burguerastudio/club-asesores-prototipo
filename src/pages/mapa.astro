@@ -251,40 +251,76 @@ const MAPA = { w: 2752, h: 1536 };
     transform: translate(-50%, -100%);
     display: flex; flex-direction: column; align-items: center;
     text-decoration: none; color: inherit;
-    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.75));
+    /* --luz es el color del estado. La usan el halo, el filo, el icono y la punta, asi
+       que el estado se cambia en un sitio y baja a las cuatro piezas solo. */
+    --luz: var(--aqua);
+    --luz-rgb: 95, 208, 224;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.8));
   }
+
+  /* EL HALO. Va en el ::before del .hito y NO en la marca, por lo de siempre: la marca
+     lleva augmented-ui, o sea clip-path, y el clip-path se come el box-shadow. El pulso
+     de las salas en reparacion llevaba puesto desde el principio y no se habia visto
+     nunca por eso mismo. Aqui .hito no va recortado, asi que el halo se ve.
+     Y se anima por OPACIDAD y no por filter: animar filter re-rasteriza cada frame, que
+     es lo que dio lag en el Patio (ver docs/PLAN-MEJORA.md). */
+  .hito::before {
+    content: ''; position: absolute; top: -7px; left: 50%; z-index: -1;
+    width: 48px; height: 48px; transform: translateX(-50%);
+    border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(var(--luz-rgb), 0.75), transparent 70%);
+    filter: blur(7px);
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+  }
+
   .hito__marca {
     --aug-tl: 7px; --aug-br: 7px;
     --aug-border-all: 1px;
-    --aug-border-bg: var(--aqua);
+    --aug-border-bg: var(--luz);
     width: 34px; height: 34px; display: grid; place-items: center;
-    background: linear-gradient(180deg, rgba(20,32,46,0.97), rgba(9,13,20,0.97));
-    color: var(--aqua);
+    /* Tenido con su propia luz en vez de negro plano: la chincheta es una luz de la
+       fortaleza, como los faroles del castro, no una etiqueta pegada encima. */
+    background: linear-gradient(180deg, rgba(var(--luz-rgb), 0.34), rgba(9,13,20,0.94));
+    color: var(--luz);
     transition: transform 0.2s ease, background 0.2s ease;
   }
-  .hito__ico { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  /* La punta: el pico que toca la puerta. Con el mismo filo que la marca. */
-  .hito__punta {
-    width: 2px; height: 9px; background: var(--aqua); opacity: 0.85;
+  .hito__ico {
+    width: 19px; height: 19px; fill: none; stroke: currentColor;
+    stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
   }
+  /* La punta: el pico que toca la puerta */
+  .hito__punta { width: 2px; height: 9px; background: var(--luz); }
 
-  /* El estado se ve en la materia, como en toda la casa: la sala viva en ambar, la que
-     esta en reparacion en cian, y la desconectada apagada y en gris. */
-  .hito--fortalecida .hito__marca { --aug-border-bg: var(--amber); color: var(--amber); }
-  .hito--fortalecida .hito__punta { background: var(--amber); }
-  .hito--desconectada .hito__marca { --aug-border-bg: rgba(194,205,214,0.45); color: var(--mist); }
-  .hito--desconectada .hito__punta { background: rgba(194,205,214,0.45); }
+  /* El estado se ve en la materia, como en toda la casa: la fortalecida arde en ambar,
+     la que esta en reparacion late en cian, y la desconectada esta apagada. */
+  .hito--fortalecida { --luz: var(--amber); --luz-rgb: 232, 169, 63; }
+
+  /* Apagada: es lo que significa desconectada, asi que aqui NO se sube el brillo. Si
+     brillan las cinco igual, el estado deja de contar nada. */
+  .hito--desconectada {
+    --luz: rgba(194,205,214,0.5);
+    --luz-rgb: 194, 205, 214;
+  }
+  .hito--desconectada::before { opacity: 0.18; }
+  .hito--desconectada .hito__marca { background: linear-gradient(180deg, rgba(194,205,214,0.1), rgba(9,13,20,0.94)); color: var(--mist); }
   /* La desconectada no ensena la flecha: por ahi todavia no se entra de verdad */
   .hito--desconectada .hito__flecha { opacity: 0.25; }
 
-  .hito:hover .hito__marca, .hito:focus-visible .hito__marca { transform: scale(1.14); background: linear-gradient(180deg, rgba(63,169,201,0.3), rgba(9,13,20,0.97)); }
+  .hito:hover .hito__marca, .hito:focus-visible .hito__marca {
+    transform: scale(1.14);
+    background: linear-gradient(180deg, rgba(var(--luz-rgb), 0.55), rgba(9,13,20,0.9));
+  }
+  .hito:hover::before, .hito:focus-visible::before { opacity: 1; }
+  .hito--desconectada:hover::before { opacity: 0.5; }
+
   /* La pieza que no es sala (la Puerta) no promete clic. Su icono ya es otro (el portal,
      no el gesto de entrar), asi que aqui no hay nada que esconder. */
   .hito--pieza { cursor: default; }
 
   @media (prefers-reduced-motion: no-preference) {
-    .hito--reparacion .hito__marca { animation: late-hito 2.8s ease-in-out infinite alternate; }
-    @keyframes late-hito { from { box-shadow: 0 0 0 rgba(95,208,224,0); } to { box-shadow: 0 0 14px rgba(95,208,224,0.55); } }
+    .hito--reparacion::before { animation: late-hito 2.8s ease-in-out infinite alternate; }
+    @keyframes late-hito { from { opacity: 0.45; } to { opacity: 1; } }
   }
 
   /* El cartel: el nombre solo cuando lo pides. En reposo el mapa se lee como un mapa. */
