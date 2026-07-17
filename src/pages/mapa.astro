@@ -1,0 +1,323 @@
+---
+// El Mapa de la Fortaleza (P1b). El viaje: el curso entero sobre el dibujo del castro.
+// No es el home (eso es El Patio); aqui se ve DONDE estas en el ciclo y que te queda.
+//
+// Sustituye a la Pagina de Viaje del sistema (Club es Ecosistema). Dos piezas:
+//   1. El castro, con cada sitio en su estado. Es la ventana: un cuadro colgado.
+//   2. Las tres sendas del triskel, con sus doce intervenciones y su estado real.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import Motas from '../components/Motas.astro';
+import { asesora, salas, sitiosDelMapa, sendas, sendaDelMes, intervenciones, ETIQUETA_ESTADO } from '../data/demo.js';
+
+// Cada sitio del mapa se cruza con su sala para heredar nombre, nota y estado. La Puerta
+// no es sala y trae los suyos propios.
+const sitios = sitiosDelMapa.map((s) => {
+  const sala = salas.find((x) => x.slug === s.slug);
+  return {
+    ...s,
+    nombre: sala?.nombre ?? s.nombre,
+    nota: sala?.nota ?? s.nota,
+    estado: sala?.estado ?? s.estado,
+    href: sala?.href,
+  };
+});
+
+// Si una senda reclama una intervencion que no existe, el build para aqui y no en la
+// cara del cliente. No es paranoia: la 12 se reclamaba de la Senda del Orden y Orden no
+// la reclamaba a ella, y eso vivio en demo.js hasta que este Mapa lo destapo.
+const porNumero = (n: number) => {
+  const i = intervenciones.find((x) => x.n === n);
+  if (!i) throw new Error(`El Mapa pide la intervención ${n} y demo.js no la tiene.`);
+  return i;
+};
+
+const cierre = intervenciones.find((i) => i.senda === 'Cierre');
+if (!cierre) throw new Error('El Mapa pide la intervención de Cierre (la 12, transversal) y demo.js no la tiene.');
+
+// El progreso de cada senda sale de SUS intervenciones, no de un numero suelto que
+// pudiera contradecirlas.
+const sendasVivas = Object.entries(sendas).map(([clave, s]) => {
+  const suyas = s.intervenciones.map(porNumero);
+  return {
+    clave, ...s,
+    suyas,
+    fortalecidas: suyas.filter((i) => i.estado === 'fortalecida').length,
+    esLaDelMes: clave === sendaDelMes,
+  };
+});
+
+// Formas (docs/DESIGN.md): el mapa es la VENTANA, un cuadro colgado. Es la unica pieza
+// del proyecto que la lleva, y por eso se reserva.
+const F_VENTANA = 'tl-clip-inset tr-clip-inset bl-clip-inset br-clip-inset border';
+const F_AZULEJO = 'tl-clip br-clip border';
+
+const ETIQUETA_INTERV = {
+  fortalecida: 'Fortalecida',
+  activa: 'Sabotaje detectado',
+  bloqueada: 'Bloqueada',
+};
+type EstadoSala = keyof typeof ETIQUETA_ESTADO;
+type EstadoInterv = keyof typeof ETIQUETA_INTERV;
+---
+
+<Fortaleza title="El Mapa de la Fortaleza, Club de la Asesoría" activa="/mapa">
+  <header class="cab">
+    <h1 class="display cab__t">El Mapa de la Fortaleza</h1>
+    <p class="cita cab__estado">
+      {asesora.fortalecidas} de {asesora.totalIntervenciones} intervenciones fortalecidas. El primer ciclo se recorre por las tres sendas del triskel, y este mes tienes abierta la del {sendaDelMes}.
+    </p>
+  </header>
+
+  <div class="grid">
+    <!-- El castro. Ventana y no placa: no es un objeto clavado en la fortaleza, es la
+         fortaleza mirada desde fuera. Los puntos calientes van en % sobre la imagen, asi
+         que escalan con ella sin recalcular nada. -->
+    <div class="placa-caja m-mapa-caja">
+      <Motas base={7} refuerzo={5} />
+
+      <section class="placa forma-ventana m-mapa" aria-label="El castro" data-augmented-ui={F_VENTANA}>
+        <img
+          class="m-mapa__im"
+          src="/assets/mapa-escenas/ui/mapa-fortaleza.webp"
+          alt="El castro de la fortaleza a vista de pájaro, de noche sobre el acantilado"
+          width="1760" height="983"
+        />
+
+        <ul class="hitos">
+          {sitios.map((s) => {
+            const Caja = s.href ? 'a' : 'span';
+            return (
+              <li class="hitos__li" style={`left:${s.x}%; top:${s.y}%`}>
+                <Caja
+                  class={`hito hito--${s.estado}${s.sala ? '' : ' hito--pieza'}${s.y < 22 ? ' hito--cartel-abajo' : ''}`}
+                  href={s.href}
+                  aria-label={s.href ? `${s.nombre}: ${ETIQUETA_ESTADO[s.estado as EstadoSala]}. ${s.nota}` : undefined}
+                >
+                  <span class="hito__pin" aria-hidden="true"></span>
+                  <span class="hito__cartel" data-augmented-ui={F_AZULEJO}>
+                    <b class="hito__n">{s.nombre}</b>
+                    <span class="hito__e">{ETIQUETA_ESTADO[s.estado as EstadoSala]}</span>
+                    <span class="hito__no">{s.nota}</span>
+                  </span>
+                </Caja>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </div>
+
+    <!-- Las tres sendas. Cada una es un brazo del triskel, y sus intervenciones van
+         debajo con su estado real. Nada de rotulos flotantes: el nombre de la senda ES
+         el titulo, y el foco su linea. -->
+    <section class="mod m-sendas" aria-label="Las tres sendas del triskel">
+      <!-- UN triskel, no tres. Tres brazos que parten del mismo centro: cada senda es un
+           brazo, no un triskel entero. Repetirlo por columna decia "tres triskels", que
+           es mentira, y ademas es el ornamento repetido que delata plantilla (DESIGN.md).
+           Aqui significa algo: es el emblema de la estructura del ciclo. -->
+      <img class="m-sendas__tri" src="/assets/emblemas-insignias/ui/triskel-sello/triskel-sendas.webp" alt="" aria-hidden="true" width="128" height="128" loading="lazy" />
+
+      <div class="sendas">
+        {sendasVivas.map((s) => (
+          <article class={`senda${s.esLaDelMes ? ' is-mes' : ''}`}>
+            <header class="senda__cab">
+              <h2 class="display senda__t">{s.nombre}</h2>
+              <p class="senda__f">{s.foco}</p>
+            </header>
+
+            <p class="senda__p">
+              <b>{s.fortalecidas}</b> de {s.suyas.length} fortalecidas
+              {s.esLaDelMes && <span class="senda__mes">Abierta este mes</span>}
+            </p>
+
+            <ol class="intervs">
+              {s.suyas.map((i) => {
+                const Caja = i.estado === 'activa' ? 'a' : 'span';
+                return (
+                  <li>
+                    <Caja class={`interv interv--${i.estado}`} href={i.estado === 'activa' ? '/intervencion' : undefined} data-augmented-ui={F_AZULEJO}>
+                      <span class="interv__n" aria-hidden="true">{i.n}</span>
+                      <span class="interv__d">
+                        <b class="interv__t">{i.titulo}</b>
+                        <span class="interv__e">{ETIQUETA_INTERV[i.estado as EstadoInterv]}</span>
+                      </span>
+                    </Caja>
+                  </li>
+                );
+              })}
+            </ol>
+          </article>
+        ))}
+      </div>
+
+      <!-- La 12 no es de ninguna senda: cierra el ciclo y cruza las tres. Por eso va
+           sola y a lo ancho, debajo de las tres, y no colgando de una. -->
+      <div class={`cierre cierre--${cierre.estado}`} data-augmented-ui={F_AZULEJO}>
+        <span class="cierre__n" aria-hidden="true">{cierre.n}</span>
+        <div class="cierre__d">
+          <b class="cierre__t">{cierre.titulo}</b>
+          <span class="cierre__no">Transversal a las tres sendas. Se abre cuando el ciclo está listo para cerrarse.</span>
+        </div>
+        <span class="cierre__e">{ETIQUETA_INTERV[cierre.estado as EstadoInterv]}</span>
+      </div>
+    </section>
+  </div>
+</Fortaleza>
+
+<style is:global>
+  /* LA LLEGADA. Igual que el Patio: con .entra (la pone Fortaleza.astro desde el <head>)
+     los modulos arrancan ocultos, y la red de seguridad los descubre a los 1.6s si el JS
+     fallara. Aqui no hay timeline de GSAP: la pagina es un mapa, no una ceremonia. */
+  .entra .cab,
+  .entra .m-mapa-caja,
+  .entra .m-sendas {
+    animation: destape-mapa 0.5s ease-out both;
+  }
+  .entra .m-mapa-caja { animation-delay: 0.1s; }
+  .entra .m-sendas { animation-delay: 0.22s; }
+  @keyframes destape-mapa {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .cab { margin-bottom: clamp(20px, 3vh, 34px); }
+  .cab__t { margin: 0; font-size: clamp(1.5rem, 2.6vw, 2.3rem); color: var(--bone); }
+  .cab__estado { margin: 0.5rem 0 0; max-width: 74ch; }
+
+  .grid { display: grid; gap: clamp(26px, 3vw, 44px); }
+
+  /* EL CASTRO */
+  .m-mapa { position: relative; padding: 0; overflow: hidden; }
+  .m-mapa__im { display: block; width: 100%; height: auto; }
+
+  .hitos { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
+  /* El li es solo el ancla en el mapa: el % lo coloca y el translate lo centra */
+  .hitos__li { position: absolute; transform: translate(-50%, -50%); }
+
+  .hito {
+    position: relative; display: block; width: 22px; height: 22px;
+    text-decoration: none; color: inherit;
+  }
+  /* El pin: un punto de luz, del mismo material que las motas de las placas */
+  .hito__pin {
+    position: absolute; inset: 0; display: block; border-radius: 50%;
+    border: 1.5px solid var(--aqua);
+    background: radial-gradient(circle, rgba(95,208,224,0.55), rgba(95,208,224,0.06) 70%);
+    box-shadow: 0 0 10px rgba(95,208,224,0.7);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  /* Cada estado se ve en la materia, no en una etiqueta: la sala viva late, la que esta
+     en reparacion aguanta encendida y la desconectada esta apagada y en gris. */
+  .hito--fortalecida .hito__pin { border-color: var(--amber); background: radial-gradient(circle, rgba(232,169,63,0.6), rgba(232,169,63,0.06) 70%); box-shadow: 0 0 12px rgba(232,169,63,0.75); }
+  .hito--desconectada .hito__pin { border-color: rgba(194,205,214,0.5); background: radial-gradient(circle, rgba(194,205,214,0.18), transparent 70%); box-shadow: none; }
+  .hito:hover .hito__pin, .hito:focus-visible .hito__pin { transform: scale(1.35); }
+  /* La pieza que no es sala (la Puerta) no promete clic: ni cursor ni crecer */
+  .hito--pieza { cursor: default; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hito--reparacion .hito__pin { animation: late-hito 2.6s ease-in-out infinite alternate; }
+    @keyframes late-hito { from { opacity: 0.55; } to { opacity: 1; } }
+  }
+
+  /* El cartel: el nombre de la sala solo cuando lo pides. En reposo el mapa se lee como
+     un mapa, no como un tablero de etiquetas. */
+  .hito__cartel {
+    --aug-tl: 6px; --aug-br: 6px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.4);
+    position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: 210px; padding: 9px 13px;
+    display: flex; flex-direction: column; gap: 3px;
+    background-color: rgba(9,13,20,0.97);
+    background-image: var(--grano);
+    opacity: 0; visibility: hidden; pointer-events: none; z-index: 5;
+    transition: opacity 0.2s ease, visibility 0.2s;
+  }
+  /* El hito que cae en la banda de arriba del mapa (la Torre, al 11%) cuelga su cartel
+     hacia abajo: hacia arriba se sale de la ventana, y la ventana va recortada con
+     augmented-ui, asi que el cartel desaparecia. Lo decide la propia coordenada (y < 22),
+     no una lista a mano: si se mueve un hito, se recoloca solo. Ver docs/DESIGN.md. */
+  .hito--cartel-abajo .hito__cartel { bottom: auto; top: calc(100% + 12px); }
+  .hito:hover .hito__cartel, .hito:focus-visible .hito__cartel { opacity: 1; visibility: visible; }
+  .hito__n { font-family: var(--display); font-weight: 600; font-size: 0.84rem; color: var(--bone); letter-spacing: 0.03em; }
+  .hito__e { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--aqua); }
+  .hito--fortalecida .hito__e { color: var(--amber); }
+  .hito--desconectada .hito__e { color: var(--mist); }
+  .hito__no { font-size: 0.72rem; line-height: 1.4; color: var(--moon); }
+
+  /* LAS TRES SENDAS */
+  /* El triskel preside las tres, una sola vez y centrado: es el emblema del ciclo entero */
+  .m-sendas__tri {
+    display: block; width: clamp(52px, 5vw, 72px); height: auto;
+    margin: 0 auto clamp(20px, 2.4vh, 30px);
+    object-fit: contain; opacity: 0.9;
+  }
+  .sendas { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 1.8vw, 28px); }
+  .senda { display: flex; flex-direction: column; }
+  .senda__cab { min-height: 3.2rem; }
+  .senda__t { margin: 0; font-size: 1.06rem; color: var(--bone); }
+  .senda__f { margin: 3px 0 0; font-size: 0.74rem; line-height: 1.35; color: var(--mist); }
+  /* La senda del mes NO se pinta de su color: en esta pagina el color dice ESTADO
+     (ambar fortalecida, cian sabotaje detectado), y los colores de senda de demo.js
+     pelearian con eso. Se marca con la palabra, que no miente. */
+  .senda__p { display: flex; align-items: center; gap: 10px; margin: 14px 0 12px; font-size: 0.78rem; color: var(--moon); }
+  .senda__p b { color: var(--aqua); font-size: 0.92rem; }
+  /* La senda del mes se marca con la palabra, no con un halo mas: si brilla todo, nada destaca */
+  .senda__mes { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.11em; color: var(--amber); }
+
+  .intervs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .interv {
+    --aug-tl: 7px; --aug-br: 7px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.2);
+    display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 11px;
+    padding: 10px 13px; text-decoration: none;
+    background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.4));
+    transition: background 0.2s ease;
+  }
+  .interv__n { font-family: var(--display); font-size: 0.94rem; color: var(--mist); text-align: center; }
+  .interv__d { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .interv__t { font-size: 0.8rem; font-weight: 600; color: var(--moon); line-height: 1.25; }
+  .interv__e { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
+
+  /* Fortalecida: hecha. Se ve en ambar, que es el color de lo que ya arde. */
+  .interv--fortalecida { --aug-border-bg: rgba(232,169,63,0.32); }
+  .interv--fortalecida .interv__n, .interv--fortalecida .interv__e { color: var(--amber); }
+  .interv--fortalecida .interv__t { color: var(--bone); }
+
+  /* Activa: la unica que es puerta. Las otras son estado, y no prometen clic. */
+  .interv--activa {
+    --aug-border-bg: var(--cyan);
+    background: linear-gradient(180deg, rgba(63,169,201,0.22), rgba(63,169,201,0.05));
+  }
+  .interv--activa .interv__t { color: var(--bone); }
+  .interv--activa .interv__n, .interv--activa .interv__e { color: var(--aqua); }
+  .interv--activa:hover { background: linear-gradient(180deg, rgba(63,169,201,0.32), rgba(63,169,201,0.1)); }
+
+  /* Bloqueada: no se anuncia con un cartel, se ve apagada. Es el estado vacio en la
+     materia que pide el sistema. */
+  .interv--bloqueada { opacity: 0.42; }
+
+  /* EL CIERRE: la 12, transversal */
+  .cierre {
+    --aug-tl: 8px; --aug-br: 8px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.18);
+    margin-top: clamp(16px, 1.8vw, 26px);
+    display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 14px;
+    padding: 13px 16px;
+    background: linear-gradient(180deg, rgba(20,32,46,0.42), rgba(9,13,20,0.36));
+  }
+  .cierre--bloqueada { opacity: 0.5; }
+  .cierre__n { font-family: var(--display); font-size: 1rem; color: var(--mist); text-align: center; }
+  .cierre__d { display: flex; flex-direction: column; gap: 3px; }
+  .cierre__t { font-size: 0.86rem; font-weight: 600; color: var(--moon); }
+  .cierre__no { font-size: 0.72rem; color: var(--mist); }
+  .cierre__e { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
+
+  @media (max-width: 980px) {
+    .sendas { grid-template-columns: 1fr; gap: 26px; }
+    /* En estrecho el cartel del hito se sale por los lados del mapa */
+    .hito__cartel { max-width: 170px; }
+  }
+</style>

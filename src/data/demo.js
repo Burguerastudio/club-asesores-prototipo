@@ -104,6 +104,32 @@ export const salas = [
   { slug: 'mirador', nombre: 'Mirador de la Fortaleza', href: '/mirador', img: '/assets/mapa-escenas/ui/mirador.webp', estado: 'desconectada', nota: 'Las ventanas siguen cerradas.' },
 ];
 
+// EL MAPA DE LA FORTALEZA (P1b). Donde cae cada sitio sobre mapa-fortaleza.webp, en % del
+// ancho y del alto de la imagen, para que los puntos calientes escalen con ella.
+//
+// El asset se genero como key visual (prompt B1: "wide establishing aerial cinematic
+// shot"), asi que sus edificios no venian asignados a salas. La lectura la cerro Mati el
+// 2026-07-17 mirando las formas contra lo que pide cada sala en CONTENIDO 2.2:
+//   la torre alta con la luz ambar     -> Torre de Retos ("torre alta, senal exterior")
+//   la cupula circular                 -> El Consejo ("sala circular, luz en el centro")
+//   la terraza con escalera y luces    -> Mirador ("ventanales y balcon")
+//   la casa redonda mayor, techo conico-> Sala de Mandos ("mesa central de mapas")
+//   el rectangulo con el arbol seco    -> Biblioteca (su prompt pide "arbol de la vida
+//                                         integrado": ahi esta, apagado)
+//   el porton con faroles              -> Puerta Principal (intervencion 6)
+//
+// OJO: si Conchi elige la variante castillo, estas coordenadas se rehacen enteras.
+export const sitiosDelMapa = [
+  { slug: 'torre-retos', x: 28.5, y: 11, sala: true },
+  { slug: 'sala-mandos', x: 47, y: 29, sala: true },
+  { slug: 'biblioteca', x: 66, y: 26, sala: true },
+  { slug: 'consejo', x: 72.5, y: 51, sala: true },
+  { slug: 'mirador', x: 28, y: 57, sala: true },
+  // La Puerta no es una sala: es lo que se repara en la intervencion 6, y de momento
+  // no tiene pagina. Va como pieza del mapa, no como acceso.
+  { slug: 'puerta', x: 69, y: 79, sala: false, nombre: 'Puerta Principal', nota: 'Se abre mal: los visitantes entran sin orientación.', estado: 'desconectada' },
+];
+
 export const logrosRecientes = [
   { img: '/assets/emblemas-insignias/ui/insignias-intervencion/sellos/insignia-i05-sello.webp', nombre: 'Torre Encendida', pie: 'Sello de Fortaleza, Hazte visible' },
   { img: '/assets/emblemas-insignias/ui/logros-generales/logro-global-primer-tramo.webp', nombre: 'Primer Tramo en Marcha', pie: 'Logro global, 3 intervenciones validadas' },
