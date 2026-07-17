@@ -104,30 +104,43 @@ export const salas = [
   { slug: 'mirador', nombre: 'Mirador de la Fortaleza', href: '/mirador', img: '/assets/mapa-escenas/ui/mirador.webp', estado: 'desconectada', nota: 'Las ventanas siguen cerradas.' },
 ];
 
-// EL MAPA DE LA FORTALEZA (P1b). Donde cae cada sitio sobre mapa-fortaleza.webp, en % del
-// ancho y del alto de la imagen, para que los puntos calientes escalen con ella.
+// EL MAPA DE LA FORTALEZA (P1b). Donde esta LA PUERTA de cada sitio sobre
+// mapa-fortaleza.webp, en % del ancho y del alto de la imagen.
+//
+// Se guarda la PUERTA y no el edificio: el marcador apunta a ella con la punta y se
+// planta encima, como una chincheta. Asi dice "se entra por aqui" en vez de "este
+// edificio es este". Medido ampliando el asset edificio a edificio (2026-07-17); antes
+// los puntos caian en los tejados, que es donde no se entra.
 //
 // El asset se genero como key visual (prompt B1: "wide establishing aerial cinematic
-// shot"), asi que sus edificios no venian asignados a salas. La lectura la cerro Mati el
-// 2026-07-17 mirando las formas contra lo que pide cada sala en CONTENIDO 2.2:
-//   la torre alta con la luz ambar     -> Torre de Retos ("torre alta, senal exterior")
-//   la cupula circular                 -> El Consejo ("sala circular, luz en el centro")
-//   la terraza con escalera y luces    -> Mirador ("ventanales y balcon")
-//   la casa redonda mayor, techo conico-> Sala de Mandos ("mesa central de mapas")
+// shot"), asi que sus edificios no venian asignados a salas. La lectura la cerro Mati
+// mirando las formas contra lo que pide cada sala en CONTENIDO 2.2:
+//   la torre alta con la luz ambar     -> Torre de Retos ("torre alta, senal exterior").
+//                                         Su puerta esta en la BASE, no en el pebetero:
+//                                         la luz de arriba es su senal, no su entrada.
+//   la cupula circular                 -> El Consejo ("sala circular, luz en el centro").
+//                                         Puerta: el arco iluminado del lateral izquierdo.
+//   la terraza con escalera            -> Mirador ("ventanales y balcon"). OJO: no tiene
+//                                         puerta ni ventanas, es una terraza abierta. Su
+//                                         acceso es la escalera, y ahi va la chincheta.
+//   la casa redonda mayor, techo conico-> Sala de Mandos ("mesa central de mapas").
+//                                         Puerta: el arco con escalones, abajo a la dcha.
 //   el rectangulo con el arbol seco    -> Biblioteca (su prompt pide "arbol de la vida
-//                                         integrado": ahi esta, apagado)
+//                                         integrado": ahi esta, seco). Su puerta es el
+//                                         arco APAGADO del lateral, y encaja con que la
+//                                         sala este en reparacion.
 //   el porton con faroles              -> Puerta Principal (intervencion 6)
 //
-// OJO: si Conchi elige la variante castillo, estas coordenadas se rehacen enteras.
+// Castro confirmado por Conchi el 2026-07-17: estas coordenadas ya no corren peligro.
 export const sitiosDelMapa = [
-  { slug: 'torre-retos', x: 28.5, y: 11, sala: true },
-  { slug: 'sala-mandos', x: 47, y: 29, sala: true },
-  { slug: 'biblioteca', x: 66, y: 26, sala: true },
-  { slug: 'consejo', x: 72.5, y: 51, sala: true },
-  { slug: 'mirador', x: 28, y: 57, sala: true },
+  { slug: 'torre-retos', x: 31.7, y: 27.2, sala: true },
+  { slug: 'sala-mandos', x: 51.7, y: 36.5, sala: true },
+  { slug: 'biblioteca', x: 63.2, y: 33.1, sala: true },
+  { slug: 'consejo', x: 70.4, y: 55.9, sala: true },
+  { slug: 'mirador', x: 30.5, y: 52.3, sala: true },
   // La Puerta no es una sala: es lo que se repara en la intervencion 6, y de momento
   // no tiene pagina. Va como pieza del mapa, no como acceso.
-  { slug: 'puerta', x: 69, y: 79, sala: false, nombre: 'Puerta Principal', nota: 'Se abre mal: los visitantes entran sin orientación.', estado: 'desconectada' },
+  { slug: 'puerta', x: 69.1, y: 80.7, sala: false, nombre: 'Puerta Principal', nota: 'Se abre mal: los visitantes entran sin orientación.', estado: 'desconectada' },
 ];
 
 export const logrosRecientes = [
