@@ -24,19 +24,29 @@ export const asesora = {
   rango: 'Asesora Constructora',
   rangoSiguiente: 'Asesora Estratega',
   avatar: '/assets/avatares/ui/asesora-r3.webp',
-  retrato: '/assets/retratos/asesora-r3.webp',
+  // El del chip del HUD, que lo pinta a 34px. Iba al master (512x512, 48KB) en TODAS las
+  // paginas: diez veces mas grande de lo que se ve. El ui/ son 160x160 y 8KB.
+  retrato: '/assets/retratos/ui/asesora-r3.webp',
   pf: 1800,
   fortalecidas: 4,
   totalIntervenciones: 12,
   faltanParaSiguiente: 2, // Estratega arranca en 6 fortalecidas
 };
 
-// Las tres sendas del triskel (CONTENIDO 5.2)
+// Las tres sendas del triskel (CONTENIDO 5.2), mas el cierre, que no es una senda:
+// la 12 es transversal a las tres y cierra el ciclo.
+//
+// 2026-07-17: la 12 decia senda 'Orden' y Orden no la incluia ([4, 7, 8]). Quedaba
+// huerfana: se reclamaba de una senda que no la reclamaba. CONTENIDO 5.2 dice
+// "Cierre del ciclo | Transversal a las tres sendas | 12". El Mapa lo destapo.
 export const sendas = {
-  Orden: { color: 'var(--silver)', intervenciones: [4, 7, 8] },
-  Valor: { color: 'var(--amber)', intervenciones: [1, 2, 3] },
-  Crecimiento: { color: 'var(--cyan)', intervenciones: [5, 6, 9, 10, 11] },
+  Orden: { nombre: 'Senda del Orden', foco: 'Organización del despacho', color: 'var(--silver)', intervenciones: [4, 7, 8] },
+  Valor: { nombre: 'Senda del Valor', foco: 'Servicios estratégicos y rentabilidad', color: 'var(--amber)', intervenciones: [1, 2, 3] },
+  Crecimiento: { nombre: 'Senda del Crecimiento', foco: 'Crecimiento de negocio, marketing y ventas', color: 'var(--cyan)', intervenciones: [5, 6, 9, 10, 11] },
 };
+
+// La senda que la asesora tiene abierta este mes (la de la intervencion activa)
+export const sendaDelMes = 'Valor';
 
 // Estado: fortalecida | activa | bloqueada
 export const intervenciones = [
@@ -51,7 +61,8 @@ export const intervenciones = [
   { n: 9, titulo: 'Gestiona la percepción de valor', senda: 'Crecimiento', estado: 'bloqueada' },
   { n: 10, titulo: 'Posiciónate como referente', senda: 'Crecimiento', estado: 'bloqueada' },
   { n: 11, titulo: 'Consigue clientes activamente', senda: 'Crecimiento', estado: 'bloqueada' },
-  { n: 12, titulo: 'Cierra y planifica', senda: 'Orden', estado: 'bloqueada' },
+  // Transversal a las tres, no de ninguna: es el cierre del ciclo (CONTENIDO 5.2)
+  { n: 12, titulo: 'Cierra y planifica', senda: 'Cierre', estado: 'bloqueada' },
 ];
 
 // La intervencion del mes. Ya tiene la Progresion; le toca la Accion.
