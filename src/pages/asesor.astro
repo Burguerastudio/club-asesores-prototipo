@@ -179,6 +179,11 @@ const pestanas = [
 </script>
 
 <style is:global>
+  /* El layout reserva hasta 88px de aire abajo, que en las paginas que scrollean da
+     respiro y aqui es hueco muerto: era el que hacia que la pagina se pasara 69px y
+     apareciera barra por nada. Esta pantalla esta hecha para caber. */
+  .contenido:has(.yo) { padding-bottom: clamp(18px, 2.5vh, 28px); }
+
   /* LA LLEGADA, igual que el resto de la casa */
   .entra .yo, .entra .col { animation: destape-asesor 0.5s ease-out both; }
   .entra .col { animation-delay: 0.14s; }
@@ -188,10 +193,16 @@ const pestanas = [
   }
 
   /* QUIEN ERES */
-  .yo { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 38px); margin-bottom: clamp(22px, 3vh, 36px); }
+  .yo { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 38px); margin-bottom: clamp(14px, 2vh, 26px); }
   .yo__fig { flex: none; }
+  /* Grande a proposito: la figura del rango es LA recompensa de subir, y esta es su
+     pantalla. En el Patio va pequena porque alli compite con la intervencion del mes;
+     aqui no compite con nada. */
   .yo__fig img {
-    display: block; width: auto; height: clamp(190px, 20vw, 268px);
+    /* min(vw, vh) y no vw a secas: quien manda aqui es el ALTO. Con solo vw, un
+       1366x768 sacaba la figura a 369px sobre una ventana de 768 y la pagina scrolleaba
+       120px. Es el mismo arreglo que la Puerta. */
+    display: block; width: auto; height: clamp(230px, min(26vw, 39vh), 360px);
     object-fit: contain; object-position: center bottom;
     filter: drop-shadow(0 18px 30px rgba(0,0,0,0.75));
   }
@@ -207,17 +218,17 @@ const pestanas = [
     --aug-border-all: 1px;
     --aug-border-bg: rgba(194,205,214,0.24);
     margin-top: clamp(14px, 2vh, 22px);
-    display: flex; align-items: center; gap: 13px;
-    padding: 11px 14px; max-width: 60ch;
+    display: flex; align-items: center; gap: 15px;
+    padding: 13px 16px; max-width: 62ch;
     background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.4));
   }
-  .arq__im { width: 42px; height: 42px; flex: none; object-fit: contain; }
+  .arq__im { width: clamp(56px, 5vw, 72px); height: auto; flex: none; object-fit: contain; }
   .arq__d { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .arq__n { font-size: 0.86rem; font-weight: 600; color: var(--bone); }
-  .arq__l { font-size: 0.74rem; line-height: 1.4; color: var(--mist); }
+  .arq__n { font-size: 0.92rem; font-weight: 600; color: var(--bone); }
+  .arq__l { font-size: 0.78rem; line-height: 1.45; color: var(--mist); }
   /* Los otros tres, apagados y pequenos: dicen que hay cuatro y que el tuyo es uno */
   .arq__otros { position: relative; margin-left: auto; flex: none; display: flex; gap: 3px; }
-  .arq__otros img { width: 20px; height: 20px; object-fit: contain; filter: grayscale(1) brightness(0.5); opacity: 0.5; }
+  .arq__otros img { width: 26px; height: 26px; object-fit: contain; filter: grayscale(1) brightness(0.5); opacity: 0.5; }
 
   /* LAS PESTANAS */
   .tabs { display: flex; gap: 6px; margin-bottom: clamp(16px, 2vh, 22px); flex-wrap: wrap; }
@@ -263,7 +274,7 @@ const pestanas = [
        el ojo tenia que cruzarlo para saber si la tenias. Fijo, los tres caen siempre en
        el mismo sitio y las doce filas se leen de una pasada. */
     display: grid; grid-template-columns: 26px minmax(0, 30ch) auto; align-items: center; gap: 12px;
-    padding: 5px 10px;
+    padding: 3px 10px;
     border-left: 2px solid rgba(194,205,214,0.16);
   }
   .ins__f--fortalecida { border-left-color: var(--amber); }
@@ -277,7 +288,7 @@ const pestanas = [
 
   /* La pieza: la insignia. Ganada, arde. Pendiente, en SILUETA, que es lo que dice que
      hay camino: esconderla no contaria nada. */
-  .pieza { position: relative; display: block; width: 40px; height: 40px; }
+  .pieza { position: relative; display: block; width: 38px; height: 38px; }
   .pieza img { width: 100%; height: 100%; object-fit: contain; }
   .pieza:not(.is-ganada) img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
   .pieza.is-ganada img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }

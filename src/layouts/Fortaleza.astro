@@ -290,9 +290,18 @@ const nav = [
           rgba(9,13,20,0.95) 0%, rgba(9,13,20,0.86) 42%,
           rgba(9,13,20,0.5) 74%, rgba(9,13,20,0) 100%);
       }
-      /* En % y no en vw: vw cuenta la barra de scroll y la cabecera se desalineaba
-         del contenido por unos 7px. */
-      .shell__in { width: min(1400px, 94%); margin: 0 auto; height: var(--alto-shell); display: flex; align-items: center; gap: clamp(14px, 2.6vw, 38px); }
+      /* A PANTALLA COMPLETA, con el margen fijo de la casa. Es lo que hace UpGrade
+         (left:0, right:0, padding lateral fijo), y es lo que un HUD es: flota sobre la
+         pantalla entera, no vive en la columna de lectura.
+         Iba en min(1400px, 94%), o sea centrado en columna, y no cuadraba con la banda
+         de sendas del Mapa, que si esta al borde. A 1440 bailaban 26px; en un monitor
+         grande, la columna se queda en 1400 y el HUD se despegaba del borde 260px.
+         El mismo clamp que la banda del Mapa, para que caigan en la misma vertical. */
+      .shell__in {
+        width: 100%; height: var(--alto-shell);
+        padding: 0 clamp(14px, 3vw, 32px);
+        display: flex; align-items: center; gap: clamp(14px, 2.6vw, 38px);
+      }
       /* Menu de juego: los espacios son ranuras que se encienden, no enlaces subrayados.
          Sin logo delante: dentro de la fortaleza ya sabes donde estas, y el HUD de un
          juego no lleva la marca. Asi el menu manda desde el primer pixel. */
