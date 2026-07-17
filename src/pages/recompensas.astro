@@ -1,0 +1,211 @@
+---
+// Recompensas (P10). El Shop del sistema, aterrizado en La Fortaleza.
+// Cuelga del avatar del HUD: lo que reclamas con tus PF es tuyo, no un sitio del castro.
+//
+// NO es una tienda: los PF no se gastan. El umbral es una marca que se alcanza, no un
+// precio que se paga (ver demo.js). Por eso aqui no hay carrito, ni saldo despues del
+// canje, ni elegir entre una y otra: lo que alcanzas, es tuyo.
+//
+// Lo que aun no alcanzas SE VE, con cuanto falta. Es lo que dice que hay camino.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { asesora, recompensas, rangoDe } from '../data/demo.js';
+
+const rangoN = rangoDe(asesora.fortalecidas);
+
+const catalogo = recompensas.map((r) => {
+  const porPuntos = asesora.pf >= r.umbral;
+  const porRango = r.oRango !== undefined && rangoN >= r.oRango;
+  return {
+    ...r,
+    alAlcance: porPuntos || porRango,
+    porRango: !porPuntos && porRango, // la abrio el rango, no los puntos
+    faltan: Math.max(0, r.umbral - asesora.pf),
+    img: `/assets/recompensas/ui/${r.slug}.webp`,
+  };
+});
+
+const alAlcance = catalogo.filter((r) => r.alAlcance).length;
+// La siguiente que cae: la mas barata de las que faltan. Es la que da la meta corta.
+const siguiente = catalogo.find((r) => !r.alAlcance);
+
+const F_AZULEJO = 'tl-clip br-clip border';
+---
+
+<Fortaleza title="Recompensas, Club de la Asesoría" activa="/recompensas">
+  <!-- EL SALDO. Arriba, como manda el sistema: es contra lo que se lee todo lo demas.
+       Sin placa: es un dato tuyo, no un objeto clavado en la fortaleza. -->
+  <header class="saldo">
+    <div class="saldo__d">
+      <p class="saldo__k">Tus Puntos de Fortaleza</p>
+      <p class="saldo__n">
+        <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
+        <b>{asesora.pf.toLocaleString('es-ES')}</b>
+      </p>
+      <p class="cita saldo__l">
+        {alAlcance} de {recompensas.length} a tu alcance. Los Puntos de Fortaleza no se
+        gastan al reclamar: son la marca de lo que ya has levantado.
+      </p>
+    </div>
+
+    {siguiente && (
+      <div class="proxima" data-augmented-ui={F_AZULEJO}>
+        <img src={siguiente.img} alt="" aria-hidden="true" width="380" height="420" />
+        <div class="proxima__d">
+          <p class="rotulo">La siguiente</p>
+          <b class="proxima__n">{siguiente.nombre}</b>
+          <span class="proxima__f">
+            Te faltan <b>{siguiente.faltan.toLocaleString('es-ES')} PF</b>
+            {siguiente.oRangoNombre && <> o llegar a {siguiente.oRangoNombre}</>}
+          </span>
+        </div>
+      </div>
+    )}
+  </header>
+
+  <!-- EL CATALOGO -->
+  <section class="cat" aria-label="Catálogo de recompensas">
+    <ul class="cat__l">
+      {catalogo.map((r) => (
+        <li class={`rec${r.alAlcance ? ' is-tuya' : ''}`} data-augmented-ui={F_AZULEJO}>
+          <div class="rec__im">
+            <img src={r.img} alt="" aria-hidden="true" width="380" height="420" loading="lazy" />
+          </div>
+
+          <b class="rec__n">{r.nombre}</b>
+          <span class="rec__u">
+            {r.umbral.toLocaleString('es-ES')} PF
+            {r.oRangoNombre && <> o {r.oRangoNombre}</>}
+          </span>
+
+          <div class="rec__pie">
+            {r.alAlcance ? (
+              <>
+                <!-- Reclamar lo resuelve el plugin: aqui no navega, avisa -->
+                <button
+                  class="enlace rec__b"
+                  type="button"
+                  data-integracion="gamipress:reclamar-recompensa"
+                  data-aviso="Se reclama sola cuando la fortaleza esté conectada."
+                >
+                  Reclamar
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reclamar</span>
+                </button>
+                {r.porRango && <span class="rec__via">Por tu rango</span>}
+              </>
+            ) : (
+              <!-- Lo que no alcanzas no se esconde: se ve, y dice cuanto falta -->
+              <span class="rec__falta">Te faltan <b>{r.faltan.toLocaleString('es-ES')} PF</b></span>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Fortaleza>
+
+<script>
+  // El aviso de lo que resuelve el plugin ya lo monta el layout (integracion.js): los
+  // botones solo tienen que llevar data-integracion. Aqui no hace falta nada.
+</script>
+
+<style is:global>
+  /* El layout reserva hasta 88px de aire abajo, que aqui es hueco muerto: esta pantalla
+     esta hecha para caber. Mismo caso que El asesor. */
+  .contenido:has(.saldo) { padding-bottom: clamp(18px, 2.5vh, 28px); }
+
+  .entra .saldo, .entra .cat { animation: destape-rec 0.5s ease-out both; }
+  .entra .cat { animation-delay: 0.14s; }
+  @keyframes destape-rec {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* EL SALDO */
+  .saldo {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: clamp(20px, 3vw, 48px); flex-wrap: wrap;
+    margin-bottom: clamp(20px, 3vh, 34px);
+  }
+  .saldo__k { margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--mist); }
+  .saldo__n { display: flex; align-items: center; gap: 12px; margin: 6px 0 0; }
+  .saldo__n img { width: clamp(28px, 2.6vw, 38px); height: auto; object-fit: contain; }
+  .saldo__n b {
+    font-family: var(--serif); font-weight: 600; letter-spacing: 0.02em;
+    font-size: clamp(2rem, 3.6vw, 3rem); color: var(--aqua);
+  }
+  .saldo__l { margin: 8px 0 0; max-width: 52ch; font-size: 0.92rem; }
+
+  /* La siguiente que cae: la meta corta. En placa porque es un objeto, no un dato. */
+  .proxima {
+    --aug-tl: 12px; --aug-br: 12px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.26);
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 18px 12px 12px;
+    background: linear-gradient(180deg, rgba(20,32,46,0.55), rgba(9,13,20,0.4));
+  }
+  .proxima img { width: clamp(48px, 4.4vw, 62px); height: auto; object-fit: contain; filter: grayscale(1) brightness(0.5); opacity: 0.7; }
+  .proxima__d { display: flex; flex-direction: column; gap: 3px; }
+  .proxima__n { font-size: 0.88rem; color: var(--bone); }
+  .proxima__f { font-size: 0.76rem; color: var(--mist); }
+  .proxima__f b { color: var(--aqua); }
+
+  /* EL CATALOGO. Tres columnas: las seis caben en dos filas y sin scroll. */
+  .cat__l {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.2vw, 18px);
+  }
+  /* La ficha va en VERTICAL y la pieza manda: son objetos, y el catalogo esta para
+     lucirlos. En fila iban a 60px, o sea de miniatura, con media pantalla vacia debajo. */
+  .rec {
+    --aug-tl: 10px; --aug-br: 10px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.18);
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 4px; padding: clamp(14px, 1.6vw, 22px) 14px 14px;
+    background: linear-gradient(180deg, rgba(20,32,46,0.42), rgba(9,13,20,0.26));
+  }
+  /* La que ya es tuya arde; la que no, en silueta. El mismo par que en El asesor. */
+  .rec.is-tuya { --aug-border-bg: rgba(232,169,63,0.4); }
+
+  /* Caja de alto FIJO: las seis piezas tienen proporciones distintas (el cofre es alto,
+     el disco redondo, el pergamino ancho), y a ancho libre cada una empujaba su titulo a
+     otra altura. Con la caja fija, los seis nombres caen en la misma linea. */
+  .rec__im {
+    width: 100%; height: clamp(96px, 9vw, 132px); margin-bottom: 10px;
+    display: grid; place-items: center;
+  }
+  .rec__im img { max-width: clamp(84px, 8vw, 118px); max-height: 100%; width: auto; height: auto; object-fit: contain; }
+  .rec:not(.is-tuya) .rec__im img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
+  .rec.is-tuya .rec__im img { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.65)); }
+
+  /* Dos lineas reservadas: hay nombres de una linea y de dos, y sin el hueco fijo el
+     umbral de cada ficha caia a una altura distinta. */
+  .rec__n { font-size: 0.84rem; font-weight: 600; line-height: 1.32; color: var(--moon); min-height: 2.64em; }
+  .rec.is-tuya .rec__n { color: var(--bone); }
+  .rec__u { font-size: 0.72rem; color: var(--mist); }
+  .rec.is-tuya .rec__u { color: var(--amber); }
+  .rec__pie { margin-top: 10px; min-height: 22px; display: flex; align-items: center; gap: 8px; }
+
+  /* Reclamar va en ENLACE y no en boton ambar. El ambar es la accion principal de la
+     pantalla, y aqui hay CINCO a la vez: cinco ambares no son cinco acciones
+     principales, son ninguna. Lo dice DESIGN.md y me lo salte. */
+  .rec__b { position: relative; border: 0; background: transparent; cursor: pointer; font-family: var(--sans); font-size: 0.78rem; }
+  .rec__b .pista { text-transform: none; letter-spacing: 0; }
+  /* Aqui la pildora es SOLO el aviso: el boton ya dice lo que hace */
+  .rec__b:hover > .pista { opacity: 0; visibility: hidden; }
+  .rec__b > .pista.is-dicha { opacity: 1; visibility: visible; }
+
+  .rec__falta { font-size: 0.74rem; color: var(--mist); white-space: nowrap; }
+  .rec__falta b { color: var(--moon); }
+  .rec:not(.is-tuya) { opacity: 0.62; }
+  .rec__via { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--amber); }
+
+  @media (max-width: 1180px) {
+    .cat__l { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .cat__l { grid-template-columns: 1fr; }
+    .saldo { flex-direction: column; align-items: flex-start; }
+  }
+</style>

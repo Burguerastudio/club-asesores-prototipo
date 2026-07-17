@@ -228,6 +228,29 @@ export const avisos = [
 
 export const avisosSinLeer = avisos.filter((a) => a.nueva).length;
 
+// RECOMPENSAS (P10). El Shop del sistema.
+//
+// OJO, no es una tienda: NO se gastan los PF. CONTENIDO 4.4 y las mecanicas del cliente
+// dicen "se desbloquean por Puntos de Fortaleza O POR RANGO", y P10 dice "accion de
+// reclamar". Lo que lo zanja es el "o por rango": un rango no se puede gastar. O sea que
+// el umbral es una marca que se alcanza, no un precio que se paga, y al reclamar el saldo
+// no baja. El sistema Sepia llama a esta pantalla "canje", que es la palabra de una
+// tienda: en Club es una escalera. Ver docs/CONTENIDO.md 4.4.
+export const recompensas = [
+  { slug: 'recompensa-kit-entrada', nombre: 'Kit de Entrada a la Fortaleza', umbral: 150 },
+  { slug: 'recompensa-plantilla-reparacion', nombre: 'Plantilla de Reparación', umbral: 400 },
+  { slug: 'recompensa-mapa-prioridades', nombre: 'Mapa de Prioridades de la Fortaleza', umbral: 800 },
+  { slug: 'recompensa-caso-consejo', nombre: 'Caso de Consejo Ampliado', umbral: 1200 },
+  { slug: 'recompensa-biblioteca-herramientas', nombre: 'Biblioteca de Herramientas Avanzadas', umbral: 1800 },
+  // La unica con dos puertas: 2500 PF o llegar a Estratega, lo que caiga antes
+  { slug: 'recompensa-sesion-premium', nombre: 'Sesión / Taller Premium', umbral: 2500, oRango: 4, oRangoNombre: 'Asesora Estratega' },
+];
+
+// El rango sale de las intervenciones fortalecidas, no de un numero suelto (CONTENIDO
+// 5.4). Derivado y no escrito: asi no puede contradecir a asesora.rango.
+export const rangoDe = (fortalecidas) =>
+  fortalecidas === 0 ? 1 : fortalecidas <= 2 ? 2 : fortalecidas <= 5 ? 3 : fortalecidas <= 8 ? 4 : 5;
+
 // EL ASESOR (P8). Lo que la asesora colecciona.
 
 // Que insignias tiene ganadas de cada intervencion. Se DERIVA del estado en vez de
