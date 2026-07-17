@@ -95,6 +95,46 @@ export const proximoEvento = {
   nota: 'El Consejo abre sus puertas: repaso del mes y dudas en directo.',
 };
 
+// Los avisos de la campana. Voz de Nara: guia, nunca alarma (CONTENIDO 7), y los tipos
+// que ese apartado documenta (sabotaje detectado, nueva intervencion disponible, reto
+// pendiente, recordatorio de accion).
+//
+// NINGUNO es inventado: todos salen del estado de arriba, y por eso la campana no miente.
+//   1 y 4 -> la intervencion 3 (activa, Senda del Valor) y su sabotaje
+//   2     -> su tier de Accion, pendiente y el que toca (+100 PF)
+//   3     -> la Torre en reparacion: "Un tramo encendido, cuatro apagados"
+//   5     -> proximoEvento, el directo del jueves en El Consejo
+// Si cambia el estado de arriba, estos avisos hay que rehacerlos con el.
+export const avisos = [
+  {
+    nueva: true, cuando: 'Hoy', tipo: 'sabotaje',
+    texto: 'Sabotaje en los cimientos: el Rebelde ha escondido los registros de rentabilidad entre los libros.',
+    img: '/assets/emblemas-insignias/ui/insignias-intervencion/sellos/insignia-i03-sello.webp',
+  },
+  {
+    nueva: true, cuando: 'Hoy', tipo: 'accion',
+    texto: 'Ya exploraste los cimientos. Falta la maniobra: sin la Acción, la grieta sigue abierta.',
+    img: '/assets/emblemas-insignias/ui/insignias-intervencion/accion/insignia-i03-accion.webp',
+  },
+  {
+    nueva: true, cuando: 'Ayer', tipo: 'reto',
+    texto: 'La Torre tiene un tramo encendido y cuatro apagados. Cada reto que cierras enciende el siguiente.',
+    img: '/assets/emblemas-insignias/ui/logros-generales/logro-global-primer-tramo.webp',
+  },
+  {
+    nueva: false, cuando: '12 de julio', tipo: 'intervencion',
+    texto: 'Se ha abierto tu intervención del mes en la Senda del Valor: Escala la rentabilidad.',
+    img: '/assets/emblemas-insignias/ui/insignias-intervencion/progresion/insignia-i03-progresion.webp',
+  },
+  {
+    nueva: false, cuando: '9 de julio', tipo: 'accion',
+    texto: 'El Consejo abre sus puertas el jueves 23 a las 10:00: repaso del mes y dudas en directo.',
+    img: '/assets/emblemas-insignias/ui/logros-generales/logro-global-mapa-revelado.webp',
+  },
+];
+
+export const avisosSinLeer = avisos.filter((a) => a.nueva).length;
+
 export const ETIQUETA_ESTADO = {
   fortalecida: 'Fortalecida',
   reparacion: 'En reparación',

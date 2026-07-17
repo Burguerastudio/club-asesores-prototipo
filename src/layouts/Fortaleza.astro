@@ -3,7 +3,7 @@
 // Lo heredan todas las pantallas de dentro (el Login no, que va sin navegacion).
 import '../styles/tokens.css';
 import Velo from '../components/Velo.astro';
-import { asesora } from '../data/demo.js';
+import { asesora, avisos, avisosSinLeer } from '../data/demo.js';
 
 const { title = 'Club de la Asesoría', activa = '' } = Astro.props;
 
@@ -87,23 +87,95 @@ const nav = [
         </nav>
 
         <div class="shell__yo">
-          <button class="sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui={RANURA}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
-              <g class="sonido__ondas">
-                <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
-                <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
-              </g>
-              <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
-            </svg>
-          </button>
+          <!-- Campana y lupa son herramientas, y van ANTES del contador. Entre el contador
+               y el avatar no se mete nada: esos dos son el asesor (lo que tiene y quien es)
+               y no se separan. Ver docs/DESIGN.md.
+               La pildora y la bandeja van FUERA del boton, en su caja: augmented-ui recorta
+               la forma del boton y dentro las encerraria. Misma trampa que las motas. -->
 
-          <span class="pf" data-augmented-ui={`${RANURA} border`}>
-            <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
-            {asesora.pf.toLocaleString('es-ES')}
-            <span class="sr-only">Puntos de Fortaleza</span>
-            <!-- La pildora del sistema, no el tooltip gris del navegador -->
-            <span class="pista" role="tooltip" data-augmented-ui="tl-clip br-clip border">Puntos de Fortaleza</span>
+          <!-- La campana SI abre su bandeja, como en UpGrade: el punto promete avisos, y un
+               punto que no los enseña miente. Los avisos son estado de la demo (demo.js),
+               como los PF; lo que vive en el plugin es de donde salen de verdad. -->
+          <span class="util-caja">
+            <button
+              class="util"
+              type="button"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="bandeja"
+              aria-label={`Avisos de la fortaleza, ${avisosSinLeer} sin leer`}
+              data-augmented-ui={RANURA}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <!-- La campana del castro: hombros rectos y falda acampanada, del mismo
+                     trazo labrado que el resto de la casa. -->
+                <path d="M12 3.8v1.6" />
+                <path d="M6.8 16.2v-5.6a5.2 5.2 0 0 1 10.4 0v5.6l2 2.6H4.8l2-2.6z" />
+                <path d="M13.9 18.8a1.9 1.9 0 0 1-3.8 0" />
+              </svg>
+              {avisosSinLeer > 0 && <i class="util__punto" aria-hidden="true"></i>}
+            </button>
+
+            <div class="bandeja" id="bandeja" hidden data-augmented-ui="tl-clip br-clip border">
+              <header class="bandeja__cab">
+                <b>Avisos</b>
+                <span>{avisosSinLeer} sin leer</span>
+              </header>
+              <ul class="bandeja__lista">
+                {avisos.map((a) => (
+                  <li class={a.nueva ? 'is-nueva' : ''}>
+                    <span class="bandeja__mini" aria-hidden="true"><img src={a.img} alt="" loading="lazy" width="64" height="64" /></span>
+                    <div>
+                      <p>{a.texto}</p>
+                      <time>{a.cuando}</time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <!-- Marcar como leido lo resuelve el plugin: aqui no navega, avisa -->
+              <button
+                class="bandeja__todo"
+                type="button"
+                data-integracion="buddyboss:marcar-avisos-leidos"
+                data-aviso="Los avisos se marcan solos cuando la fortaleza esté conectada."
+              >
+                Dar por leídos
+                <!-- Esta pildora NO va --baja: colgaria por debajo de la bandeja, que
+                     tambien va recortada con augmented-ui, y el recorte se la comia.
+                     Hacia arriba se queda dentro, que es donde se ve. -->
+                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Dar por leídos</span>
+              </button>
+            </div>
+          </span>
+
+          <span class="util-caja">
+            <button
+              class="util"
+              type="button"
+              aria-label="Buscar en la fortaleza"
+              data-integracion="buddyboss:busqueda"
+              data-aviso="Desde aquí buscarás en toda la fortaleza. En el prototipo aún no."
+              data-augmented-ui={RANURA}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="10.8" cy="10.8" r="6.3" />
+                <path d="M15.4 15.4l4.3 4.3" />
+              </svg>
+            </button>
+            <span class="pista pista--baja" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Buscar</span>
+          </span>
+
+          <!-- La pildora del sistema, no el tooltip gris del navegador. Va en la caja y
+               no dentro de .pf por lo mismo que la de los botones: el recorte de
+               augmented-ui la encerraba, y por eso no se habia visto nunca. Y cuelga
+               hacia abajo, que en el HUD por encima solo esta el borde de la ventana. -->
+          <span class="pf-caja">
+            <span class="pf" data-augmented-ui={`${RANURA} border`}>
+              <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
+              {asesora.pf.toLocaleString('es-ES')}
+              <span class="sr-only">Puntos de Fortaleza</span>
+            </span>
+            <span class="pista pista--baja" role="tooltip" data-augmented-ui="tl-clip br-clip border">Puntos de Fortaleza</span>
           </span>
 
           <!-- Lo tuyo cuelga de tu avatar: tu ficha, tus recompensas, tus fechas y tus ajustes.
@@ -137,10 +209,15 @@ const nav = [
     <script>
       import { montarCursor } from '../scripts/cursor.js';
       import { montarVelo } from '../scripts/velo.js';
-      import { cablearInterfaz, arrancarMusica, alternarSonido, estaSilenciado } from '../scripts/audio.js';
+      import { montarIntegracion } from '../scripts/integracion.js';
+      import { cablearInterfaz, arrancarMusica } from '../scripts/audio.js';
 
       montarCursor();
       montarVelo();
+      montarIntegracion();
+      // El sonido sigue montado igual: cablearInterfaz() escucha sobre el document, asi
+      // que cada pantalla nueva nace sonando. Lo que ya no vive aqui es el MANDO: el
+      // interruptor y los dos volumenes van en Ajustes (P12). Ver docs/DESIGN.md.
       cablearInterfaz();
 
       // Dentro de la fortaleza la musica ya viene queriendose (se pulso Entrar en el Login).
@@ -150,41 +227,38 @@ const nav = [
       if (document.readyState === 'complete') setTimeout(arrancarMusica, 250);
       else addEventListener('load', () => setTimeout(arrancarMusica, 250), { once: true });
 
-      // Desplegable del jugador
-      const chip = document.querySelector<HTMLButtonElement>('.chip');
-      const menu = document.querySelector<HTMLDivElement>('.menu');
-      if (chip && menu) {
+      // Los dos desplegables del HUD (la bandeja de avisos y el menu del jugador) se
+      // comportan igual, asi que el comportamiento se escribe una vez.
+      //
+      // Sin stopPropagation a proposito: cortaba el evento antes de llegar al document,
+      // y entonces abrir uno no cerraba el otro (se quedaban los dos abiertos). En vez de
+      // cortar, el cierre de fuera ignora los clics sobre el propio boton.
+      const desplegable = (boton: HTMLElement | null, panel: HTMLElement | null) => {
+        if (!boton || !panel) return;
         const abrir = (si: boolean) => {
-          menu.hidden = !si;
-          chip.setAttribute('aria-expanded', String(si));
+          panel.hidden = !si;
+          boton.setAttribute('aria-expanded', String(si));
         };
-        chip.addEventListener('click', (e) => {
-          e.stopPropagation(); // si no, el cierre de fuera lo volveria a cerrar al vuelo
-          abrir(menu.hidden === true);
-        });
+        boton.addEventListener('click', () => abrir(panel.hidden === true));
+
         document.addEventListener('click', (e) => {
-          if (!menu.hidden && !menu.contains(e.target as Node)) abrir(false);
+          if (panel.hidden) return;
+          const donde = e.target as Node;
+          if (panel.contains(donde) || boton.contains(donde)) return;
+          abrir(false);
         });
         document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && !menu.hidden) { abrir(false); chip.focus(); }
+          if (e.key === 'Escape' && !panel.hidden) { abrir(false); boton.focus(); }
         });
-        // Al tabular mas alla de Ajustes el menu se quedaba abierto sobre el contenido
-        const jugador = document.querySelector('.jugador');
-        jugador?.addEventListener('focusout', (e) => {
-          if (!jugador.contains(e.relatedTarget as Node)) abrir(false);
+        // Al tabular mas alla del ultimo enlace se quedaba abierto sobre el contenido
+        const caja = boton.parentElement;
+        caja?.addEventListener('focusout', (e) => {
+          if (!caja.contains((e as FocusEvent).relatedTarget as Node)) abrir(false);
         });
-      }
+      };
 
-      const boton = document.querySelector('.sonido');
-      if (boton) {
-        const pintar = () => {
-          const off = estaSilenciado();
-          boton.setAttribute('aria-pressed', String(off));
-          boton.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
-        };
-        pintar();
-        boton.addEventListener('click', () => { alternarSonido(); pintar(); });
-      }
+      desplegable(document.querySelector('.jugador .chip'), document.querySelector('.menu'));
+      desplegable(document.querySelector('.util[aria-controls="bandeja"]'), document.querySelector('.bandeja'));
     </script>
 
     <style is:global>
@@ -241,13 +315,100 @@ const nav = [
         background: linear-gradient(180deg, rgba(63,169,201,0.3), rgba(63,169,201,0.07));
       }
 
-      /* Zona del jugador: el sonido, el cumulo de PF y su ficha, arriba a la derecha.
-         El boton .sonido es del sistema (tokens.css): tambien vive en el Login. */
+      /* Zona del jugador, arriba a la derecha, en este orden: campana, lupa, cumulo de
+         PF y ficha. Las herramientas van antes; el contador y el avatar cierran juntos
+         porque los dos son el asesor (lo que tiene y quien es). Ver docs/DESIGN.md. */
       .shell__yo { flex: none; display: flex; align-items: center; gap: clamp(10px, 1.2vw, 16px); }
+
+      /* La caja ancla la pildora, que tiene que quedar FUERA del elemento recortado:
+         augmented-ui recorta con clip-path y encierra a todo hijo que asome (la misma
+         razon por la que las motas viven en .placa-caja). Ver docs/DESIGN.md. */
+      .util-caja, .pf-caja { position: relative; flex: none; display: flex; }
+      /* Al tabular, la pildora la enciende el foco del boton, que ya no es su padre */
+      .util:focus-visible ~ .pista { opacity: 1; visibility: visible; }
+
+      /* Campana y lupa: mismo boton-ranura que el resto del HUD. Geometria calcada del
+         .sonido que vivia aqui (y que sigue en el Login), para no abrir un molde nuevo. */
+      .util {
+        --aug-tl: 6px; --aug-br: 6px;
+        flex: none; display: grid; place-items: center; width: 34px; height: 34px;
+        padding: 0; border: 0; background: transparent; color: var(--mist);
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+      .util:hover { color: var(--bone); background: rgba(63, 169, 201, 0.13); }
+      .util:active { background: rgba(63, 169, 201, 0.24); }
+      .util[aria-expanded='true'] { color: var(--aqua); background: rgba(63, 169, 201, 0.18); }
+      .util svg {
+        width: 19px; height: 19px;
+        fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+      }
+
+      /* Avisos sin leer. En cian y no en ambar: el ambar es la accion principal de la
+         pantalla y ya lo gasta el CTA del Patio; dos ambares matan la jerarquia. El cian
+         de la casa es justo el que dice "esto esta vivo". Va dentro del boton, lejos de
+         las esquinas chaflanadas (tl y br), asi que el recorte no lo toca. */
+      .util__punto {
+        position: absolute; top: 5px; right: 6px;
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--aqua);
+        box-shadow: 0 0 6px rgba(95, 208, 224, 0.9);
+      }
+
+      /* La bandeja: misma placa pequena que el menu del jugador, mismo material */
+      .bandeja {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
+        --aug-tl: 10px; --aug-br: 10px;
+        --aug-border-all: 1px;
+        --aug-border-bg: linear-gradient(150deg, rgba(194,205,214,0.5), rgba(63,169,201,0.22) 40%, rgba(58,70,84,0.36));
+        width: min(374px, calc(100vw - 40px));
+        background-color: rgba(9,13,20,0.97);
+        background-image: var(--grano);
+        filter: drop-shadow(0 18px 34px rgba(0,0,0,0.9));
+      }
+      .bandeja[hidden] { display: none; opacity: 0; translate: 0 -6px; }
+      .bandeja {
+        opacity: 1; translate: 0 0;
+        transition: opacity 0.18s ease, translate 0.18s ease, display 0.18s allow-discrete;
+      }
+      @starting-style { .bandeja { opacity: 0; translate: 0 -6px; } }
+
+      .bandeja__cab { display: flex; align-items: baseline; justify-content: space-between; padding: 13px 16px 10px; }
+      .bandeja__cab b { font-family: var(--display); font-weight: 600; font-size: 0.92rem; color: var(--bone); letter-spacing: 0.03em; }
+      .bandeja__cab span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--aqua); }
+
+      .bandeja__lista { list-style: none; margin: 0; padding: 0 8px; }
+      .bandeja__lista li { position: relative; display: flex; gap: 11px; align-items: flex-start; padding: 11px 9px; }
+      .bandeja__lista li + li { border-top: 1px solid rgba(194,205,214,0.1); }
+      .bandeja__lista p { margin: 0; font-size: 0.78rem; line-height: 1.42; color: var(--moon); }
+      .bandeja__lista time { display: block; margin-top: 4px; font-size: 0.68rem; color: var(--mist); }
+      .bandeja__mini { flex: none; width: 32px; height: 32px; }
+      .bandeja__mini img { width: 100%; height: 100%; object-fit: contain; }
+      /* Lo no leido lleva el filo cian; lo leido se apaga. Nada de puntos ni negritas:
+         el estado se ve en la materia, como en el resto de la casa. */
+      .bandeja__lista li.is-nueva::before {
+        content: ''; position: absolute; left: 0; top: 11px; bottom: 11px; width: 2px;
+        background: var(--aqua);
+      }
+      .bandeja__lista li:not(.is-nueva) { opacity: 0.55; }
+
+      .bandeja__todo {
+        position: relative; /* ancla de su pildora */
+        display: block; width: calc(100% - 16px); margin: 6px 8px 9px; padding: 10px;
+        border: 0; border-top: 1px solid rgba(194,205,214,0.14);
+        background: transparent; color: var(--mist);
+        font-family: var(--sans); font-size: 0.7rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.11em;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+      .bandeja__todo:hover { color: var(--bone); background: rgba(63,169,201,0.1); }
+      /* Aqui la pildora es SOLO para el aviso: el boton ya dice lo que hace, y repetirlo
+         al pasar por encima es ruido. Solo habla cuando se pulsa. */
+      .bandeja__todo:hover > .pista { opacity: 0; visibility: hidden; }
+      .bandeja__todo > .pista.is-dicha { opacity: 1; visibility: visible; }
 
       /* Los PF son un contador de recurso: va en su ranura, como en cualquier HUD */
       .pf {
-        position: relative; /* ancla de su pildora */
+        /* El ancla de la pildora es .pf-caja, no esto: aqui dentro la recorta augmented-ui */
         --aug-tl: 6px; --aug-br: 6px;
         --aug-border-all: 1px;
         --aug-border-bg: rgba(63,169,201,0.34);

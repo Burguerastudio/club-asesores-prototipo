@@ -330,6 +330,15 @@ input:-webkit-autofill:focus {
 :hover > .pista,
 :focus-visible > .pista { opacity: 1; visibility: visible; }
 
+/* La pildora nace encima, que es su sitio en el cuerpo de la pagina. En el HUD no cabe:
+   encima solo esta el borde de la ventana, y ahi se pintaba fuera de pantalla (nunca se
+   llego a ver la de los PF). --baja la cuelga debajo. */
+.pista--baja { bottom: auto; top: calc(100% + 10px); }
+
+/* El aviso del contrato data-integracion: la pildora se queda dicha un momento aunque
+   no haya raton encima. La mueve src/scripts/integracion.js. */
+.pista.is-dicha { opacity: 1; visibility: visible; }
+
 /* Enlace: la accion secundaria, cuando el boton pesaria demasiado */
 .enlace {
   display: inline-block; font-size: 0.78rem; color: var(--cyan); text-decoration: none;
