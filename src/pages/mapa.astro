@@ -94,7 +94,8 @@ const MAPA = { w: 2752, h: 1536 };
                        todo: la regla del proyecto es iconografia propia, sin libreria.
                        La Puerta lleva otro, y no por capricho: no es una sala, no se
                        entra en ella, y ensenar el gesto de entrar seria mentir. Ella ES
-                       una puerta, asi que lleva el portal. -->
+                       una puerta, asi que lleva el portal. Y va en blanco en las salas
+                       apagadas: lo apagado lo cuenta el halo, no el icono. -->
                   <svg class="hito__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     {s.sala ? (
                       <>
@@ -303,9 +304,14 @@ const MAPA = { w: 2752, h: 1536 };
     --luz-rgb: 194, 205, 214;
   }
   .hito--desconectada::before { opacity: 0.18; }
-  .hito--desconectada .hito__marca { background: linear-gradient(180deg, rgba(194,205,214,0.1), rgba(9,13,20,0.94)); color: var(--mist); }
-  /* La desconectada no ensena la flecha: por ahi todavia no se entra de verdad */
-  .hito--desconectada .hito__flecha { opacity: 0.25; }
+  /* El icono va en BLANCO aunque la sala este apagada. Iba en gris y la flecha encima al
+     25%, y no se veia: un icono ilegible no dice nada, ni siquiera "apagado". Lo apagado
+     lo cuentan el halo (18% contra 85), el filo y el tinte del fondo, que para eso estan.
+     El icono esta para leerse. */
+  .hito--desconectada .hito__marca {
+    background: linear-gradient(180deg, rgba(194,205,214,0.1), rgba(9,13,20,0.94));
+    color: var(--bone);
+  }
 
   .hito:hover .hito__marca, .hito:focus-visible .hito__marca {
     transform: scale(1.14);
