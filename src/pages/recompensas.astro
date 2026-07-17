@@ -26,13 +26,11 @@ const catalogo = recompensas.map((r) => {
   };
 });
 
-const alAlcance = catalogo.filter((r) => r.alAlcance).length;
 // La siguiente que cae: la mas barata de las que faltan. Es la que da la meta corta.
 const siguiente = catalogo.find((r) => !r.alAlcance);
-// La cara de todas: si la reclamas, te quedas sin las demas. Es la tension de la pantalla.
-const laCara = [...catalogo].reverse().find((r) => r.alAlcance && !r.porRango);
 
 const F_AZULEJO = 'tl-clip br-clip border';
+const F_BOTON = 'l-clip-y r-clip-y';
 ---
 
 <Fortaleza title="Recompensas, Club de la Asesoría" activa="/recompensas">
@@ -45,10 +43,7 @@ const F_AZULEJO = 'tl-clip br-clip border';
         <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
         <b>{asesora.pf.toLocaleString('es-ES')}</b>
       </p>
-      <p class="cita saldo__l">
-        {alAlcance} de {recompensas.length} a tu alcance, pero no para todas a la vez:
-        reclamar cuesta. {laCara && <>Llévate la {laCara.nombre} y te quedan {laCara.resto.toLocaleString('es-ES')}.</>}
-      </p>
+
     </div>
 
     {siguiente && (
@@ -71,34 +66,37 @@ const F_AZULEJO = 'tl-clip br-clip border';
     <ul class="cat__l">
       {catalogo.map((r) => (
         <li class={`rec${r.alAlcance ? ' is-tuya' : ''}`} data-augmented-ui={F_AZULEJO}>
-          <div class="rec__im">
+          <!-- La hornacina: el mismo hueco de piedra para las seis. Es lo que las hace
+               leer como un set aunque cada pieza tenga su forma (el cofre es alto, el
+               pergamino ancho, el disco redondo). CSS puro, que los ornamentos no son
+               imagenes. -->
+          <div class="rec__nicho">
             <img src={r.img} alt="" aria-hidden="true" width="380" height="420" loading="lazy" />
           </div>
 
           <b class="rec__n">{r.nombre}</b>
-          <span class="rec__u">
-            {r.precio.toLocaleString('es-ES')} PF
-            {r.oRangoNombre && <> o {r.oRangoNombre}</>}
-          </span>
+
+          <!-- El precio con su cristal: es la moneda de la casa, y en el HUD se lee asi -->
+          <p class="rec__pf">
+            <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
+            <b>{r.precio.toLocaleString('es-ES')}</b>
+            <span>PF</span>
+          </p>
+          {r.oRangoNombre && <span class="rec__o">o llegar a {r.oRangoNombre}</span>}
 
           <div class="rec__pie">
             {r.alAlcance ? (
-              <>
-                <!-- Reclamar lo resuelve el plugin: aqui no navega, avisa -->
-                <button
-                  class="enlace rec__b"
-                  type="button"
-                  data-integracion="gamipress:reclamar-recompensa"
-                  data-aviso="Se reclama sola cuando la fortaleza esté conectada."
-                >
-                  Reclamar
-                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reclamar</span>
-                </button>
-                {/* Lo que te queda es LA cifra: es lo que convierte el catalogo en decision */}
-                {r.porRango
-                  ? <span class="rec__via">Sin pagar, por tu rango</span>
-                  : <span class="rec__resto">Te quedarían {r.resto.toLocaleString('es-ES')}</span>}
-              </>
+              <!-- Reclamar lo resuelve el plugin: aqui no navega, avisa -->
+              <button
+                class="btn-linea rec__b"
+                type="button"
+                data-integracion="gamipress:reclamar-recompensa"
+                data-aviso="Se reclama sola cuando la fortaleza esté conectada."
+                data-augmented-ui={F_BOTON}
+              >
+                {r.porRango ? 'Reclamar por rango' : 'Reclamar'}
+                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reclamar</span>
+              </button>
             ) : (
               <!-- Lo que no alcanzas no se esconde: se ve, y dice cuanto falta -->
               <span class="rec__falta">Te faltan <b>{r.faltan.toLocaleString('es-ES')} PF</b></span>
@@ -131,7 +129,7 @@ const F_AZULEJO = 'tl-clip br-clip border';
   .saldo {
     display: flex; align-items: center; justify-content: space-between;
     gap: clamp(20px, 3vw, 48px); flex-wrap: wrap;
-    margin-bottom: clamp(20px, 3vh, 34px);
+    margin-bottom: clamp(14px, 2vh, 24px);
   }
   .saldo__k { margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--mist); }
   .saldo__n { display: flex; align-items: center; gap: 12px; margin: 6px 0 0; }
@@ -160,55 +158,92 @@ const F_AZULEJO = 'tl-clip br-clip border';
   /* EL CATALOGO. Tres columnas: las seis caben en dos filas y sin scroll. */
   .cat__l {
     list-style: none; margin: 0; padding: 0;
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.2vw, 18px);
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(9px, 1vw, 14px);
   }
-  /* La ficha va en VERTICAL y la pieza manda: son objetos, y el catalogo esta para
-     lucirlos. En fila iban a 60px, o sea de miniatura, con media pantalla vacia debajo. */
+  /* LA FICHA. Vertical y con la pieza mandando: son objetos, y el catalogo esta para
+     lucirlos. En fila iban a 60px, de miniatura, con media pantalla vacia debajo. */
   .rec {
-    --aug-tl: 10px; --aug-br: 10px;
+    --aug-tl: 12px; --aug-br: 12px;
     --aug-border-all: 1px;
-    --aug-border-bg: rgba(194,205,214,0.18);
+    --aug-border-bg: rgba(194,205,214,0.2);
     display: flex; flex-direction: column; align-items: center; text-align: center;
-    gap: 4px; padding: clamp(14px, 1.6vw, 22px) 14px 14px;
-    background: linear-gradient(180deg, rgba(20,32,46,0.42), rgba(9,13,20,0.26));
+    padding: clamp(12px, 1.4vw, 18px) 16px clamp(12px, 1.4vw, 16px);
+    background:
+      radial-gradient(ellipse 70% 45% at 50% 22%, rgba(63,169,201,0.1), transparent 70%),
+      linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.3));
+    transition: background 0.25s ease;
   }
-  /* La que ya es tuya arde; la que no, en silueta. El mismo par que en El asesor. */
-  .rec.is-tuya { --aug-border-bg: rgba(232,169,63,0.4); }
+  .rec.is-tuya { --aug-border-bg: rgba(232,169,63,0.42); }
+  .rec.is-tuya:hover { background:
+      radial-gradient(ellipse 70% 45% at 50% 22%, rgba(232,169,63,0.14), transparent 70%),
+      linear-gradient(180deg, rgba(20,32,46,0.62), rgba(9,13,20,0.34)); }
 
-  /* Caja de alto FIJO: las seis piezas tienen proporciones distintas (el cofre es alto,
-     el disco redondo, el pergamino ancho), y a ancho libre cada una empujaba su titulo a
-     otra altura. Con la caja fija, los seis nombres caen en la misma linea. */
-  .rec__im {
-    width: 100%; height: clamp(96px, 9vw, 132px); margin-bottom: 10px;
-    display: grid; place-items: center;
+  /* LA HORNACINA. El mismo hueco para las seis: cuadrado, con su luz al fondo y su sombra
+     en el suelo. Es lo que las hace leer como un set aunque cada pieza tenga su forma.
+     El alto FIJO ademas alinea los seis nombres, que si no cada pieza empuja el suyo. */
+  .rec__nicho {
+    position: relative;
+    width: 100%; height: clamp(96px, 8.6vw, 124px);
+    padding: 0 9% 4px;
+    margin-bottom: clamp(8px, 1vw, 12px);
   }
-  .rec__im img { max-width: clamp(84px, 8vw, 118px); max-height: 100%; width: auto; height: auto; object-fit: contain; }
-  .rec:not(.is-tuya) .rec__im img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
-  .rec.is-tuya .rec__im img { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.65)); }
+  /* La luz del fondo del hueco */
+  .rec__nicho::before {
+    content: ''; position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+    width: 74%; height: 74%; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(95,208,224,0.16), transparent 72%);
+  }
+  /* La sombra en el suelo: la pieza se APOYA, no flota */
+  .rec__nicho::after {
+    content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+    width: 62%; height: 12px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.6), transparent 70%);
+  }
+  /* La imagen LLENA la hornacina y la encaja object-fit, en vez de ir a su tamano con
+     max-height: en un grid item centrado el max-height en % no resuelve (el porcentaje
+     cae contra un alto indefinido y el navegador lo ignora), y las piezas salian a
+     tamano natural pisando el texto. Asi las seis ocupan la misma caja exacta. */
+  .rec__nicho img {
+    position: relative;
+    width: 100%; height: 100%; object-fit: contain; object-position: center bottom;
+    transition: transform 0.25s ease;
+  }
+  .rec:not(.is-tuya) .rec__nicho img { filter: grayscale(1) brightness(0.42); opacity: 0.55; }
+  .rec:not(.is-tuya) .rec__nicho::before { background: radial-gradient(closest-side, rgba(194,205,214,0.06), transparent 72%); }
+  .rec.is-tuya .rec__nicho img { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7)); }
+  .rec.is-tuya:hover .rec__nicho img { transform: translateY(-4px) scale(1.04); }
 
   /* Dos lineas reservadas: hay nombres de una linea y de dos, y sin el hueco fijo el
-     umbral de cada ficha caia a una altura distinta. */
-  .rec__n { font-size: 0.84rem; font-weight: 600; line-height: 1.32; color: var(--moon); min-height: 2.64em; }
+     precio de cada ficha caia a una altura distinta. */
+  .rec__n {
+    font-family: var(--serif); font-weight: 600; letter-spacing: 0.02em;
+    font-size: 0.94rem; line-height: 1.3; color: var(--moon); min-height: 2.6em;
+  }
   .rec.is-tuya .rec__n { color: var(--bone); }
-  .rec__u { font-size: 0.72rem; color: var(--mist); }
-  .rec.is-tuya .rec__u { color: var(--amber); }
-  .rec__pie { margin-top: 10px; min-height: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
-  /* Reclamar va en ENLACE y no en boton ambar. El ambar es la accion principal de la
-     pantalla, y aqui hay CINCO a la vez: cinco ambares no son cinco acciones
-     principales, son ninguna. Lo dice DESIGN.md y me lo salte. */
-  .rec__b { position: relative; border: 0; background: transparent; cursor: pointer; font-family: var(--sans); font-size: 0.78rem; }
-  .rec__b .pista { text-transform: none; letter-spacing: 0; }
+  /* EL PRECIO, con su cristal: es la moneda de la casa y en el HUD se lee asi */
+  .rec__pf { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 6px 0 0; }
+  .rec__pf img { width: 17px; height: auto; object-fit: contain; }
+  .rec__pf b {
+    font-family: var(--serif); font-weight: 600; letter-spacing: 0.02em;
+    font-size: 1.34rem; color: var(--amber); line-height: 1;
+  }
+  .rec__pf span { font-size: 0.68rem; letter-spacing: 0.1em; color: var(--amber); opacity: 0.75; }
+  .rec:not(.is-tuya) .rec__pf b, .rec:not(.is-tuya) .rec__pf span { color: var(--mist); }
+  .rec:not(.is-tuya) .rec__pf img { filter: grayscale(1) brightness(0.6); opacity: 0.6; }
+  /* La otra puerta de la Premium, callada: no compite con el precio */
+  .rec__o { margin-top: 4px; font-size: 0.68rem; color: var(--mist); }
+
+  .rec__pie { margin-top: clamp(9px, 1.1vw, 14px); min-height: 36px; display: flex; align-items: center; }
+  .rec__b { position: relative; }
+  .rec__b .pista { text-transform: none; letter-spacing: 0; font-weight: 400; }
   /* Aqui la pildora es SOLO el aviso: el boton ya dice lo que hace */
   .rec__b:hover > .pista { opacity: 0; visibility: hidden; }
   .rec__b > .pista.is-dicha { opacity: 1; visibility: visible; }
 
-  .rec__falta { font-size: 0.74rem; color: var(--mist); white-space: nowrap; }
+  .rec__falta { font-size: 0.76rem; color: var(--mist); white-space: nowrap; }
   .rec__falta b { color: var(--moon); }
-  .rec:not(.is-tuya) { opacity: 0.62; }
-  .rec__via { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--amber); }
-  /* Lo que te queda: en gris y pequeno, que es consecuencia, no reclamo */
-  .rec__resto { font-size: 0.7rem; color: var(--mist); white-space: nowrap; }
+  .rec:not(.is-tuya) { opacity: 0.66; }
 
   @media (max-width: 1180px) {
     .cat__l { grid-template-columns: repeat(2, 1fr); }

@@ -178,6 +178,29 @@ a { color: inherit; }
   transition: background-color 0.2s ease;
 }
 .btn:hover { background-color: var(--amber-2); }
+
+/* BOTON SECUNDARIO. Mismas puntas que el primario, pero de filo y no macizo: se llena al
+   posarse. Nace el 2026-07-18 con Recompensas, y por un hueco real del sistema: alli hay
+   CINCO acciones iguales a la vez, y el ambar se reserva para la accion principal de cada
+   pantalla (cinco ambares no son cinco acciones principales, son ninguna). El enlace cian
+   se quedaba corto: una palabra suelta no parece pulsable en una ficha de catalogo.
+   Pide data-augmented-ui="l-clip-y r-clip-y", como el primario. */
+.btn-linea {
+  --aug-l: 11px; --aug-r: 11px;
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(63, 169, 201, 0.7);
+  display: inline-block; padding: 10px 22px; border: 0; cursor: pointer;
+  background: rgba(63, 169, 201, 0.1);
+  color: var(--aqua); font-family: var(--sans); font-weight: 600; font-size: 0.76rem;
+  text-transform: uppercase; letter-spacing: 0.1em; text-align: center; text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.btn-linea:hover {
+  --aug-border-bg: var(--aqua);
+  background: rgba(63, 169, 201, 0.32);
+  color: var(--bone);
+}
+.btn-linea:active { background: rgba(63, 169, 201, 0.45); }
 /* El barrido de luz, una pasada al posarse: solo con movimiento permitido */
 @media (prefers-reduced-motion: no-preference) {
   .btn:hover { background-position: -60% 0; transition: background-color 0.2s ease, background-position 0.55s ease; }
