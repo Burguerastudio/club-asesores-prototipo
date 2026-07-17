@@ -2,24 +2,26 @@
 // Recompensas (P10). El Shop del sistema, aterrizado en La Fortaleza.
 // Cuelga del avatar del HUD: lo que reclamas con tus PF es tuyo, no un sitio del castro.
 //
-// NO es una tienda: los PF no se gastan. El umbral es una marca que se alcanza, no un
-// precio que se paga (ver demo.js). Por eso aqui no hay carrito, ni saldo despues del
-// canje, ni elegir entre una y otra: lo que alcanzas, es tuyo.
+// ES una tienda: el umbral es un PRECIO y al reclamar se gastan los PF (ver demo.js).
+// Y eso cambia de que va la pantalla: no es un escaparate de lo que ya tienes, es una
+// DECISION. Las seis cuestan 6850 y en el ciclo entero solo se ganan 4420, asi que no
+// llegan para todas y hay que elegir. Por eso aqui manda lo que te QUEDA si reclamas.
 //
-// Lo que aun no alcanzas SE VE, con cuanto falta. Es lo que dice que hay camino.
+// Lo que no te alcanza SE VE, con cuanto falta. Es lo que dice que hay camino.
 import Fortaleza from '../layouts/Fortaleza.astro';
 import { asesora, recompensas, rangoDe } from '../data/demo.js';
 
 const rangoN = rangoDe(asesora.fortalecidas);
 
 const catalogo = recompensas.map((r) => {
-  const porPuntos = asesora.pf >= r.umbral;
+  const puedesPagar = asesora.pf >= r.precio;
   const porRango = r.oRango !== undefined && rangoN >= r.oRango;
   return {
     ...r,
-    alAlcance: porPuntos || porRango,
-    porRango: !porPuntos && porRango, // la abrio el rango, no los puntos
-    faltan: Math.max(0, r.umbral - asesora.pf),
+    alAlcance: puedesPagar || porRango,
+    porRango: !puedesPagar && porRango, // te la da el rango, no la pagas
+    faltan: Math.max(0, r.precio - asesora.pf),
+    resto: asesora.pf - r.precio, // lo que te quedaria: esta es LA cifra de esta pantalla
     img: `/assets/recompensas/ui/${r.slug}.webp`,
   };
 });
@@ -27,6 +29,8 @@ const catalogo = recompensas.map((r) => {
 const alAlcance = catalogo.filter((r) => r.alAlcance).length;
 // La siguiente que cae: la mas barata de las que faltan. Es la que da la meta corta.
 const siguiente = catalogo.find((r) => !r.alAlcance);
+// La cara de todas: si la reclamas, te quedas sin las demas. Es la tension de la pantalla.
+const laCara = [...catalogo].reverse().find((r) => r.alAlcance && !r.porRango);
 
 const F_AZULEJO = 'tl-clip br-clip border';
 ---
@@ -42,8 +46,8 @@ const F_AZULEJO = 'tl-clip br-clip border';
         <b>{asesora.pf.toLocaleString('es-ES')}</b>
       </p>
       <p class="cita saldo__l">
-        {alAlcance} de {recompensas.length} a tu alcance. Los Puntos de Fortaleza no se
-        gastan al reclamar: son la marca de lo que ya has levantado.
+        {alAlcance} de {recompensas.length} a tu alcance, pero no para todas a la vez:
+        reclamar cuesta. {laCara && <>Llévate la {laCara.nombre} y te quedan {laCara.resto.toLocaleString('es-ES')}.</>}
       </p>
     </div>
 
@@ -73,7 +77,7 @@ const F_AZULEJO = 'tl-clip br-clip border';
 
           <b class="rec__n">{r.nombre}</b>
           <span class="rec__u">
-            {r.umbral.toLocaleString('es-ES')} PF
+            {r.precio.toLocaleString('es-ES')} PF
             {r.oRangoNombre && <> o {r.oRangoNombre}</>}
           </span>
 
@@ -90,7 +94,10 @@ const F_AZULEJO = 'tl-clip br-clip border';
                   Reclamar
                   <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reclamar</span>
                 </button>
-                {r.porRango && <span class="rec__via">Por tu rango</span>}
+                {/* Lo que te queda es LA cifra: es lo que convierte el catalogo en decision */}
+                {r.porRango
+                  ? <span class="rec__via">Sin pagar, por tu rango</span>
+                  : <span class="rec__resto">Te quedarían {r.resto.toLocaleString('es-ES')}</span>}
               </>
             ) : (
               <!-- Lo que no alcanzas no se esconde: se ve, y dice cuanto falta -->
@@ -185,7 +192,7 @@ const F_AZULEJO = 'tl-clip br-clip border';
   .rec.is-tuya .rec__n { color: var(--bone); }
   .rec__u { font-size: 0.72rem; color: var(--mist); }
   .rec.is-tuya .rec__u { color: var(--amber); }
-  .rec__pie { margin-top: 10px; min-height: 22px; display: flex; align-items: center; gap: 8px; }
+  .rec__pie { margin-top: 10px; min-height: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
   /* Reclamar va en ENLACE y no en boton ambar. El ambar es la accion principal de la
      pantalla, y aqui hay CINCO a la vez: cinco ambares no son cinco acciones
@@ -200,6 +207,8 @@ const F_AZULEJO = 'tl-clip br-clip border';
   .rec__falta b { color: var(--moon); }
   .rec:not(.is-tuya) { opacity: 0.62; }
   .rec__via { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--amber); }
+  /* Lo que te queda: en gris y pequeno, que es consecuencia, no reclamo */
+  .rec__resto { font-size: 0.7rem; color: var(--mist); white-space: nowrap; }
 
   @media (max-width: 1180px) {
     .cat__l { grid-template-columns: repeat(2, 1fr); }

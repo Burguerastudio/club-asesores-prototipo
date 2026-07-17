@@ -228,23 +228,36 @@ export const avisos = [
 
 export const avisosSinLeer = avisos.filter((a) => a.nueva).length;
 
-// RECOMPENSAS (P10). El Shop del sistema.
+// RECOMPENSAS (P10). El Shop del sistema. SI ES una tienda: el umbral es un PRECIO y al
+// reclamar se gastan los PF (Mati, 2026-07-18).
 //
-// OJO, no es una tienda: NO se gastan los PF. CONTENIDO 4.4 y las mecanicas del cliente
-// dicen "se desbloquean por Puntos de Fortaleza O POR RANGO", y P10 dice "accion de
-// reclamar". Lo que lo zanja es el "o por rango": un rango no se puede gastar. O sea que
-// el umbral es una marca que se alcanza, no un precio que se paga, y al reclamar el saldo
-// no baja. El sistema Sepia llama a esta pantalla "canje", que es la palabra de una
-// tienda: en Club es una escalera. Ver docs/CONTENIDO.md 4.4.
+// Y lo demuestra la propia economia, no una opinion:
+//   ganable en el ciclo entero = 12 x 290 + 820 de logros + 120 de lecciones = 4420 PF
+//   las seis recompensas cuestan                                             = 6850 PF
+// Cuestan 2430 MAS de lo que existe en todo el ano, o sea que la economia esta hecha para
+// que haya que ELEGIR. Si el umbral fuese solo una marca que se alcanza, con 2500 PF
+// tendrias las seis, y 2500 se alcanzan sobre la intervencion 6 de 12: media membresia
+// sin nada que conseguir. Eso no se sostiene.
+//
+// PENDIENTE: que significa el "o rango Asesor Estratega" de la Sesion Premium. Aqui esta
+// montado como la otra puerta: si llegas a Estratega la tienes SIN pagar los 2500 (el
+// rango es la moneda de esa). La otra lectura ("Estratega te deja comprarla por 2500") no
+// se sostiene: a 2500 PF ya la tendrias igualmente, asi que el rango no aportaria nada.
+// Lo confirma Sepia. Ver docs/PLAN-PANTALLAS.md.
 export const recompensas = [
-  { slug: 'recompensa-kit-entrada', nombre: 'Kit de Entrada a la Fortaleza', umbral: 150 },
-  { slug: 'recompensa-plantilla-reparacion', nombre: 'Plantilla de Reparación', umbral: 400 },
-  { slug: 'recompensa-mapa-prioridades', nombre: 'Mapa de Prioridades de la Fortaleza', umbral: 800 },
-  { slug: 'recompensa-caso-consejo', nombre: 'Caso de Consejo Ampliado', umbral: 1200 },
-  { slug: 'recompensa-biblioteca-herramientas', nombre: 'Biblioteca de Herramientas Avanzadas', umbral: 1800 },
-  // La unica con dos puertas: 2500 PF o llegar a Estratega, lo que caiga antes
-  { slug: 'recompensa-sesion-premium', nombre: 'Sesión / Taller Premium', umbral: 2500, oRango: 4, oRangoNombre: 'Asesora Estratega' },
+  { slug: 'recompensa-kit-entrada', nombre: 'Kit de Entrada a la Fortaleza', precio: 150 },
+  { slug: 'recompensa-plantilla-reparacion', nombre: 'Plantilla de Reparación', precio: 400 },
+  { slug: 'recompensa-mapa-prioridades', nombre: 'Mapa de Prioridades de la Fortaleza', precio: 800 },
+  { slug: 'recompensa-caso-consejo', nombre: 'Caso de Consejo Ampliado', precio: 1200 },
+  { slug: 'recompensa-biblioteca-herramientas', nombre: 'Biblioteca de Herramientas Avanzadas', precio: 1800 },
+  // La unica con dos puertas: pagar 2500 o llegar a Estratega y llevartela sin pagar
+  { slug: 'recompensa-sesion-premium', nombre: 'Sesión / Taller Premium', precio: 2500, oRango: 4, oRangoNombre: 'Asesora Estratega' },
 ];
+
+// La asesora no ha reclamado ninguna todavia, y por eso su saldo (1840) es exactamente lo
+// que ha GANADO, que es lo que suma El asesor pieza a pieza. En cuanto reclame una, saldo
+// y ganado dejan de ser el mismo numero y habra que separarlos.
+export const recompensasReclamadas = [];
 
 // El rango sale de las intervenciones fortalecidas, no de un numero suelto (CONTENIDO
 // 5.4). Derivado y no escrito: asi no puede contradecir a asesora.rango.
