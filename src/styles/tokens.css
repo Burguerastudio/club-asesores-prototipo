@@ -330,6 +330,40 @@ input:-webkit-autofill:focus {
 :hover > .pista,
 :focus-visible > .pista { opacity: 1; visibility: visible; }
 
+/* LA FIGURA. El personaje apoyado en el suelo, con su sombra. La usan el Patio (el
+   avatar de la ficha, Nara) y El asesor (el avatar del rango).
+   Vivia en el <style> del Patio, o sea que solo existia alli: en El asesor la barra se
+   pintaba invisible y la figura sin sombra. Lo que usa mas de una pantalla es sistema y
+   va aqui. Descubierto el 2026-07-18 montando El asesor. */
+.figura { position: relative; flex: none; display: inline-flex; }
+.figura img { position: relative; }
+.figura::before {
+  content: ''; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%);
+  width: 118%; height: 22px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 68%);
+}
+
+/* LA BARRA DE RANGO. Un tramo por intervencion: encendidos los fortalecidos, ambar el
+   activo. La usan el Patio y El asesor, y cuenta lo mismo en las dos. */
+.barra { display: flex; gap: 3px; margin: 12px 0 9px; }
+.barra span {
+  flex: 1; height: 9px; border-radius: 1px;
+  background: rgba(9,13,20,0.66); border: 1px solid rgba(194,205,214,0.13);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+.barra span.is-on {
+  background: var(--cyan);
+  border-color: rgba(95,208,224,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
+}
+/* La intervencion activa: un tramo ambar entre cianes, el mismo par que .tier.is-toca.
+   De paso la barra cuenta que las sendas se entrelazan (no se avanza en linea recta). */
+.barra span.is-toca {
+  background: linear-gradient(180deg, rgba(242,196,113,0.6), rgba(232,169,63,0.32));
+  border-color: rgba(232,169,63,0.75);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+}
+
 /* La pildora nace encima, que es su sitio en el cuerpo de la pagina. En el HUD no cabe:
    encima solo esta el borde de la ventana, y ahi se pintaba fuera de pantalla (nunca se
    llego a ver la de los PF). --baja la cuelga debajo. */

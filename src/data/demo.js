@@ -4,8 +4,13 @@
 //   4 fortalecidas = 1160
 //   Logros globales ya conseguidos: Entrada +20, Mapa Revelado +50, Primera Reparacion +50,
 //     Primera Grieta Sellada +100, Primer Tramo en Marcha +300 = 520
+//   Progresion de la 3 (la activa, ya recorrida) +40
 //   Lecciones sueltas (24 x 5) +120
-//   Total = 1800 PF
+//   Total = 1840 PF
+//
+// 2026-07-18: eran 1800 y se dejaban fuera los +40 de la Progresion de la intervencion 3.
+// La suma cuadraba consigo misma, pero contradecia al Patio, que pinta esa Progresion como
+// hecha (activa.tiers). Lo destapo El asesor al listar las insignias con sus puntos.
 // Rango por intervenciones fortalecidas (no por puntos): 3 a 5 = Constructora.
 //
 // 2026-07-17, reunion de equipo: eran 1950 y bajan a 1800. El proyecto NO tiene test de
@@ -27,7 +32,7 @@ export const asesora = {
   // El del chip del HUD, que lo pinta a 34px. Iba al master (512x512, 48KB) en TODAS las
   // paginas: diez veces mas grande de lo que se ve. El ui/ son 160x160 y 8KB.
   retrato: '/assets/retratos/ui/asesora-r3.webp',
-  pf: 1800,
+  pf: 1840,
   fortalecidas: 4,
   totalIntervenciones: 12,
   faltanParaSiguiente: 2, // Estratega arranca en 6 fortalecidas
@@ -50,19 +55,43 @@ export const sendaDelMes = 'Valor';
 
 // Estado: fortalecida | activa | bloqueada
 export const intervenciones = [
-  { n: 1, titulo: 'Sube tus precios', senda: 'Valor', estado: 'fortalecida' },
-  { n: 2, titulo: 'Reestructura tus servicios', senda: 'Valor', estado: 'fortalecida' },
-  { n: 3, titulo: 'Escala la rentabilidad', senda: 'Valor', estado: 'activa' },
-  { n: 4, titulo: 'Organiza tu despacho', senda: 'Orden', estado: 'fortalecida' },
-  { n: 5, titulo: 'Hazte visible', senda: 'Crecimiento', estado: 'fortalecida' },
-  { n: 6, titulo: 'Convierte y retén', senda: 'Crecimiento', estado: 'bloqueada' },
-  { n: 7, titulo: 'Delega y desconecta', senda: 'Orden', estado: 'bloqueada' },
-  { n: 8, titulo: 'Conoce tus números', senda: 'Orden', estado: 'bloqueada' },
-  { n: 9, titulo: 'Gestiona la percepción de valor', senda: 'Crecimiento', estado: 'bloqueada' },
-  { n: 10, titulo: 'Posiciónate como referente', senda: 'Crecimiento', estado: 'bloqueada' },
-  { n: 11, titulo: 'Consigue clientes activamente', senda: 'Crecimiento', estado: 'bloqueada' },
+  { n: 1, titulo: 'Sube tus precios', senda: 'Valor', estado: 'fortalecida',
+    insignias: { progresion: 'Explorador de la Tabla de Honorarios', accion: 'Ajuste de Honorarios Ejecutado', sello: 'Tabla de Honorarios Recuperada' },
+    habilidad: { nombre: 'Defensa del valor', slug: 'defensa-valor' } },
+  { n: 2, titulo: 'Reestructura tus servicios', senda: 'Valor', estado: 'fortalecida',
+    insignias: { progresion: 'Explorador del Mapa de Servicios', accion: 'Reordenación de Servicios Ejecutada', sello: 'Mapa de Servicios Fortalecido' },
+    habilidad: { nombre: 'Arquitectura de oferta', slug: 'arquitectura-oferta' } },
+  { n: 3, titulo: 'Escala la rentabilidad', senda: 'Valor', estado: 'activa',
+    insignias: { progresion: 'Explorador de los Cimientos del Margen', accion: 'Maniobra del Margen Ejecutada', sello: 'Cimientos del Margen Fortalecidos' },
+    habilidad: { nombre: 'Gobierno del margen', slug: 'gobierno-margen' } },
+  { n: 4, titulo: 'Organiza tu despacho', senda: 'Orden', estado: 'fortalecida',
+    insignias: { progresion: 'Explorador de los Pasillos Internos', accion: 'Proceso Prioritario Ordenado', sello: 'Pasillos Internos Fortalecidos' },
+    habilidad: { nombre: 'Orden operativo', slug: 'orden-operativo' } },
+  { n: 5, titulo: 'Hazte visible', senda: 'Crecimiento', estado: 'fortalecida',
+    insignias: { progresion: 'Explorador de la Torre', accion: 'Señal Exterior Ejecutada', sello: 'Torre Encendida' },
+    habilidad: { nombre: 'Visibilidad estratégica', slug: 'visibilidad-estrategica' } },
+  { n: 6, titulo: 'Convierte y retén', senda: 'Crecimiento', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de la Puerta Principal', accion: 'Recorrido de Entrada Ejecutado', sello: 'Puerta Principal Fortalecida' },
+    habilidad: { nombre: 'Experiencia de entrada', slug: 'experiencia-entrada' } },
+  { n: 7, titulo: 'Delega y desconecta', senda: 'Orden', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de las Puertas Laterales', accion: 'Relevo Activado', sello: 'Puertas Laterales Abiertas' },
+    habilidad: { nombre: 'Delegación consciente', slug: 'delegacion-consciente' } },
+  { n: 8, titulo: 'Conoce tus números', senda: 'Orden', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de los Registros', accion: 'Lectura de Indicadores Ejecutada', sello: 'Registros Liberados' },
+    habilidad: { nombre: 'Dirección por datos', slug: 'direccion-datos' } },
+  { n: 9, titulo: 'Gestiona la percepción de valor', senda: 'Crecimiento', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de los Estandartes', accion: 'Comunicación de Valor Ejecutada', sello: 'Estandarte Desplegado' },
+    habilidad: { nombre: 'Valor visible', slug: 'valor-visible' } },
+  { n: 10, titulo: 'Posiciónate como referente', senda: 'Crecimiento', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de la Lente', accion: 'Señal de Autoridad Ejecutada', sello: 'Lente Alineada' },
+    habilidad: { nombre: 'Autoridad de mercado', slug: 'autoridad-mercado' } },
+  { n: 11, titulo: 'Consigue clientes activamente', senda: 'Crecimiento', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador de los Caminos de Acceso', accion: 'Ruta Comercial Ejecutada', sello: 'Camino Iluminado' },
+    habilidad: { nombre: 'Iniciativa comercial', slug: 'iniciativa-comercial' } },
   // Transversal a las tres, no de ninguna: es el cierre del ciclo (CONTENIDO 5.2)
-  { n: 12, titulo: 'Cierra y planifica', senda: 'Cierre', estado: 'bloqueada' },
+  { n: 12, titulo: 'Cierra y planifica', senda: 'Cierre', estado: 'bloqueada',
+    insignias: { progresion: 'Explorador del Mapa del Ciclo', accion: 'Revisión de Ciclo Ejecutada', sello: 'Mapa del Ciclo Iluminado' },
+    habilidad: { nombre: 'Dirección estratégica', slug: 'direccion-estrategica' } },
 ];
 
 // La intervencion del mes. Ya tiene la Progresion; le toca la Accion.
@@ -198,6 +227,43 @@ export const avisos = [
 ];
 
 export const avisosSinLeer = avisos.filter((a) => a.nueva).length;
+
+// EL ASESOR (P8). Lo que la asesora colecciona.
+
+// Que insignias tiene ganadas de cada intervencion. Se DERIVA del estado en vez de
+// escribirse a mano: con una lista aparte, la 3 podria decir aqui una cosa y en
+// activa.tiers otra, y ya ha pasado (la 12 huerfana, los +40 que faltaban en los PF).
+// activa.tiers manda para la intervencion del mes, que es donde vive su verdad.
+export const ganadasDe = (i) => {
+  if (i.estado === 'fortalecida') return ['progresion', 'accion', 'sello'];
+  if (i.n !== activa.n) return [];
+  const clave = { 'Progresión': 'progresion', 'Acción': 'accion', 'Sello de Fortaleza': 'sello' };
+  return activa.tiers.filter((t) => t.hecho).map((t) => clave[t.nombre]);
+};
+
+// Los seis hitos del ciclo (CONTENIDO 4.3 B). Cinco ganados: el sexto cierra el ano.
+export const logrosGlobales = [
+  { slug: 'logro-global-entrada', nombre: 'Entrada en la Fortaleza', pf: 20, comoSeGana: 'Inicio de la membresía', ganado: true },
+  { slug: 'logro-global-mapa-revelado', nombre: 'Mapa de la Fortaleza Revelado', pf: 50, comoSeGana: 'Nara te entrega el mapa en el onboarding', ganado: true },
+  { slug: 'logro-global-primera-reparacion', nombre: 'Primera Reparación Ejecutada', pf: 50, comoSeGana: 'Primera acción o reto ejecutado', ganado: true },
+  { slug: 'logro-global-primera-grieta', nombre: 'Primera Grieta Sellada', pf: 100, comoSeGana: 'Primera implementación declarada', ganado: true },
+  { slug: 'logro-global-primer-tramo', nombre: 'Primer Tramo de Fortaleza en Marcha', pf: 300, comoSeGana: '3 intervenciones fortalecidas', ganado: true },
+  { slug: 'logro-global-cierre-ciclo', nombre: 'Cierre del Primer Ciclo', pf: 300, comoSeGana: 'Revisión final de los 12 meses', ganado: false },
+];
+
+// El arquetipo del Test de Player. Solo uno es tuyo: el test no es nuestro, solo
+// mostramos el resultado (CONTENIDO 4.3 C). Los nombres del universo salen de
+// inputs/test-de-players.md; entre parentesis, el arquetipo de Bartle del que vienen.
+//
+// Marta es de Avance, y no al azar: es lo unico que cuadra con su estado. Tiene 4
+// intervenciones fortalecidas (ejecuta), pero el Consejo desconectado (no pregunta) y el
+// Mirador cerrado (no comparte). Eso es una conseguidora, no una socializadora.
+export const arquetipos = [
+  { slug: 'conseguidor', nombre: 'Asesor de Avance', bartle: 'Conseguidor', linea: 'Avanzas cerrando cosas. Te mueve terminar lo que empiezas y verlo en marcha.', tuyo: true },
+  { slug: 'explorador', nombre: 'Asesor Rastreador', bartle: 'Explorador', linea: 'Avanzas entendiendo. Antes de decidir quieres ver el mapa entero.', tuyo: false },
+  { slug: 'socializador', nombre: 'Asesor de Alianza', bartle: 'Socializador', linea: 'Avanzas con otros. Lo que aprendes lo pones en común.', tuyo: false },
+  { slug: 'killer', nombre: 'Asesor del Desafío', bartle: 'Killer', linea: 'Avanzas midiéndote. El reto es lo que te pone en marcha.', tuyo: false },
+];
 
 export const ETIQUETA_ESTADO = {
   fortalecida: 'Fortalecida',
