@@ -20,13 +20,15 @@ const RANURA = 'tl-clip br-clip';
 // avatar, insignias, PF y los arquetipos. Y "Ajustes" y no "Mi cuenta", que se
 // confundia con el perfil (el estandar tambien lo llama Ajustes).
 //
-// Desviacion del estandar, decidida el 2026-07-17: Recompensas es el Shop, y en el
-// estandar el Shop vive a la izquierda. Aqui cuelga del avatar porque en La Fortaleza
-// lo que reclamas con tus PF es tuyo, no un sitio del castro. Ver docs/DESIGN.md.
+// Dos desviaciones del estandar, las dos del 2026-07-17 y las dos en docs/DESIGN.md:
+//   1. Recompensas es el Shop, y en el estandar el Shop vive a la izquierda. Aqui cuelga
+//      del avatar porque en La Fortaleza lo que reclamas con tus PF es tuyo, no un sitio
+//      del castro.
+//   2. NO hay Calendario, y el estandar lo pone aqui. Club no tiene directos, ni talleres,
+//      ni sesiones (reunion de equipo), asi que la pagina se quedaba sin contenido.
 const menuJugador = [
   { href: '/asesor', label: 'El asesor' },
   { href: '/recompensas', label: 'Recompensas' },
-  { href: '/calendario', label: 'Calendario' },
   { href: '/ajustes', label: 'Ajustes' },
 ];
 

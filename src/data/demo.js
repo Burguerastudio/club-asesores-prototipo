@@ -4,9 +4,20 @@
 //   4 fortalecidas = 1160
 //   Logros globales ya conseguidos: Entrada +20, Mapa Revelado +50, Primera Reparacion +50,
 //     Primera Grieta Sellada +100, Primer Tramo en Marcha +300 = 520
-//   Diagnostico inicial +50, lecciones sueltas (24 x 5) +120, participacion (4 x 25) +100
-//   Total = 1950 PF
-// Rango por intervenciones fortalecidas y validadas (no por puntos): 3 a 5 = Constructora.
+//   Lecciones sueltas (24 x 5) +120
+//   Total = 1800 PF
+// Rango por intervenciones fortalecidas (no por puntos): 3 a 5 = Constructora.
+//
+// 2026-07-17, reunion de equipo: eran 1950 y bajan a 1800. El proyecto NO tiene test de
+// diagnostico ni directos, asi que caen dos partidas:
+//   -50  el diagnostico inicial, que ya no existe.
+//   -100 la participacion (4 x 25). Su fila de mecanicas es "participar en sesion, Consejo
+//        o revision", y Marta tiene el Consejo desconectado y el Mirador cerrado: sus
+//        cuatro participaciones solo podian ser sesiones, y sesiones ya no hay.
+// El logro Mapa Revelado sobrevive y mantiene sus +50: se disparaba con el diagnostico y
+// pasa a dispararse en el onboarding, cuando Nara te entrega el mapa. Ver docs/CONTENIDO.md.
+// OJO: inputs/mecanicas-sistema.md sigue diciendo que el diagnostico existe. Es un input
+// del cliente y esta desfasado; lo repone Sepia, no nosotros.
 
 export const asesora = {
   nombre: 'Marta',
@@ -14,7 +25,7 @@ export const asesora = {
   rangoSiguiente: 'Asesora Estratega',
   avatar: '/assets/avatares/ui/asesora-r3.webp',
   retrato: '/assets/retratos/asesora-r3.webp',
-  pf: 1950,
+  pf: 1800,
   fortalecidas: 4,
   totalIntervenciones: 12,
   faltanParaSiguiente: 2, // Estratega arranca en 6 fortalecidas
@@ -88,12 +99,9 @@ export const logrosRecientes = [
   { img: '/assets/emblemas-insignias/ui/insignias-intervencion/progresion/insignia-i03-progresion.webp', nombre: 'Explorador de los Cimientos', pie: 'Progresión, Escala la rentabilidad' },
 ];
 
-export const proximoEvento = {
-  titulo: 'Directo mensual con Conchi',
-  cuando: 'Jueves 23 de julio, 10:00',
-  // Cosido al mapa de espacios: el directo mensual es El Consejo abriendo sus puertas
-  nota: 'El Consejo abre sus puertas: repaso del mes y dudas en directo.',
-};
+// Aqui vivia proximoEvento (el directo mensual con Conchi). Fuera el 2026-07-17: el
+// proyecto no tiene directos, ni talleres, ni sesiones. Con el se fue el modulo de la
+// convocatoria del Patio y la pagina de Calendario (P11). Ver docs/CONTENIDO.md.
 
 // Los avisos de la campana. Voz de Nara: guia, nunca alarma (CONTENIDO 7), y los tipos
 // que ese apartado documenta (sabotaje detectado, nueva intervencion disponible, reto
@@ -103,8 +111,10 @@ export const proximoEvento = {
 //   1 y 4 -> la intervencion 3 (activa, Senda del Valor) y su sabotaje
 //   2     -> su tier de Accion, pendiente y el que toca (+100 PF)
 //   3     -> la Torre en reparacion: "Un tramo encendido, cuatro apagados"
-//   5     -> proximoEvento, el directo del jueves en El Consejo
 // Si cambia el estado de arriba, estos avisos hay que rehacerlos con el.
+//
+// Eran cinco: el quinto era el directo del jueves en El Consejo, y cayo con los directos
+// (2026-07-17). No se repone con otro: no hay mas estado real que contar sin inventarlo.
 export const avisos = [
   {
     nueva: true, cuando: 'Hoy', tipo: 'sabotaje',
@@ -125,11 +135,6 @@ export const avisos = [
     nueva: false, cuando: '12 de julio', tipo: 'intervencion',
     texto: 'Se ha abierto tu intervención del mes en la Senda del Valor: Escala la rentabilidad.',
     img: '/assets/emblemas-insignias/ui/insignias-intervencion/progresion/insignia-i03-progresion.webp',
-  },
-  {
-    nueva: false, cuando: '9 de julio', tipo: 'accion',
-    texto: 'El Consejo abre sus puertas el jueves 23 a las 10:00: repaso del mes y dudas en directo.',
-    img: '/assets/emblemas-insignias/ui/logros-generales/logro-global-mapa-revelado.webp',
   },
 ];
 
