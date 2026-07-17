@@ -1,0 +1,279 @@
+---
+// CALIBRADOR DEL MAPA. Andamio interno, NO es producto.
+//
+// Sirve para colocar las chinchetas a ojo sobre el castro y copiar las coordenadas ya
+// listas para pegar en demo.js. Medirlas ampliando el asset a mano funciona, pero deja
+// el ultimo 2% a ojo de quien mide, y ese 2% es justo lo que se nota.
+//
+// Se arrastra cada chincheta, se acerca con la rueda para afinar, y el panel de la
+// derecha escupe el bloque sitiosDelMapa entero.
+//
+// OJO: esta pagina se retira del repo en la Fase 9, como el deck de key visuals. Va
+// anotada en docs/PLAN-PANTALLAS.md.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { salas, sitiosDelMapa } from '../data/demo.js';
+
+const sitios = sitiosDelMapa.map((s) => ({
+  ...s,
+  nombre: salas.find((x) => x.slug === s.slug)?.nombre ?? s.nombre,
+}));
+
+const MAPA = { w: 1760, h: 983 };
+const F_AZULEJO = 'tl-clip br-clip border';
+
+// Los candidatos a icono de entrada. Todos dibujados aqui, en el trazo de la casa
+// (caja 24, grosor 1.6, remates redondos): ninguno sale de una libreria, que la regla
+// del proyecto es iconografia propia.
+const ICONOS = [
+  {
+    id: 'arco-flecha',
+    nombre: 'Arco con flecha',
+    pie: 'El que está puesto ahora. El arco del castro y la flecha entrando.',
+    d: ['M6.6 20V11a5.4 5.4 0 0 1 10.8 0v9', 'M4.2 20h15.6', 'M12 7.4v7.2m0 0-2.7-2.7M12 14.6l2.7-2.7'],
+  },
+  {
+    id: 'arco',
+    nombre: 'Arco solo',
+    pie: 'El portal del castro, sin más. Más callado y más piedra.',
+    d: ['M6.6 20V11a5.4 5.4 0 0 1 10.8 0v9', 'M4.2 20h15.6', 'M12 20v-4.5'],
+  },
+  {
+    id: 'entrar',
+    nombre: 'Entrar de lado',
+    pie: 'La flecha que cruza el umbral. Es el gesto de entrar, no el sitio.',
+    d: ['M13.5 4.5H17a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3.5', 'M4.5 12h8.5m0 0-2.8-2.8M13 12l-2.8 2.8'],
+  },
+  {
+    id: 'peldanos',
+    nombre: 'Peldaños',
+    pie: 'Los escalones que suben a la puerta. Los tienen la Torre y la Sala de Mandos.',
+    d: ['M4 19.5h4.5V15H13v-4.5h4.5V6H20', 'M12 3.6v4.2m0 0L9.6 5.4M12 7.8l2.4-2.4'],
+  },
+  {
+    id: 'triskel',
+    nombre: 'Espiral celta',
+    pie: 'Del mundo, no de la interfaz. Puede leerse como adorno y no como entrada.',
+    d: ['M12 12a2.6 2.6 0 1 0 2.6 2.6', 'M14.6 14.6A5.2 5.2 0 1 1 9.4 9.4', 'M9.4 9.4A7.8 7.8 0 1 1 4.2 14.6'],
+  },
+  {
+    id: 'punta',
+    nombre: 'Solo la punta',
+    pie: 'Sin icono: la chincheta pelada. Lo más callado posible.',
+    d: [],
+  },
+];
+---
+
+<Fortaleza title="Calibrador del mapa (interno)" activa="/mapa">
+  <div class="visor" data-visor style={`--map-w:${MAPA.w}; --map-h:${MAPA.h}`}>
+    <div class="lienzo" data-lienzo>
+      <img
+        class="lienzo__im"
+        src="/assets/mapa-escenas/ui/mapa-fortaleza.webp"
+        alt="" width={MAPA.w} height={MAPA.h} draggable="false"
+      />
+
+      <ul class="hitos" data-hitos>
+        {sitios.map((s) => (
+          <li class="hitos__li" data-hito={s.slug} data-x={s.x} data-y={s.y} style={`left:${s.x}%; top:${s.y}%`}>
+            <span class="hito" tabindex="0" role="button" aria-label={`Mover la chincheta de ${s.nombre}`}>
+              <span class="hito__marca" data-augmented-ui={F_AZULEJO}>
+                <svg class="hito__ico" viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </span>
+              <span class="hito__punta" aria-hidden="true"></span>
+              <span class="hito__eti">{s.nombre}</span>
+            </span>
+            <!-- La cruz marca el pixel exacto al que apunta la punta -->
+            <span class="mira" aria-hidden="true"></span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="mandos">
+      <button class="mando" type="button" data-zoom="1" aria-label="Acercar"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12" /></svg></button>
+      <button class="mando" type="button" data-zoom="-1" aria-label="Alejar"><svg viewBox="0 0 24 24"><path d="M6 12h12" /></svg></button>
+      <button class="mando" type="button" data-centrar aria-label="Centrar"><svg viewBox="0 0 24 24"><path d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2z" /><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21" /></svg></button>
+    </div>
+  </div>
+
+  <!-- EL PANEL. Flota a la derecha, sobre el mapa. -->
+  <aside class="panel" data-panel data-augmented-ui="tl-clip br-clip border">
+    <header class="panel__cab">
+      <div>
+        <b>Calibrador del mapa</b>
+        <span>Andamio interno. No es producto.</span>
+      </div>
+      <!-- El panel cae justo encima de El Consejo y de la Puerta: sin esto habria que
+           arrastrar el mapa para llegar a ellas, y a escala 1 casi no se mueve. -->
+      <button class="panel__pliega" type="button" data-pliega aria-expanded="true" aria-label="Plegar el panel">
+        <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
+      </button>
+    </header>
+
+    <div class="panel__b">
+      <p class="ayuda">
+        Arrastra cada chincheta hasta la puerta de su edificio. Acerca con la rueda o con
+        los botones para afinar: la cruz marca el píxel exacto al que apunta.
+        Cuando esté, copia y pásamelo.
+      </p>
+
+      <ul class="lista" data-lista></ul>
+
+      <details class="iconos">
+        <summary>Probar otro icono de entrada</summary>
+        <p class="ayuda ayuda--fino">
+          Ninguno sale de una biblioteca: todos están dibujados aquí con el trazo de la
+          casa. Elige y dime cuál.
+        </p>
+        <div class="iconos__g" data-iconos>
+          {ICONOS.map((i, n) => (
+            <button class={`ico-op${n === 0 ? ' is-on' : ''}`} type="button" data-ico={i.id} data-augmented-ui={F_AZULEJO}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">{i.d.map((d) => <path d={d} />)}</svg>
+              <b>{i.nombre}</b>
+              <span>{i.pie}</span>
+            </button>
+          ))}
+        </div>
+      </details>
+
+      <button class="btn copiar" type="button" data-copiar data-augmented-ui="l-clip-y r-clip-y">
+        Copiar para demo.js
+      </button>
+      <p class="dicho" data-dicho hidden>Copiado. Pégamelo en el chat.</p>
+    </div>
+  </aside>
+</Fortaleza>
+
+<script define:vars={{ ICONOS }}>
+  window.__ICONOS = ICONOS;
+</script>
+
+<script>
+  import { montarVisor } from '../scripts/visor.js';
+  import { montarCalibrador } from '../scripts/calibrar.js';
+  montarVisor();
+  montarCalibrador();
+</script>
+
+<style is:global>
+  .contenido:has(.visor) { padding: 0; }
+  .contenido > .visor {
+    width: 100vw; max-width: 100vw;
+    margin-left: 50%; transform: translateX(-50%);
+    margin-top: calc(var(--alto-shell) * -1 - 26px);
+    height: 100svh;
+    position: relative; overflow: hidden;
+    cursor: grab; touch-action: none;
+  }
+  .visor.is-agarrado { cursor: grabbing; }
+
+  .lienzo {
+    position: absolute; top: 0; left: 0;
+    width: max(100%, calc(100svh * var(--map-w) / var(--map-h)));
+    aspect-ratio: var(--map-w) / var(--map-h);
+    transform-origin: 0 0; will-change: transform;
+  }
+  .lienzo__im { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+
+  .hitos { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
+  .hitos__li { position: absolute; }
+
+  /* La cruz: el pixel exacto al que apunta la punta. Es lo que se calibra. */
+  .mira {
+    position: absolute; left: 0; top: 0; width: 15px; height: 15px;
+    transform: translate(-50%, -50%); pointer-events: none;
+    background:
+      linear-gradient(var(--amber), var(--amber)) center/1px 100% no-repeat,
+      linear-gradient(var(--amber), var(--amber)) center/100% 1px no-repeat;
+    opacity: 0.9;
+  }
+
+  .hito {
+    position: absolute; left: 0; top: 0;
+    transform: translate(-50%, -100%);
+    display: flex; flex-direction: column; align-items: center;
+    cursor: grab; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.75));
+  }
+  .hito.is-movida { cursor: grabbing; }
+  .hito__marca {
+    --aug-tl: 7px; --aug-br: 7px;
+    --aug-border-all: 1px; --aug-border-bg: var(--aqua);
+    width: 34px; height: 34px; display: grid; place-items: center;
+    background: linear-gradient(180deg, rgba(20,32,46,0.97), rgba(9,13,20,0.97));
+    color: var(--aqua);
+  }
+  .hito__ico { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .hito__punta { width: 2px; height: 9px; background: var(--aqua); }
+  .hito__eti {
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--bone); background: rgba(9,13,20,0.9); padding: 2px 6px; white-space: nowrap;
+  }
+  .hito.is-movida .hito__marca, .hito:focus-visible .hito__marca { --aug-border-bg: var(--amber); color: var(--amber); }
+
+  .mandos { position: absolute; right: clamp(14px, 2vw, 26px); bottom: 20px; z-index: 6; display: flex; flex-direction: column; gap: 6px; }
+  .mando {
+    --aug-tl: 6px; --aug-br: 6px; --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.3);
+    width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0;
+    color: var(--moon); background: rgba(9,13,20,0.86);
+  }
+  .mando:hover { color: var(--bone); background: rgba(63,169,201,0.28); }
+  .mando svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* EL PANEL */
+  .panel {
+    --aug-tl: 12px; --aug-br: 12px;
+    --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.4);
+    position: fixed; right: 18px; top: calc(var(--alto-shell) + 18px); z-index: 30;
+    width: min(370px, calc(100vw - 36px)); max-height: calc(100svh - var(--alto-shell) - 90px);
+    display: flex; flex-direction: column;
+    background-color: rgba(9,13,20,0.97); background-image: var(--grano);
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.9));
+  }
+  .panel__cab { padding: 13px 16px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .panel__cab > div { display: flex; flex-direction: column; gap: 2px; }
+  .panel__pliega {
+    flex: none; width: 26px; height: 26px; display: grid; place-items: center;
+    padding: 0; border: 0; background: transparent; color: var(--mist);
+  }
+  .panel__pliega:hover { color: var(--bone); }
+  .panel__pliega svg { width: 11px; height: 7px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.22s ease; }
+  /* Plegado: se queda solo la cabecera, y el mapa entero a la vista */
+  .panel.is-plegado .panel__b { display: none; }
+  .panel.is-plegado .panel__pliega svg { transform: rotate(180deg); }
+  .panel__cab b { font-family: var(--display); font-size: 0.95rem; color: var(--bone); letter-spacing: 0.03em; }
+  .panel__cab span { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.11em; color: var(--amber); }
+  .panel__b { padding: 0 16px 16px; overflow-y: auto; }
+
+  .ayuda { margin: 0 0 12px; font-size: 0.74rem; line-height: 1.45; color: var(--mist); }
+  .ayuda--fino { margin: 8px 0 10px; font-size: 0.7rem; }
+
+  .lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .lista li { display: flex; align-items: center; gap: 8px; padding: 5px 7px; font-size: 0.72rem; border-left: 2px solid rgba(194,205,214,0.2); }
+  .lista li.is-tocada { border-left-color: var(--amber); background: rgba(232,169,63,0.08); }
+  .lista b { color: var(--moon); font-weight: 500; flex: 1; }
+  .lista code { font-family: ui-monospace, monospace; font-size: 0.7rem; color: var(--aqua); }
+
+  .iconos { margin-bottom: 14px; }
+  .iconos summary { cursor: pointer; font-size: 0.72rem; color: var(--aqua); padding: 7px 0; }
+  .iconos__g { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ico-op {
+    --aug-tl: 6px; --aug-br: 6px; --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.24);
+    padding: 9px 8px; border: 0; background: rgba(20,32,46,0.5); color: var(--mist);
+    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  }
+  .ico-op svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-op b { font-size: 0.68rem; color: var(--moon); font-weight: 600; }
+  .ico-op span { font-size: 0.6rem; line-height: 1.3; color: var(--mist); }
+  .ico-op:hover { --aug-border-bg: var(--cyan); color: var(--aqua); }
+  .ico-op.is-on { --aug-border-bg: var(--amber); color: var(--amber); background: rgba(232,169,63,0.1); }
+  .ico-op.is-on b { color: var(--bone); }
+
+  .copiar { width: 100%; padding: 11px; font-size: 0.78rem; }
+  .dicho { margin: 8px 0 0; font-size: 0.7rem; color: var(--amber); text-align: center; }
+
+  @media (max-width: 900px) {
+    .panel { position: static; width: auto; margin: 12px; max-height: none; }
+  }
+</style>
