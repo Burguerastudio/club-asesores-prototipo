@@ -24,16 +24,8 @@ const F_BOTON = 'l-clip-y r-clip-y';
 ---
 
 <Fortaleza title="El Patio, Club de la Asesoría" activa="/dashboard">
-  <!-- Antes del primer paint: si hay movimiento permitido, la pagina arranca oculta
-       (clase .entra) y la timeline de llegada la va descubriendo. Inline y aqui arriba
-       para ganar al pintado de la rejilla; el HUD no se anima y puede pintarse ya. -->
-  <script is:inline>
-    if (matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('entra');
-  </script>
-
-  <!-- El otro lado del velo del Login: el Patio emerge del mismo oscuro -->
-  <div class="velo-entrada" aria-hidden="true"></div>
-
+  <!-- La clase .entra (que aqui deja la pagina oculta hasta que la timeline la
+       descubre) y el velo del cruce los pone ya Fortaleza.astro, desde el <head>. -->
   <header class="cab">
     <h1 class="display cab__t"><span data-saludo>Buenos días</span>, {asesora.nombre}</h1>
     <!-- El Patio recoge la promesa del Login: el saludo no es de SaaS, es el parte
@@ -285,8 +277,8 @@ const F_BOTON = 'l-clip-y r-clip-y';
 </script>
 
 <style is:global>
-  /* LA LLEGADA. Con .entra (solo si hay movimiento permitido, la pone un inline script
-     antes del primer paint) los modulos arrancan ocultos y la timeline los descubre.
+  /* LA LLEGADA. Con .entra (solo si hay movimiento permitido, la pone Fortaleza.astro
+     desde el <head>) los modulos arrancan ocultos y la timeline los descubre.
      La animacion destape es la red de seguridad: si el JS fallara, a los 1.6s todo
      aparece igualmente (las animaciones CSS ganan al inline style de GSAP, y a esa
      altura GSAP ya ha dejado opacity 1: no se pisa nada). */
@@ -300,12 +292,6 @@ const F_BOTON = 'l-clip-y r-clip-y';
     animation: destape 0.01s linear 1.6s forwards;
   }
   @keyframes destape { to { opacity: 1; } }
-
-  /* El otro lado del velo del Login: cubre la pagina y se retira en el primer medio
-     segundo. Sin .entra queda a opacity 0 (invisible, sin JS que limpiar). */
-  .velo-entrada { position: fixed; inset: 0; z-index: 90; background: var(--ink); opacity: 0; pointer-events: none; }
-  .entra .velo-entrada { animation: descubrir 0.45s ease 0.05s both; }
-  @keyframes descubrir { from { opacity: 1; } to { opacity: 0; } }
 
   /* La chispa del tramo al encenderse en la ceremonia */
   .barra span.is-chispa { animation: chispa 0.4s ease-out; }

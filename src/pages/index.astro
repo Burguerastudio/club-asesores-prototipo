@@ -4,6 +4,7 @@
 // Mas adelante, al terminar el acceso, disparara el Onboarding.
 // Va sin el shell de Fortaleza.astro (aqui no hay navegacion todavia).
 import '../styles/tokens.css';
+import Velo from '../components/Velo.astro';
 
 const POSTER = '/assets/mapa-escenas/ui/patio-entrada.webp';
 const VIDEO = '/assets/animaciones/patio-entrada.webm';
@@ -32,8 +33,17 @@ const RANURA = 'tl-clip br-clip border';
     <meta property="og:description" content="Tu despacho es una fortaleza. Nara ya ha encontrado la primera grieta." />
     <meta property="og:image" content="https://club-asesores-prototipo.vercel.app/og.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Mismo arranque que dentro de la fortaleza (ver Fortaleza.astro): con movimiento
+         permitido, la Puerta tambien se descubre desde el velo. Asi Cerrar sesion cierra
+         en el Patio y abre aqui, sin costura. -->
+    <script is:inline>
+      if (matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('entra');
+    </script>
   </head>
   <body>
+    <!-- La Puerta va sin el shell (aqui no hay navegacion), pero el velo es de la casa -->
+    <Velo />
+
     <main class="login" style={`background-image:url('${POSTER}')`}>
       <!-- El control de silencio, a la vista ANTES de que suene nada: aqui ya hay
            efectos de hover y click, y la musica arranca al cruzar. -->
@@ -49,10 +59,6 @@ const RANURA = 'tl-clip br-clip border';
       </button>
       <video class="bg" muted loop playsinline preload="none" poster={POSTER} aria-hidden="true" data-src={VIDEO}></video>
       <div class="veil" aria-hidden="true"></div>
-
-      <!-- El velo del cruce: al pulsar Entrar funde a oscuro con el golpe de puerta,
-           y el Patio recibe emergiendo de ese mismo oscuro. -->
-      <div class="velo-cruce" aria-hidden="true"></div>
 
       <div class="wrap">
         <section class="acceso">
@@ -93,9 +99,11 @@ const RANURA = 'tl-clip br-clip border';
 
     <script>
       import { montarCursor } from '../scripts/cursor.js';
+      import { montarVelo, cruzar } from '../scripts/velo.js';
       import { cablearInterfaz, alternarSonido, estaSilenciado, sonar } from '../scripts/audio.js';
 
       montarCursor();
+      montarVelo();
       cablearInterfaz();
 
       // El video de la escena solo se pide si hay movimiento permitido: antes, con
@@ -125,9 +133,9 @@ const RANURA = 'tl-clip br-clip border';
             if (!golpeDado) sonar('entrar', 0.4);
           }
           if (btn) { btn.disabled = true; btn.textContent = 'Abriendo la puerta'; }
-          document.querySelector('.velo-cruce')?.classList.add('is-cerrando');
-          // Con sonido, el velo acompana al golpe (~550ms); en silencio, cruce corto
-          setTimeout(() => { window.location.href = '/dashboard'; }, silencio ? 280 : 550);
+          // El velo es el de la casa, pero aqui la espera se fuerza: con sonido acompana
+          // al golpe de puerta (~550ms) y en silencio cruza corto.
+          cruzar('/dashboard', silencio ? 280 : 550);
         });
       }
 
@@ -152,15 +160,10 @@ const RANURA = 'tl-clip br-clip border';
       /* El silencio flota sobre la escena, alineado con el margen del contenido */
       .login__sonido { position: absolute; top: 20px; right: max(3vw, 20px); z-index: 3; }
 
-      /* El velo del cruce: por encima de todo, invisible hasta que se cruza */
-      .velo-cruce { position: fixed; inset: 0; z-index: 20; background: var(--ink); opacity: 0; pointer-events: none; }
-      .velo-cruce.is-cerrando { opacity: 1; }
-
       /* La columna entra escalonada, como quien llega al umbral. Solo con movimiento
          permitido: sin la preferencia, el estado servido ya es el final. El boton de
          silencio queda fuera a proposito: el control se ve desde el primer frame. */
       @media (prefers-reduced-motion: no-preference) {
-        .velo-cruce { transition: opacity 0.45s ease; }
         .logo, .titulo, .lead, .lead-firma, .campo, .olvido, .form .btn, .nota, .nara {
           animation: umbral 0.5s ease-out both;
         }

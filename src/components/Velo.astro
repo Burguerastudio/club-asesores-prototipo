@@ -1,0 +1,46 @@
+---
+// El velo del cruce. Estandar del sistema Sepia: TODA navegacion pasa por aqui.
+// No es decoracion: el prototipo son paginas sueltas y sin el se nota el salto del
+// navegador. Con el, la fortaleza se lee como plataforma y no como web.
+//
+// Va servido transparente a proposito: si el JS no llega o no hay movimiento
+// permitido, la pagina se ve igual y nadie se queda mirando un rectangulo negro.
+// Lo mueve src/scripts/velo.js.
+---
+
+<div class="velo" aria-hidden="true">
+  <img class="velo__logo" src="/assets/marca/logo-club.webp" alt="" width="860" height="842" />
+</div>
+
+<style is:global>
+  .velo {
+    position: fixed; inset: 0; z-index: 100;
+    display: grid; place-items: center;
+    background: var(--ink);
+    opacity: 0; pointer-events: none;
+  }
+  /* Una sola opacidad para todo el velo: el logo va dentro y viaja con el.
+     Animarlo aparte solo abre la puerta a que se desincronicen. */
+  .velo__logo { width: clamp(104px, 11vw, 152px); height: auto; }
+
+  /* LA LLEGADA. Con .entra (la pone un inline script en el <head> si hay movimiento
+     permitido) el velo esta echado en el primer frame y se retira solo.
+     El fill va en backwards y no en both: con both, el estado final del keyframe
+     mandaria para siempre y .is-cerrando no podria volver a taparlo nunca. */
+  .entra .velo { animation: velo-abre 0.5s ease 0.05s backwards; }
+  @keyframes velo-abre { from { opacity: 1; } to { opacity: 0; } }
+
+  /* Mientras una animacion corre, gana a cualquier opacity que le pongas encima.
+     Sin esto, pulsar un enlace antes de que la llegada termine (medio segundo) dejaba
+     el cruce sin velo: is-cerrando no podia con velo-abre. La corta velo.js al cruzar. */
+  .velo.is-quieto { animation: none; }
+
+  /* LA SALIDA. La pone velo.js al pulsar un enlace de dentro, antes de saltar.
+     Va DENTRO del media query a proposito: sin transicion, is-cerrando daria un corte
+     a negro seco, que es justo lo que evita quien pide menos movimiento. Con la
+     preferencia puesta el velo no aparece nunca y se salta y ya. */
+  @media (prefers-reduced-motion: no-preference) {
+    .velo { transition: opacity 0.4s ease; }
+    .velo.is-cerrando { opacity: 1; pointer-events: auto; }
+  }
+</style>

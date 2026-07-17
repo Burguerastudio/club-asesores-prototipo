@@ -2,6 +2,7 @@
 // Shell persistente de la plataforma: cabecera + fondo + tokens.
 // Lo heredan todas las pantallas de dentro (el Login no, que va sin navegacion).
 import '../styles/tokens.css';
+import Velo from '../components/Velo.astro';
 import { asesora } from '../data/demo.js';
 
 const { title = 'Club de la Asesoría', activa = '' } = Astro.props;
@@ -13,11 +14,15 @@ const RANURA = 'tl-clip br-clip';
 
 // El Patio es el Dashboard: el patio de armas del castro, donde caes al cruzar la Puerta
 // (el Login) y de donde salen los caminos a cada sala. El Mapa es otra cosa: el viaje.
-// Lo tuyo cuelga del avatar, no del menu de espacios: tu ficha, tus recompensas,
-// tus fechas y tus ajustes no son sitios de la fortaleza.
-// "El asesor" es P8 en CONTENIDO.md: rango, avatar, insignias, PF y los roles del
-// Test de Player. Ojo: la "Player Page" de CONTENIDO es otra cosa, el reproductor
-// de la Biblioteca. Y "Ajustes" y no "Mi cuenta", que se confundia con el perfil.
+//
+// El desplegable del avatar es el estandar del sistema Sepia: lo personal cuelga de
+// tu cara, no del menu de espacios. "El asesor" (P8) es la Player Page de Club: rango,
+// avatar, insignias, PF y los arquetipos. Y "Ajustes" y no "Mi cuenta", que se
+// confundia con el perfil (el estandar tambien lo llama Ajustes).
+//
+// Desviacion del estandar, decidida el 2026-07-17: Recompensas es el Shop, y en el
+// estandar el Shop vive a la izquierda. Aqui cuelga del avatar porque en La Fortaleza
+// lo que reclamas con tus PF es tuyo, no un sitio del castro. Ver docs/DESIGN.md.
 const menuJugador = [
   { href: '/asesor', label: 'El asesor' },
   { href: '/recompensas', label: 'Recompensas' },
@@ -51,9 +56,18 @@ const nav = [
     <meta property="og:description" content="Tu despacho es una fortaleza. Nara ya ha encontrado la primera grieta." />
     <meta property="og:image" content="https://club-asesores-prototipo.vercel.app/og.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Antes de pintar nada: si hay movimiento permitido, la pagina llega con el velo
+         echado (.entra) y las animaciones de llegada lo van descubriendo. En el <head>
+         y no en el <body> para que ningun frame se cuele antes que la clase. -->
+    <script is:inline>
+      if (matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('entra');
+    </script>
   </head>
   <body>
     <a class="saltar" href="#contenido" data-augmented-ui="tl-clip br-clip">Saltar al contenido</a>
+
+    <!-- Toda navegacion de la casa cruza por aqui: es lo que cose el prototipo -->
+    <Velo />
 
     <!-- El <i> lleva la niebla: la vineta del ::after tiene que pintarse encima de todo,
          y un pseudo no puede quedar sobre el otro si ambos cuelgan del mismo elemento. -->
@@ -109,6 +123,9 @@ const nav = [
               {menuJugador.map((m) => (
                 <a href={m.href} class={activa === m.href ? 'is-activa' : ''} aria-current={activa === m.href ? 'page' : undefined}>{m.label}</a>
               ))}
+              <!-- Salir es de otra clase que lo demas: no te lleva a un sitio de la
+                   fortaleza, te saca. Va detras de un filo para que no se pulse de paso. -->
+              <a class="menu__salir" href="/">Cerrar sesión</a>
             </div>
           </div>
         </div>
@@ -119,9 +136,11 @@ const nav = [
 
     <script>
       import { montarCursor } from '../scripts/cursor.js';
+      import { montarVelo } from '../scripts/velo.js';
       import { cablearInterfaz, arrancarMusica, alternarSonido, estaSilenciado } from '../scripts/audio.js';
 
       montarCursor();
+      montarVelo();
       cablearInterfaz();
 
       // Dentro de la fortaleza la musica ya viene queriendose (se pulso Entrar en el Login).
@@ -272,6 +291,10 @@ const nav = [
       }
       .menu a:hover { background: rgba(63,169,201,0.14); color: var(--bone); }
       .menu a.is-activa { color: var(--bone); background: linear-gradient(180deg, rgba(63,169,201,0.26), rgba(63,169,201,0.06)); }
+      /* Salir no es un destino mas: se separa con un filo y se queda en gris.
+         No lleva cian: el cian de la casa dice "esto esta vivo", y esto apaga. */
+      .menu .menu__salir { margin-top: 5px; padding-top: 12px; border-top: 1px solid rgba(194,205,214,0.16); color: var(--mist); }
+      .menu .menu__salir:hover { background: rgba(194,205,214,0.1); color: var(--bone); }
       .chip__marco {
         --aug-tl: 6px; --aug-br: 6px;
         --aug-border-all: 1px;
