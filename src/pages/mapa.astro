@@ -85,14 +85,29 @@ const MAPA = { w: 1760, h: 983 };
                 href={s.href}
                 aria-label={s.href ? `Entrar en ${s.nombre}: ${ETIQUETA_ESTADO[s.estado as EstadoSala]}. ${s.nota}` : `${s.nombre}: ${s.nota}`}
               >
-                <!-- La chincheta: se planta ENCIMA de la puerta y la senala con su punta.
-                     El icono es el arco del castro con la flecha entrando: dice "se entra
-                     por aqui", que es lo que un punto pelado no decia. -->
+                <!-- La chincheta: se planta ENCIMA de la puerta y la senala con su punta. -->
                 <span class="hito__marca" data-augmented-ui={F_AZULEJO}>
+                  <!-- Entrada lateral: la flecha cruza el umbral. Elegido por Mati el
+                       2026-07-17 en /calibrar, viendolo puesto en las seis a la vez.
+                       Es el GESTO de entrar, no el sitio: el arco ya lo pone el castro.
+                       Dibujado aqui con el trazo de la casa (caja 24, grosor 1.6), como
+                       todo: la regla del proyecto es iconografia propia, sin libreria.
+                       La Puerta lleva otro, y no por capricho: no es una sala, no se
+                       entra en ella, y ensenar el gesto de entrar seria mentir. Ella ES
+                       una puerta, asi que lleva el portal. -->
                   <svg class="hito__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path class="hito__arco" d="M6.6 20V11a5.4 5.4 0 0 1 10.8 0v9" />
-                    <path class="hito__suelo" d="M4.2 20h15.6" />
-                    <path class="hito__flecha" d="M12 7.4v7.2m0 0-2.7-2.7M12 14.6l2.7-2.7" />
+                    {s.sala ? (
+                      <>
+                        <path d="M13.5 4.5H17a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3.5" />
+                        <path class="hito__flecha" d="M4.5 12h8.5m0 0-2.8-2.8M13 12l-2.8 2.8" />
+                      </>
+                    ) : (
+                      <>
+                        <path d="M6.6 20V11a5.4 5.4 0 0 1 10.8 0v9" />
+                        <path d="M4.2 20h15.6" />
+                        <path d="M12 20v-4.5" />
+                      </>
+                    )}
                   </svg>
                 </span>
                 <span class="hito__punta" aria-hidden="true"></span>
@@ -263,9 +278,9 @@ const MAPA = { w: 1760, h: 983 };
   .hito--desconectada .hito__flecha { opacity: 0.25; }
 
   .hito:hover .hito__marca, .hito:focus-visible .hito__marca { transform: scale(1.14); background: linear-gradient(180deg, rgba(63,169,201,0.3), rgba(9,13,20,0.97)); }
-  /* La pieza que no es sala (la Puerta) no promete clic */
+  /* La pieza que no es sala (la Puerta) no promete clic. Su icono ya es otro (el portal,
+     no el gesto de entrar), asi que aqui no hay nada que esconder. */
   .hito--pieza { cursor: default; }
-  .hito--pieza .hito__flecha { display: none; }
 
   @media (prefers-reduced-motion: no-preference) {
     .hito--reparacion .hito__marca { animation: late-hito 2.8s ease-in-out infinite alternate; }
