@@ -239,19 +239,18 @@ export const avisosSinLeer = avisos.filter((a) => a.nueva).length;
 // tendrias las seis, y 2500 se alcanzan sobre la intervencion 6 de 12: media membresia
 // sin nada que conseguir. Eso no se sostiene.
 //
-// PENDIENTE: que significa el "o rango Asesor Estratega" de la Sesion Premium. Aqui esta
-// montado como la otra puerta: si llegas a Estratega la tienes SIN pagar los 2500 (el
-// rango es la moneda de esa). La otra lectura ("Estratega te deja comprarla por 2500") no
-// se sostiene: a 2500 PF ya la tendrias igualmente, asi que el rango no aportaria nada.
-// Lo confirma Sepia. Ver docs/PLAN-PANTALLAS.md.
+// EL RANGO NO REGALA NADA (Mati, 2026-07-18). Subir de rango desbloquea la POSIBILIDAD de
+// reclamar, no la recompensa: pagar, se paga igual. Por eso el "o rango Asesor Estratega"
+// de la Sesion Premium NO se cuenta en pantalla: decirlo prometia que llegar a Estratega
+// te la daba, y es falso. Solo cambiaria algo para una Estratega con menos de 2500 PF, que
+// no es el caso de la demo, asi que no hay nada que ensenar.
 export const recompensas = [
   { slug: 'recompensa-kit-entrada', nombre: 'Kit de Entrada a la Fortaleza', precio: 150 },
   { slug: 'recompensa-plantilla-reparacion', nombre: 'Plantilla de Reparación', precio: 400 },
   { slug: 'recompensa-mapa-prioridades', nombre: 'Mapa de Prioridades de la Fortaleza', precio: 800 },
   { slug: 'recompensa-caso-consejo', nombre: 'Caso de Consejo Ampliado', precio: 1200 },
   { slug: 'recompensa-biblioteca-herramientas', nombre: 'Biblioteca de Herramientas Avanzadas', precio: 1800 },
-  // La unica con dos puertas: pagar 2500 o llegar a Estratega y llevartela sin pagar
-  { slug: 'recompensa-sesion-premium', nombre: 'Sesión / Taller Premium', precio: 2500, oRango: 4, oRangoNombre: 'Asesora Estratega' },
+  { slug: 'recompensa-sesion-premium', nombre: 'Sesión / Taller Premium', precio: 2500 },
 ];
 
 // La asesora no ha reclamado ninguna todavia, y por eso su saldo (1840) es exactamente lo

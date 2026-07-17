@@ -173,7 +173,10 @@ const nav = [
                hacia abajo, que en el HUD por encima solo esta el borde de la ventana. -->
           <span class="pf-caja">
             <span class="pf" data-augmented-ui={`${RANURA} border`}>
-              <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
+              <!-- El CUMULO, no el fragmento suelto: el deck que valido el cliente dice
+                   "como fragmento suelto y como cumulo para el medidor", y esto es el
+                   medidor. Llevaba el fragmento desde que se monto el HUD. -->
+              <img src="/assets/moneda/ui/pf-cumulo.webp" alt="" aria-hidden="true" width="512" height="247" />
               {asesora.pf.toLocaleString('es-ES')}
               <span class="sr-only">Puntos de Fortaleza</span>
             </span>
@@ -428,7 +431,7 @@ const nav = [
         background: linear-gradient(180deg, rgba(63,169,201,0.13), rgba(9,13,20,0.4));
         font-size: 0.92rem; font-weight: 600; color: var(--aqua); letter-spacing: 0.02em;
       }
-      .pf img { width: 20px; height: 20px; object-fit: contain; }
+      .pf img { width: 26px; height: auto; object-fit: contain; }
 
       /* Ficha de personaje: el retrato va enmarcado y chaflanado, no en circulo.
          El circulo dentro de una pildora es lo mas de web que hay. */
