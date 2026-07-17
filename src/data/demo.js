@@ -132,15 +132,24 @@ export const salas = [
 //   el porton con faroles              -> Puerta Principal (intervencion 6)
 //
 // Castro confirmado por Conchi el 2026-07-17: estas coordenadas ya no corren peligro.
+//
+// COLOCADAS POR MATI en /calibrar (el andamio interno), no medidas aqui. Y la diferencia
+// enseña algo: mis seis medidas estaban desviadas hacia ARRIBA en el mismo sentido, +3,7%
+// de media (las cinco primeras entre +2,6 y +4,3). No era ruido, era sesgo: yo apuntaba al
+// ARCO de la puerta y el pie de la chincheta va en el UMBRAL, que es donde se pisa. Un
+// asset nuevo se calibra en /calibrar, no midiendo a mano.
+//
+// El Mirador es el unico que se sale del patron (+10,6): lo tenia arriba de la escalera y
+// va abajo, en la terraza. Se entiende: la terraza ES el Mirador, y la escalera solo lleva.
 export const sitiosDelMapa = [
-  { slug: 'torre-retos', x: 31.7, y: 27.2, sala: true },
-  { slug: 'sala-mandos', x: 51.7, y: 36.5, sala: true },
-  { slug: 'biblioteca', x: 63.2, y: 33.1, sala: true },
-  { slug: 'consejo', x: 70.4, y: 55.9, sala: true },
-  { slug: 'mirador', x: 30.5, y: 52.3, sala: true },
+  { slug: 'torre-retos', x: 32.6, y: 31.2, sala: true },
+  { slug: 'sala-mandos', x: 51.8, y: 40.4, sala: true },
+  { slug: 'biblioteca', x: 62.1, y: 35.7, sala: true },
+  { slug: 'consejo', x: 69.6, y: 60.2, sala: true },
+  { slug: 'mirador', x: 27.8, y: 62.9, sala: true },
   // La Puerta no es una sala: es lo que se repara en la intervencion 6, y de momento
   // no tiene pagina. Va como pieza del mapa, no como acceso.
-  { slug: 'puerta', x: 69.1, y: 80.7, sala: false, nombre: 'Puerta Principal', nota: 'Se abre mal: los visitantes entran sin orientación.', estado: 'desconectada' },
+  { slug: 'puerta', x: 69.1, y: 84.6, sala: false, nombre: 'Puerta Principal', nota: 'Se abre mal: los visitantes entran sin orientación.', estado: 'desconectada' },
 ];
 
 export const logrosRecientes = [
