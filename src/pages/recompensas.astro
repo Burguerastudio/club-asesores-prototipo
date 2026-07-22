@@ -370,11 +370,12 @@ const F_BOTON = 'l-clip-y r-clip-y';
     .saldo { flex-direction: column; align-items: flex-start; }
   }
 
-  /* MOVIL Y APAISADO: la barra inferior de 64px vive abajo. Como esta pantalla
-     SOBREESCRIBE el padding-bottom de .contenido (regla :has(.saldo) de arriba, mas
-     especifica que la del layout), hay que devolverle aqui la holgura, o el pie de la
-     ultima ficha ("Te faltan X PF" / "Abrir recompensa") queda tapado por la barra. */
-  @media (max-width: 860px), (max-height: 480px) {
+  /* MOVIL Y TABLET (y apaisado): la barra inferior de 64px vive abajo en toda la franja tablet
+     (hasta 1280). Como esta pantalla SOBREESCRIBE el padding-bottom de .contenido (regla
+     :has(.saldo) de arriba, mas especifica que la del layout), hay que devolverle aqui la
+     holgura, o el pie de la ultima ficha ("Te faltan X PF" / "Abrir recompensa") queda tapado
+     por la barra. Es solo holgura, no reflow: por eso llega a 1280 sin tocar el contenido. */
+  @media (max-width: 1280px), (max-height: 480px) {
     .contenido:has(.saldo) { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 10px); }
   }
 </style>

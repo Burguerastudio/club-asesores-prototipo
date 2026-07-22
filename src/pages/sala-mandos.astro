@@ -294,6 +294,13 @@ const GEMA = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"
      pilar es una fila compacta (escudo + nombre) que se toca para abrirse, y el pilar
      abierto despliega su panel debajo, a lo ancho. Sigue habiendo uno abierto siempre,
      como en escritorio, asi que ningun panel se solapa ni desborda. */
+  /* La barra inferior (64px) llega hasta 1280: la Sala anula el padding-bottom de .contenido,
+     asi que se devuelve aqui para que el acordeon no quede bajo la barra. Solo holgura; el
+     paso a acordeon VERTICAL se queda en movil (860). */
+  @media (max-width: 1280px) {
+    .contenido > .mandos { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 20px); }
+  }
+
   @media (max-width: 860px), (max-height: 480px) {
     .contenido > .mandos {
       justify-content: flex-start;
@@ -302,6 +309,14 @@ const GEMA = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"
          da a .contenido en movil, asi que la holgura del ultimo pilar la ponemos aqui. */
       padding: calc(var(--alto-shell) + clamp(12px, 2.4vh, 22px)) clamp(14px, 4vw, 26px) calc(64px + env(safe-area-inset-bottom, 0px) + 20px);
     }
+    /* Apilado, el acordeon ocupa TODO el alto y no solo la franja baja: el velo de escritorio
+       (claro en el centro, pensado para texto abajo) dejaba los pilares de en medio sobre la
+       zona iluminada del fondo. Aqui se unifica mas oscuro para que todo se lea, sin apagar
+       del todo la escena. */
+    .mandos__velo {
+      background: linear-gradient(to bottom, rgba(9,13,20,0.85) 0%, rgba(9,13,20,0.72) 40%, rgba(9,13,20,0.8) 72%, rgba(9,13,20,0.96) 100%);
+    }
+
     .planos { flex-direction: column; height: auto; gap: 10px; }
 
     /* Apilado: la cara es la fila que se toca; el detalle cuelga debajo (no en columna al lado). */

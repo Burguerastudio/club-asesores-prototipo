@@ -360,6 +360,13 @@ type Estado = keyof typeof ETIQUETA;
      escalera de los doce y, al pie, la voz de Nara. La figura se retira (encogida no es ella,
      es una pegatina) y su voz se queda, que es lo que explica por que la Torre esta como
      esta. El velo cierra entero para que el texto se lea sobre la piedra. */
+  /* La barra inferior (64px) llega hasta 1280: la Torre anula el padding-bottom de .contenido,
+     asi que la holgura se devuelve aqui en toda la franja tablet. Solo holgura; el reapilado
+     de la Torre (columna) se queda en movil (860). */
+  @media (max-width: 1280px) {
+    .contenido > .torre { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 18px); }
+  }
+
   @media (max-width: 860px), (max-height: 480px) {
     .contenido > .torre {
       height: auto; min-height: 100svh; overflow: visible;

@@ -469,6 +469,15 @@ const AVISO_PLUGIN = 'Esto se cablea con la comunidad cuando el Mirador esté co
     .mir__cols { padding-top: clamp(14px, 2vh, 20px); }
   }
 
+  /* TELEFONO: el composer de compartir. Inline, el boton "Publicar" estrujaba el campo y el
+     placeholder saltaba de linea ("Comparte tu avance, / Marta..."). Baja a su propia fila y
+     el campo recupera todo el ancho. Solo telefono (<=560): en tablet el composer tiene sitio
+     de sobra en una fila. */
+  @media (max-width: 560px) {
+    .composer { grid-template-columns: 44px 1fr; }
+    .composer__b { grid-column: 1 / -1; justify-self: start; }
+  }
+
   /* Móvil estrecho: pila los widgets del lado izquierdo y aprieta el composer. */
   @media (max-width: 380px) {
     .mir__lado--izq .widget { flex-basis: 100%; }

@@ -37,7 +37,6 @@
   const PASOS = [
     { page: '/dashboard', modo: 'centro', t: 'Bienvenida a tu fortaleza', x: 'Soy Nara, tu guardiana. En un minuto te enseño toda tu fortaleza. Puedes saltarte el recorrido cuando quieras.' },
     { page: '/dashboard', modo: 'foco', sel: '.m-activa-caja', t: 'La intervención del mes', x: 'Esto es lo que toca hoy: una grieta que reparar. Cada mes se abre una, y repararla fortalece tu despacho.' },
-    { page: '/dashboard', modo: 'foco', sel: '.m-activa__reb', t: 'El Rebelde', x: 'El trasno. No tira muros: posterga, desordena, lo convierte todo en «ya lo haré». Cada grieta que cierras le gana terreno.' },
     { page: '/dashboard', modo: 'foco', sel: '.pasos', t: 'Tu recorrido del mes', x: 'Ves la clase en la Biblioteca, aplicas el reto en la Torre, y la recompensa se enciende sola.' },
     { page: '/dashboard', modo: 'foco', sel: '.m-ficha', t: 'Tu avance', x: 'Reparando grietas subes de rango y enciendes la fortaleza. Aquí ves por dónde vas y lo que ya has ganado.' },
     { page: '/mapa', modo: 'libre', t: 'El Mapa: tu viaje', x: 'Las doce intervenciones sobre el castro, en tres sendas. El mapa entero de tu primer ciclo: dónde estás y lo que falta.' },
@@ -85,7 +84,13 @@
       elPrev.style.visibility = i === 0 ? 'hidden' : 'visible';
       elNext.textContent = paso.fin ? 'Empezar' : 'Siguiente';
 
-      const target = paso.modo === 'foco' && paso.sel ? document.querySelector<HTMLElement>(paso.sel) : null;
+      // En movil se QUITAN los focos: el recorte de luz sobre una pieza no cuadraba (la barra
+      // inferior, el scroll asincrono y las piezas que en movil no existen lo descolocaban).
+      // El paso foco pasa a comportarse como 'libre' (la pagina a la vista, la tarjeta al pie
+      // que fija el CSS), pero acercando la pieza que describe para que se vea. El 'centro'
+      // (bienvenida y cierre) mantiene su oscurecido plano, que si funciona.
+      const esMovil = matchMedia('(max-width: 1280px), (max-height: 480px)').matches;
+      const target = (!esMovil && paso.modo === 'foco' && paso.sel) ? document.querySelector<HTMLElement>(paso.sel) : null;
       if (target) {
         target.scrollIntoView({ block: 'center', behavior: 'smooth' });
         requestAnimationFrame(() => {
@@ -100,9 +105,13 @@
         spot.style.top = '50%'; spot.style.left = '50%'; spot.style.width = '0'; spot.style.height = '0';
         card.style.top = '50%'; card.style.left = '50%'; card.style.bottom = 'auto'; card.style.transform = 'translate(-50%, -50%)';
       } else {
-        // libre: la sala queda a la vista, la tarjeta al pie.
+        // libre (y todo foco en movil): la sala/pagina queda a la vista, la tarjeta al pie.
         spot.style.boxShadow = 'none'; spot.style.opacity = '0';
         card.style.top = 'auto'; card.style.bottom = 'clamp(20px, 5vh, 44px)'; card.style.left = '50%'; card.style.transform = 'translateX(-50%)';
+        // En movil, si el paso apuntaba a una pieza, se acerca para que se vea lo descrito.
+        if (esMovil && paso.modo === 'foco' && paso.sel) {
+          document.querySelector<HTMLElement>(paso.sel)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
       }
     };
 
@@ -168,6 +177,20 @@
   .tour__prev { padding: 8px 12px; font: inherit; font-size: 0.78rem; color: var(--moon); background: none; border: 0; cursor: pointer; border-radius: 6px; }
   .tour__prev:hover { background: rgba(194, 205, 214, 0.1); }
   .tour__next { padding: 9px 20px; font-size: 0.8rem; }
+
+  /* En movil (el menu vive abajo) la tarjeta se ancla SIEMPRE al pie, justo encima de la barra
+     de navegacion (64px), sea cual sea el modo del paso: el foco sigue resaltando su pieza
+     arriba, pero el mensaje no persigue al dedo. El !important gana a la posicion inline del JS. */
+  @media (max-width: 1280px), (max-height: 480px) {
+    .tour__card {
+      top: auto !important;
+      bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px) !important;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+      width: min(360px, calc(100vw - 24px));
+    }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .tour__spot { transition: none; }

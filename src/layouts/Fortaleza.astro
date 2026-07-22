@@ -648,9 +648,12 @@ const navResto = nav.slice(4);    // lo que va en la hoja "Mas"
         .chip__txt { display: none; }
       }
 
-      /* MOVIL Y APAISADO: el menu de arriba baja a la barra inferior; el HUD se queda con las
-         herramientas y el avatar, alineados a la derecha. El apaisado entra por max-height. */
-      @media (max-width: 860px), (max-height: 480px) {
+      /* MOVIL Y TABLET (y apaisado): el menu de arriba baja a la barra inferior. El menu de 7
+         secciones no cabe arriba en tablet (a 1024 se corta la ultima, a 1280 va justo), asi
+         que toda la franja tablet (hasta el Nest Hub, 1280) usa la barra inferior; el escritorio
+         (1440+) mantiene el menu arriba. El HUD (herramientas + avatar) se queda arriba a la
+         derecha en ambos. El apaisado corto entra por max-height. */
+      @media (max-width: 1280px), (max-height: 480px) {
         .shell__nav { display: none; }
         .shell__yo { margin-left: auto; }
         .mnav { display: flex; }

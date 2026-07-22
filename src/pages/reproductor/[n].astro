@@ -408,8 +408,21 @@ const RECURSO_PF = 15;
     .lecciones { max-height: none; overflow: visible; }
   }
   @media (max-width: 560px) {
-    .material { grid-template-columns: 40px 1fr; }
-    .material__pf, .material__b { grid-column: 2; justify-self: start; }
+    /* La card de recurso: en telefono las cuatro columnas (icono | texto | PF | boton) no
+       caben, y PF y boton caian cada uno en su fila dejando el icono suelto arriba con un
+       hueco debajo. Se reordena a dos filas limpias: icono + texto arriba, y +15 PF con
+       Descargar juntos debajo. Asi la card no "salta de linea". */
+    .material {
+      grid-template-columns: 40px 1fr auto;
+      grid-template-areas:
+        "ic desc desc"
+        "ic pf   btn";
+      align-items: center; row-gap: 12px;
+    }
+    .material__ic { grid-area: ic; align-self: start; }
+    .material__d { grid-area: desc; }
+    .material__pf { grid-area: pf; }
+    .material__b { grid-area: btn; justify-self: end; }
     .lecc-nav { grid-template-columns: 1fr; }
   }
   @media (max-width: 380px) {

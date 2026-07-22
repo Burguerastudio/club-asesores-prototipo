@@ -127,12 +127,13 @@ import Fortaleza from '../layouts/Fortaleza.astro';
   /* ============================ RESPONSIVE ============================
      Escena a sangre: la sala LLENA la ventana; lo que refluye es la columna del altar. */
 
-  /* MOVIL Y APAISADO: el layout pinta una barra inferior fija de 64px, pero
-     .contenido:has(.consejo){padding:0} le borra el padding-bottom que el propio layout
-     le pone en movil, asi que la holgura para no esconder el pie bajo la barra la doy yo.
-     Y si el contenido no cabe (apaisado, poca altura), que fluya y haga scroll en vez de
-     recortar el boton: altura auto + min-height + overflow visible. */
-  @media (max-width: 860px), (max-height: 480px) {
+  /* MOVIL Y TABLET (y apaisado): el layout pinta una barra inferior fija de 64px en toda la
+     franja tablet (hasta 1280), pero .contenido:has(.consejo){padding:0} le borra el
+     padding-bottom, asi que la holgura para no esconder el pie bajo la barra la doy yo. Y si
+     el contenido no cabe (tablet corto o apaisado), que fluya y haga scroll en vez de recortar
+     el boton: altura auto + min-height + overflow visible. La sala es un altar unico centrado
+     (sin columnas), asi que llevar esto a 1280 no colapsa ningun contenido. */
+  @media (max-width: 1280px), (max-height: 480px) {
     .contenido > .consejo {
       height: auto; min-height: 100svh; overflow: visible;
       padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + clamp(14px, 3vh, 22px));

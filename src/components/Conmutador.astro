@@ -146,7 +146,7 @@ const ETIQUETA = { 1: 'Base', 2: 'en Guardia', 3: 'Constructor', 4: 'Estratega',
   /* En movil/apaisado la pestana se aparta del centro (donde tapaba contenido) y sube justo
      encima de la barra de navegacion inferior; el panel abre hacia arriba en vez de al lado,
      para no salirse por el borde superior en pantallas cortas. */
-  @media (max-width: 860px), (max-height: 480px) {
+  @media (max-width: 1280px), (max-height: 480px) {
     .conm { top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); transform: none; }
     /* Icono solo (sin "Demo") y compacto: en pantalla pequena la pestana apenas roza el
        contenido pegado al borde izquierdo. Sigue siendo andamio, se retira en la entrega. */

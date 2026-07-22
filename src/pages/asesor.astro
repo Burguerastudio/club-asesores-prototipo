@@ -447,12 +447,16 @@ const pestanas = [
     .habs { grid-template-columns: repeat(4, 1fr); }
   }
 
-  /* MOVIL Y APAISADO. Esta pantalla sobreescribe el padding-bottom de .contenido, asi que
-     la holgura de la barra inferior (64px) hay que devolverla aqui a mano o el ultimo
-     renglon queda bajo la barra. */
-  @media (max-width: 860px), (max-height: 480px) {
+  /* La barra inferior (64px) vive en toda la franja tablet (hasta 1280). Esta pantalla
+     sobreescribe el padding-bottom de .contenido, asi que la holgura hay que devolverla a
+     mano o el ultimo renglon queda bajo la barra. Es SOLO holgura (llega a 1280); el apilado
+     del perfil se queda en movil (860). */
+  @media (max-width: 1280px), (max-height: 480px) {
     .contenido:has(.yo) { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px); }
+  }
 
+  /* MOVIL Y APAISADO: el perfil se apila en una columna. */
+  @media (max-width: 860px), (max-height: 480px) {
     .yo { flex-direction: column; align-items: flex-start; gap: clamp(10px, 2vh, 18px); }
     /* La figura, atada al ALTO: en pantallas bajas se encoge y no se come el sitio. */
     .yo__fig img { height: clamp(180px, 30vh, 240px); }

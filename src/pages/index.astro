@@ -7,7 +7,6 @@ import '../styles/tokens.css';
 import Velo from '../components/Velo.astro';
 
 const POSTER = '/assets/mapa-escenas/ui/patio-entrada.webp';
-const VIDEO = '/assets/animaciones/patio-entrada.webm';
 
 // Los campos son el mecanismo de la puerta: ranuras chaflanadas con su filo, el mismo
 // lenguaje que las ranuras del Patio. Eran lo unico del producto que seguia siendo
@@ -45,19 +44,8 @@ const RANURA = 'tl-clip br-clip border';
     <Velo />
 
     <main class="login" style={`background-image:url('${POSTER}')`}>
-      <!-- El control de silencio, a la vista ANTES de que suene nada: aqui ya hay
-           efectos de hover y click, y la musica arranca al cruzar. -->
-      <button class="sonido login__sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui="tl-clip br-clip">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
-          <g class="sonido__ondas">
-            <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
-            <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
-          </g>
-          <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
-        </svg>
-      </button>
-      <video class="bg" muted loop playsinline preload="none" poster={POSTER} aria-hidden="true" data-src={VIDEO}></video>
+      <!-- La escena de fondo es la imagen estatica (background-image del .login); el velo la
+           apaga lo justo para que el texto se lea. -->
       <div class="veil" aria-hidden="true"></div>
 
       <div class="wrap">
@@ -84,10 +72,6 @@ const RANURA = 'tl-clip br-clip border';
 
             <button class="btn" type="submit" data-sonido="entrar" data-augmented-ui="l-clip-y r-clip-y">Entrar</button>
           </form>
-
-          <p class="nota">
-            El acceso al Club es por invitación. Si ya eres miembro y no consigues entrar, escríbenos y te abrimos la puerta.
-          </p>
         </section>
 
         <figure class="nara">
@@ -100,19 +84,11 @@ const RANURA = 'tl-clip br-clip border';
     <script>
       import { montarCursor } from '../scripts/cursor.js';
       import { montarVelo, cruzar } from '../scripts/velo.js';
-      import { cablearInterfaz, alternarSonido, estaSilenciado, sonar } from '../scripts/audio.js';
+      import { cablearInterfaz, estaSilenciado, sonar } from '../scripts/audio.js';
 
       montarCursor();
       montarVelo();
       cablearInterfaz();
-
-      // El video de la escena solo se pide si hay movimiento permitido: antes, con
-      // prefers-reduced-motion, se descargaba 1.2MB de webm que nunca se veia.
-      const bg = document.querySelector<HTMLVideoElement>('.bg');
-      if (bg && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-        bg.src = bg.dataset.src || '';
-        bg.play().catch(() => {});
-      }
 
       // Entrar es EL gesto: desbloquea el audio, cierra el velo y deja la musica querida.
       // preventDefault SIEMPRE: con los campos nombrados, el GET nativo ensuciaria la
@@ -139,18 +115,6 @@ const RANURA = 'tl-clip br-clip border';
           cruzar('/onboarding', silencio ? 280 : 550);
         });
       }
-
-      // El mismo control de silencio del HUD, aqui a la vista desde el primer segundo
-      const sonido = document.querySelector('.sonido');
-      if (sonido) {
-        const pintar = () => {
-          const off = estaSilenciado();
-          sonido.setAttribute('aria-pressed', String(off));
-          sonido.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
-        };
-        pintar();
-        sonido.addEventListener('click', () => { alternarSonido(); pintar(); });
-      }
     </script>
 
     <style is:global>
@@ -158,14 +122,12 @@ const RANURA = 'tl-clip br-clip border';
 
       /* Escena de fondo: el porton del castro */
       .login { position: relative; min-height: 100svh; overflow: hidden; background-size: cover; background-position: center; }
-      /* El silencio flota sobre la escena, alineado con el margen del contenido */
-      .login__sonido { position: absolute; top: 20px; right: max(3vw, 20px); z-index: 3; }
 
       /* La columna entra escalonada, como quien llega al umbral. Solo con movimiento
          permitido: sin la preferencia, el estado servido ya es el final. El boton de
          silencio queda fuera a proposito: el control se ve desde el primer frame. */
       @media (prefers-reduced-motion: no-preference) {
-        .logo, .titulo, .lead, .lead-firma, .campo, .olvido, .form .btn, .nota, .nara {
+        .logo, .titulo, .lead, .lead-firma, .campo, .olvido, .form .btn, .nara {
           animation: umbral 0.5s ease-out both;
         }
         .titulo { animation-delay: 70ms; }
@@ -175,7 +137,6 @@ const RANURA = 'tl-clip br-clip border';
         .campo:nth-of-type(2) { animation-delay: 260ms; }
         .olvido { animation-delay: 310ms; }
         .form .btn { animation-delay: 360ms; }
-        .nota { animation-delay: 430ms; }
         /* Nara no se desplaza: ella ya estaba en el umbral, solo se revela */
         .nara { animation-name: revela; animation-duration: 0.9s; animation-delay: 150ms; }
         @keyframes umbral {
@@ -187,7 +148,6 @@ const RANURA = 'tl-clip br-clip border';
           to { opacity: 1; }
         }
       }
-      .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
       .veil {
         position: absolute; inset: 0; z-index: 1;
         background:
@@ -237,10 +197,17 @@ const RANURA = 'tl-clip br-clip border';
       /* El boton hereda de tokens.css; aqui solo su sitio en el formulario */
       .btn { margin-top: clamp(6px, 1.2vh, 10px); padding: clamp(12px, 1.9vh, 15px) 22px; font-size: 0.86rem; }
 
-      .nota { margin: clamp(14px, 2.6vh, 38px) 0 0; max-width: 40ch; font-size: 0.82rem; line-height: 1.55; color: var(--mist); }
-
       /* Nara en el umbral */
       .nara { position: relative; margin: 0; align-self: end; justify-self: center; pointer-events: none; }
+
+      /* Pantalla muy ancha (Widescreen 4K): la columna se ensancha y Nara se va a la derecha
+         de la pantalla, a la altura del formulario (centrada), en vez de quedarse pegada al
+         centro y anclada al suelo. */
+      @media (min-width: 2200px) {
+        .wrap { width: min(1920px, 94vw); grid-template-columns: minmax(360px, 540px) 1fr; }
+        .nara { justify-self: end; align-self: center; }
+        .nara img { height: clamp(600px, 62vh, 900px); }
+      }
       .nara .aura { left: 50%; top: 47%; width: 17%; }
       .nara img { display: block; height: clamp(380px, 72vh, 780px); width: auto; object-fit: contain; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.7)); }
 
@@ -268,9 +235,7 @@ const RANURA = 'tl-clip br-clip border';
         .campo { gap: 6px; }
         .campo input { padding: 11px 14px; }
         .btn { margin-top: clamp(4px, 1.2vh, 8px); }
-        .nota { margin-top: clamp(12px, 2.8vh, 18px); max-width: none; }
       }
-      @media (prefers-reduced-motion: reduce) { .bg { display: none; } }
     </style>
   </body>
 </html>

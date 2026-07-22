@@ -38,16 +38,6 @@ const FIGURAS = [
     <Velo />
 
     <main class="entrega" style={`background-image:url('${POSTER}')`}>
-      <button class="sonido entrega__sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui="tl-clip br-clip">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
-          <g class="sonido__ondas">
-            <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
-            <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
-          </g>
-          <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
-        </svg>
-      </button>
       <div class="veil" aria-hidden="true"></div>
 
       <div class="wrap">
@@ -84,18 +74,13 @@ const FIGURAS = [
 
           <p class="nota">Entras como <b>Asesor Base</b>. Nara te acompañará en tu primer recorrido por la fortaleza.</p>
         </section>
-
-        <figure class="nara">
-          <img src="/assets/personajes/ui/nara-umbral.webp" alt="Nara, la guardiana de la fortaleza" width="1165" height="1560" />
-          <span class="aura" aria-hidden="true"></span>
-        </figure>
       </div>
     </main>
 
     <script>
       import { montarCursor } from '../scripts/cursor.js';
       import { montarVelo, cruzar } from '../scripts/velo.js';
-      import { cablearInterfaz, alternarSonido, estaSilenciado, sonar } from '../scripts/audio.js';
+      import { cablearInterfaz, estaSilenciado, sonar } from '../scripts/audio.js';
 
       montarCursor();
       montarVelo();
@@ -128,25 +113,13 @@ const FIGURAS = [
           cruzar('/dashboard?tour', silencio ? 280 : 550);
         });
       }
-
-      const sonido = document.querySelector('.sonido');
-      if (sonido) {
-        const pintar = () => {
-          const off = estaSilenciado();
-          sonido.setAttribute('aria-pressed', String(off));
-          sonido.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
-        };
-        pintar();
-        sonido.addEventListener('click', () => { alternarSonido(); pintar(); });
-      }
     </script>
 
     <style is:global>
       .entrega { position: relative; min-height: 100svh; overflow: hidden; background-size: cover; background-position: center; }
-      .entrega__sonido { position: absolute; top: 20px; right: max(3vw, 20px); z-index: 3; }
 
       @media (prefers-reduced-motion: no-preference) {
-        .kicker, .titulo, .lead, .lead-firma, .campo, .figuras, .form .btn, .nota, .nara {
+        .kicker, .titulo, .lead, .lead-firma, .campo, .figuras, .form .btn, .nota {
           animation: umbral 0.5s ease-out both;
         }
         .titulo { animation-delay: 70ms; }
@@ -156,23 +129,22 @@ const FIGURAS = [
         .figuras { animation-delay: 280ms; }
         .form .btn { animation-delay: 360ms; }
         .nota { animation-delay: 430ms; }
-        .nara { animation-name: revela; animation-duration: 0.9s; animation-delay: 150ms; }
         @keyframes umbral { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes revela { from { opacity: 0; } to { opacity: 1; } }
       }
 
+      /* Escena sin Nara: la entrega es una sola columna centrada sobre el patio. El velo
+         se equilibra (vineta al centro + lavado vertical) para que el bloque se lea bien. */
       .veil {
         position: absolute; inset: 0; z-index: 1;
         background:
-          linear-gradient(to right, rgba(9,13,20,0.96) 0%, rgba(9,13,20,0.82) 34%, rgba(9,13,20,0.25) 66%, rgba(9,13,20,0.55) 100%),
-          linear-gradient(to top, rgba(9,13,20,0.9) 0%, transparent 45%);
+          linear-gradient(180deg, rgba(9,13,20,0.72) 0%, rgba(9,13,20,0.58) 45%, rgba(9,13,20,0.9) 100%),
+          radial-gradient(140% 120% at 50% 44%, transparent 28%, rgba(9,13,20,0.55) 100%);
       }
 
       .wrap {
         position: relative; z-index: 2;
-        width: min(1240px, 92vw); margin: 0 auto; min-height: 100svh;
-        display: grid; grid-template-columns: minmax(360px, 520px) 1fr;
-        align-items: center; gap: clamp(24px, 5vw, 72px);
+        width: min(560px, 92vw); margin: 0 auto; min-height: 100svh;
+        display: flex; flex-direction: column; justify-content: center;
       }
 
       .acceso { padding: clamp(14px, 3vh, 48px) 0; }
@@ -221,16 +193,11 @@ const FIGURAS = [
       .nota { margin: clamp(14px, 2.4vh, 32px) 0 0; max-width: 44ch; font-size: 0.82rem; line-height: 1.55; color: var(--mist); }
       .nota b { color: var(--moon); }
 
-      .nara { position: relative; margin: 0; align-self: end; justify-self: center; pointer-events: none; }
-      .nara .aura { left: 50%; top: 47%; width: 17%; }
-      .nara img { display: block; height: clamp(380px, 72vh, 780px); width: auto; object-fit: contain; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.7)); }
-
-      /* Sin la columna de Nara: la entrega cae a una sola columna. Cubre el movil vertical
-         y tambien el apaisado (poca altura), que ademas se recompone abajo. */
+      /* Movil vertical (y apaisado corto): el bloque sube al arranque en vez de centrarse,
+         para que un formulario alto no se persiga. El velo pasa a anclar abajo. */
       @media (max-width: 860px), (max-height: 480px) {
-        .wrap { grid-template-columns: 1fr; align-items: start; padding: clamp(28px, 6vh, 56px) 0; }
+        .wrap { justify-content: flex-start; padding: clamp(28px, 6vh, 56px) 0; }
         .veil { background: linear-gradient(to top, rgba(9,13,20,0.96) 30%, rgba(9,13,20,0.72) 70%, rgba(9,13,20,0.5) 100%); }
-        .nara { display: none; }
         .acceso { padding-top: clamp(16px, 4vh, 32px); }
       }
 
@@ -241,11 +208,11 @@ const FIGURAS = [
         .figura-op__card img { height: clamp(132px, 42vw, 168px); }
       }
 
-      /* Apaisado (poca altura, movil tumbado): dos columnas para que el umbral quepa sin
-         perseguirlo. El texto de Nara a la izquierda, el mecanismo (nombre, figuras, boton)
-         a la derecha; las figuras se encogen y el ritmo se aprieta. */
+      /* Apaisado (poca altura, movil tumbado): el bloque se parte en dos para que el umbral
+         quepa sin perseguirlo. El texto de la entrega a la izquierda, el mecanismo (nombre,
+         figuras, boton) a la derecha; las figuras se encogen y el ritmo se aprieta. */
       @media (max-height: 480px) and (min-width: 680px) {
-        .wrap { align-items: center; padding: clamp(12px, 4vh, 22px) 0; }
+        .wrap { width: min(940px, 94vw); justify-content: center; padding: clamp(12px, 4vh, 22px) 0; }
         .veil {
           background:
             linear-gradient(to right, rgba(9,13,20,0.95) 0%, rgba(9,13,20,0.85) 52%, rgba(9,13,20,0.62) 100%),

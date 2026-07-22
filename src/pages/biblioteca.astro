@@ -419,6 +419,13 @@ const emblema = (n: number) => `/assets/emblemas-insignias/ui/insignias-interven
   /* MOVIL Y APAISADO. Mismo umbral que la casa: ancho <=860 o alto <=480 (apaisado). La
      escena se queda de fondo, Nara se retira (encogida es una pegatina, no ella) y el
      catalogo ocupa el ancho. El velo cierra entero para que el texto lea sobre la piedra. */
+  /* La barra inferior (64px) llega hasta 1280: biblioteca anula el padding-bottom de
+     .contenido, asi que la holgura del catalogo se devuelve aqui en toda la franja tablet.
+     Solo holgura; el colapso a una columna (sin Nara) se queda en movil (860). */
+  @media (max-width: 1280px) {
+    .biblio__cat { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px); }
+  }
+
   @media (max-width: 860px), (max-height: 480px) {
     .contenido > .biblio { display: block; }
     .biblio__guia { display: none; }

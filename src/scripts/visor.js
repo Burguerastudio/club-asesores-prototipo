@@ -40,6 +40,16 @@ export function montarVisor() {
     lienzo.style.transform = `translate(${x}px, ${y}px) scale(${escala})`;
   };
 
+  // El centro: cuanto hay que desplazar el lienzo para que quede centrado en el visor.
+  // Como el lienzo SIEMPRE es >= el visor, sale <= 0, o sea dentro de los limites de arrastre.
+  const centro = () => {
+    const v = visor.getBoundingClientRect();
+    return {
+      x: (v.width - lienzo.offsetWidth * escala) / 2,
+      y: (v.height - lienzo.offsetHeight * escala) / 2,
+    };
+  };
+
   // Acerca o aleja SIN que se escape lo que estas mirando: el punto bajo el raton (o el
   // centro, si viene de un boton) se queda donde esta. Sin esto, el zoom tira del mapa
   // hacia la esquina y pierdes de vista lo que ibas a mirar.
@@ -105,7 +115,7 @@ export function montarVisor() {
     b.addEventListener('click', () => zoomA(escala + Number(b.dataset.zoom) * PASO));
   });
   visor.querySelector('[data-centrar]')?.addEventListener('click', () => {
-    escala = 1; x = 0; y = 0; pintar();
+    escala = 1; const c = centro(); x = c.x; y = c.y; pintar();
   });
 
   // TECLADO. El visor no es focusable a proposito (no es un control): las flechas mueven
@@ -126,5 +136,12 @@ export function montarVisor() {
   // Al cambiar la ventana, el lienzo cambia de tamano y los limites con el: si no se
   // repinta, el mapa se queda despegado de un borde.
   addEventListener('resize', pintar);
+
+  // En tactil (movil y tablet) el castro arranca CENTRADO, no pegado a la izquierda: el
+  // mapa es ancho y a la izquierda se perdia medio castro. En escritorio se respeta el
+  // encuadre de siempre (x=0), que el cliente ya dio por bueno.
+  if (matchMedia('(max-width: 1280px)').matches) {
+    const c = centro(); x = c.x; y = c.y;
+  }
   pintar();
 }
