@@ -1,0 +1,449 @@
+---
+// La Biblioteca de Recursos (P3). El catálogo del club: donde vive la mayor parte del
+// contenido. "Encontrar para aplicar, no acumular" (brief 9.1).
+//
+// Aquí se hace la PROGRESIÓN de cada intervención (+25 PF): ver el contenido y usar su
+// recurso. El segundo paso (el Reto) se ejecuta en la Torre. Las dos salas RESPIRAN EL
+// MISMO AIRE (la escena viva de fondo, Nara guiando, cartas con emblema y botón), pero no
+// son gemelas: la Torre es una escalera que se sube (columna 1-12); la Biblioteca es un
+// catálogo que se recorre, ORGANIZADO POR SENDA. Esa es su identidad (Mati, 2026-07-20).
+//
+// El emblema de cada carta es el de PROGRESIÓN (el paso que se gana aquí), con dos estados
+// y no tres: encendido si ya viste la clase, apagado si no. Nada de mezclar oro y plata;
+// eso confundía porque metía el estado del tema entero donde solo importa la clase.
+//
+// El contenido es REAL, del cliente: las doce clases del club con su sinopsis (Mati, en
+// inputs/contenidos-plataformas.md). Solo las doce del club: las formaciones de pago son
+// otro producto y no viven aquí.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { intervenciones, sendas, activa, PF, pasosDe } from '../data/demo.js';
+
+// Estado de una CLASE (el contenido, no el reto):
+//   vista      -> ya la viste y usaste su recurso (Progresión hecha). Emblema encendido.
+//   bloqueada  -> mes futuro (drip): con polvo, no se entra.
+//   disponible -> abierta y sin ver aún.
+const estadoClase = (i) =>
+  pasosDe(i).includes('progresion') ? 'vista'
+  : i.estado === 'bloqueada' ? 'bloqueada'
+  : 'disponible';
+
+const sendaColor = (i) => i.senda === 'Cierre' ? 'var(--mist)' : sendas[i.senda]?.color ?? 'var(--mist)';
+// El MODO manda el aspecto de la tarjeta destacada: mes | vista | disponible | bloqueada.
+// La del mes es 'mes' aunque además esté vista: gana lo que toca ahora.
+const modoDe = (i) => (i.n === activa.n ? 'mes' : estadoClase(i));
+const clase = (i) => ({ ...i, claseEstado: estadoClase(i), esMes: i.n === activa.n, modo: modoDe(i), sendaColor: sendaColor(i) });
+
+// Las doce en orden 1-12. Se pueden intercambiar (Mati, 2026-07-20): la de arriba es la
+// SELECCIONADA, no siempre la del mes. Se elige clicando una de la rejilla, y la tarjeta
+// grande cambia de aspecto según su estado. Al cargar, la seleccionada es la del mes.
+const todas = intervenciones.map(clase);
+const claseDelMes = todas.find((c) => c.esMes);
+if (!claseDelMes) throw new Error('La Biblioteca pide la clase de la intervención activa y no aparece.');
+const aplicadas = intervenciones.filter((i) => estadoClase(i) === 'vista').length;
+
+// El texto del kicker y del botón de la tarjeta destacada, por modo. El JS los reusa al
+// cambiar de selección, así que viven aquí en un sitio y no repartidos.
+const KICKER = { mes: 'Tu clase de este mes', vista: 'Clase vista', disponible: 'Disponible', bloqueada: 'Aún cerrada' };
+const CTA = { mes: 'Ver la clase', vista: 'Repasar la clase', disponible: 'Ver la clase', bloqueada: '' };
+
+// Nara guía, como en la Torre, pero con su voz de aquí: el saber que se queda mirándose.
+// La frase del "este mes" va aparte porque nombra la clase activa, que cambia con el rango
+// (el conmutador la re-deriva abajo). El resto es voz fija de Nara.
+const diceNaraLead = 'El Rebelde ha cubierto de polvo estos estantes para que el saber se quede aquí, mirándose, sin bajar a tu despacho. Cada clase que aplicas enciende su lámpara.';
+const diceNaraMes = `Este mes te espera "${claseDelMes.titulo}".`;
+
+const F_CARTA = 'tl-clip br-clip border';
+const BADGE = { vista: 'Vista', disponible: 'Sin ver', bloqueada: 'Se abre en su mes' };
+type ClaseEstado = keyof typeof BADGE;
+
+// El emblema de progresión de una intervención (acero). No cambia de asset por estado: lo
+// que cambia es si se pinta encendido o apagado, y eso lo hace el CSS.
+const emblema = (n: number) => `/assets/emblemas-insignias/ui/insignias-intervencion/progresion/insignia-i${String(n).padStart(2, '0')}-progresion.webp`;
+---
+
+<Fortaleza title="Biblioteca de Recursos, Club de la Asesoría" activa="/biblioteca">
+  <div class="biblio">
+    <!-- LA ESCENA, DE FONDO. La Biblioteca viva a pantalla completa: el mismo aire que la
+         Torre. El boomerang para que el bucle no salte. -->
+    <div class="biblio__escena" aria-hidden="true">
+      <img class="biblio__im" src="/assets/mapa-escenas/ui/biblioteca-fondo.webp" alt="" width="2752" height="1536" />
+    </div>
+    <div class="biblio__velo" aria-hidden="true"></div>
+
+    <!-- NARA, al pie del lado libre: el mismo gesto que en la Torre, su voz propia aquí. -->
+    <aside class="biblio__guia" aria-label="Aviso de Nara">
+      <span class="figura figura--luz biblio__fig">
+        <img src="/assets/personajes/ui/nara.webp" alt="Nara, la guardiana de la fortaleza" width="184" height="580" />
+        <span class="aura" aria-hidden="true"></span>
+      </span>
+      <div class="biblio__dice">
+        <p class="cita biblio__txt">{diceNaraLead} <span data-nara-mes>{diceNaraMes}</span></p>
+        <p class="biblio__firma">Nara, guardiana de la fortaleza</p>
+      </div>
+    </aside>
+
+    <!-- EL CATÁLOGO. Arriba la clase del mes grande; abajo el mapa de las otras once,
+         compacto y sin scroll. La senda de cada una se lee por el color de su filo. -->
+    <section class="biblio__cat" aria-label="El catálogo de la Biblioteca">
+      <!-- Sin buscador propio: la lupa del HUD ya busca en toda la fortaleza, y aquí solo
+           hay doce clases a la vista (Mati, 2026-07-20). -->
+
+      <!-- LA TARJETA DESTACADA: muestra la clase SELECCIONADA. Su aspecto cambia por modo
+           (mes / vista / disponible / bloqueada). El JS la rellena al elegir de la rejilla;
+           el HTML nace con la del mes, así funciona aunque el JS no llegue. -->
+      <article class={`destacado destacado--${claseDelMes.modo}`} id="destacado" data-modo={claseDelMes.modo} data-augmented-ui="tl-clip br-clip border" aria-live="polite">
+        <!-- Eyebrow de badges: el estado (cambia con la selección) y la posición. Mismo
+             lenguaje que la Torre, con el vocabulario de la Biblioteca. -->
+        <div class="destacado__badges">
+          <span class="badge badge--estado" data-k>{KICKER[claseDelMes.modo as keyof typeof KICKER]}</span>
+          <span class="badge badge--pos"><b data-num>{String(claseDelMes.n).padStart(2, '0')}</b> / {intervenciones.length}</span>
+        </div>
+        <div class="destacado__top">
+          <img class="destacado__im" data-im src={emblema(claseDelMes.n)} alt="" aria-hidden="true" width="256" height="256" />
+          <b class="destacado__t" data-t>{claseDelMes.titulo}</b>
+        </div>
+        <p class="destacado__a" data-a>{claseDelMes.sinopsis}</p>
+        <div class="destacado__pie">
+          <div class="destacado__meta">
+            <span class="badge badge--paso">Progresión</span>
+            <span class="badge badge--pf"><img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />+{PF.progresion} PF</span>
+          </div>
+          <a class="btn-linea destacado__btn" data-btn href={`/reproductor/${claseDelMes.n}`} data-augmented-ui="l-clip-y r-clip-y">{CTA[claseDelMes.modo as keyof typeof CTA]}</a>
+          <span class="destacado__lock" data-lock hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            Se abre en su mes
+          </span>
+        </div>
+      </article>
+
+      <!-- LA ESCALERA: las doce en vertical, unidas por el riel, IGUAL que la Torre (Mati,
+           2026-07-21). Cada peldaño es un botón que sube la clase a la tarjeta. El estado se
+           mapea a las mismas clases visuales que la Torre: vista→fortalecida (check), el mes
+           →activa (punto), bloqueada→lock. -->
+      <div class="escalera">
+        <p class="escalera__k">El catálogo <b>{aplicadas}/{intervenciones.length}</b> vistas</p>
+        <ol class="peldanos">
+          {todas.map((c) => {
+            const pel = c.esMes ? 'activa' : c.claseEstado === 'vista' ? 'fortalecida' : c.claseEstado === 'bloqueada' ? 'bloqueada' : 'disponible';
+            return (
+              <li>
+                <button
+                  type="button"
+                  class={`peldano peldano--${pel}${c.esMes ? ' is-sel' : ''}`}
+                  data-n={c.n} data-modo={c.modo}
+                  data-titulo={c.titulo} data-sinopsis={c.sinopsis}
+                  data-emblema={emblema(c.n)}
+                  aria-pressed={c.esMes ? 'true' : 'false'}
+                  title={`${c.n}. ${c.titulo}`}
+                >
+                  <span class="peldano__riel" aria-hidden="true"></span>
+                  <span class="peldano__n">{c.n}</span>
+                  <img class="peldano__im" src={emblema(c.n)} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
+                  <b class="peldano__t">{c.titulo}</b>
+                  {c.esMes ? (
+                    <svg class="peldano__ic peldano__ic--vivo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
+                  ) : c.claseEstado === 'vista' ? (
+                    <svg class="peldano__ic peldano__ic--ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  ) : c.claseEstado === 'bloqueada' ? (
+                    <svg class="peldano__ic peldano__ic--lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                  ) : null}
+                  <span class="sr-only">{BADGE[c.claseEstado as ClaseEstado]}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  </div>
+</Fortaleza>
+
+<script>
+  import { estadoDemo } from '../scripts/demo-director.js';
+
+  // EL SELECTOR. Al clicar un tomo de la rejilla, esa clase sube a la tarjeta destacada, y
+  // la tarjeta cambia de aspecto según su modo (mes/vista/disponible/bloqueada). Los textos
+  // de kicker y botón salen del frontmatter (data-*), para no repetir criterio.
+  const KICKER = { mes: 'Tu clase de este mes', vista: 'Clase vista', disponible: 'Disponible', bloqueada: 'Aún cerrada' };
+  const CTA = { mes: 'Ver la clase', vista: 'Repasar la clase', disponible: 'Ver la clase', bloqueada: '' };
+
+  const destacado = document.getElementById('destacado');
+  const peldanos = [...document.querySelectorAll('.peldano')];
+
+  const seleccionar = (peldano) => {
+    if (!destacado || !(peldano instanceof HTMLElement)) return;
+    const { n, modo, titulo, sinopsis, emblema } = peldano.dataset;
+    const m = modo || 'disponible';
+    destacado.dataset.modo = m;
+    destacado.className = `destacado destacado--${m}`;
+    destacado.querySelector('[data-num]').textContent = String(n).padStart(2, '0');
+    destacado.querySelector('[data-k]').textContent = KICKER[m] || '';
+    destacado.querySelector('[data-t]').textContent = titulo || '';
+    destacado.querySelector('[data-a]').textContent = sinopsis || '';
+    destacado.querySelector('[data-im]').src = emblema || '';
+
+    // Bloqueada: no hay clase que ver, se muestra el candado en vez del botón.
+    const btn = destacado.querySelector('[data-btn]');
+    const lock = destacado.querySelector('[data-lock]');
+    const bloqueada = m === 'bloqueada';
+    btn.hidden = bloqueada;
+    lock.hidden = !bloqueada;
+    if (!bloqueada) {
+      btn.textContent = CTA[m] || 'Ver la clase';
+      // Cada clase lleva a SU curso: /reproductor/{n} (una página por clase, getStaticPaths).
+      if (btn instanceof HTMLAnchorElement) btn.href = `/reproductor/${n}`;
+    }
+
+    for (const t of peldanos) t.setAttribute('aria-pressed', String(t === peldano));
+    peldanos.forEach((t) => t.classList.toggle('is-sel', t === peldano));
+  };
+  peldanos.forEach((t) => t.addEventListener('click', () => seleccionar(t)));
+
+  // EL CONMUTADOR DE DEMO. El build pinta el rango 3 (F=4, la 5 es la del mes); esto
+  // re-deriva por el numero de fortalecidas (0..12) que elija la demo el estado PROFUNDO del
+  // catalogo: la clase de cada peldano (vista→fortalecida, la del mes→activa, futura→
+  // bloqueada), su icono, su lectura de lector de pantalla y el contador de vistas. Luego
+  // sube a la destacada la nueva clase del mes (n=F+1) reusando el propio selector; en rango
+  // maximo (F=12) no hay mes: arranca en la ultima, ya vista. Los textos (titulo, sinopsis)
+  // no se tocan: son estaticos por clase y ya viven en cada peldano (data-*).
+  (() => {
+    const F = estadoDemo().fortalecidas;
+
+    // Los tres iconos del peldano, en un sitio: el mes (punto vivo), vista (check), futura (lock).
+    const ICONO = {
+      vivo: { cls: 'peldano__ic peldano__ic--vivo', svg: '<circle cx="12" cy="12" r="5" fill="currentColor"/>' },
+      ok:   { cls: 'peldano__ic peldano__ic--ok',   svg: '<path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' },
+      lock: { cls: 'peldano__ic peldano__ic--lock', svg: '<rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/>' },
+    };
+    // La lectura de estado para lector de pantalla, igual que el BADGE del frontmatter.
+    const BADGE = { vista: 'Vista', disponible: 'Sin ver', bloqueada: 'Se abre en su mes' };
+
+    peldanos.forEach((btn, idx) => {
+      const n = idx + 1;
+      // Misma regla que el build: progresion (vista) ganada en n<=F y en la del mes (n=F+1).
+      let claseEstado, pel, modo, ico;
+      if (n <= F) { claseEstado = 'vista'; pel = 'fortalecida'; modo = 'vista'; ico = 'ok'; }
+      else if (n === F + 1 && F < 12) { claseEstado = 'vista'; pel = 'activa'; modo = 'mes'; ico = 'vivo'; }
+      else { claseEstado = 'bloqueada'; pel = 'bloqueada'; modo = 'bloqueada'; ico = 'lock'; }
+      // La clase manda el filo del riel y el encendido/apagado del emblema (todo por CSS).
+      btn.className = 'peldano peldano--' + pel;
+      btn.setAttribute('data-modo', modo);
+      const ic = btn.querySelector('.peldano__ic');
+      if (ic) { ic.setAttribute('class', ICONO[ico].cls); ic.innerHTML = ICONO[ico].svg; }
+      const sr = btn.querySelector('.sr-only');
+      if (sr) sr.textContent = BADGE[claseEstado];
+    });
+
+    // El contador de vistas: la progresion cuenta en las fortalecidas y en la del mes.
+    const vistas = F + (F < 12 ? 1 : 0);
+    const kb = document.querySelector('.escalera__k b');
+    if (kb) kb.textContent = `${vistas}/${peldanos.length}`;
+
+    // La destacada arranca en la nueva clase del mes; si no hay (rango maximo), en la ultima.
+    const delMes = peldanos.find((b) => b.getAttribute('data-modo') === 'mes');
+    const inicial = delMes || peldanos[peldanos.length - 1];
+    if (inicial) seleccionar(inicial);
+
+    // Nara nombra la clase del mes: se re-deriva a la nueva activa (su titulo ya vive en el
+    // data-titulo del peldano, no se inventa nada). En rango maximo no hay mes: se oculta.
+    const naraMes = document.querySelector<HTMLElement>('[data-nara-mes]');
+    if (naraMes) {
+      if (delMes) { naraMes.style.display = ''; naraMes.textContent = `Este mes te espera "${delMes.dataset.titulo}".`; }
+      else { naraMes.style.display = 'none'; }
+    }
+  })();
+
+</script>
+
+<style is:global>
+  /* A PANTALLA COMPLETA con la escena de fondo: el mismo aire que la Torre y el Mapa. */
+  .contenido:has(.biblio) { padding: 0; }
+  .contenido > .biblio {
+    width: 100vw; max-width: 100vw;
+    margin-left: 50%; transform: translateX(-50%);
+    margin-top: calc(var(--alto-shell) * -1 - 26px);
+    height: 100svh;
+    position: relative; overflow: hidden;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: clamp(16px, 2vw, 32px);
+  }
+
+  .biblio__escena { position: absolute; inset: 0; }
+  .biblio__im { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 30% center; }
+
+  .biblio__velo {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to left, rgba(9,13,20,0.96) 0%, rgba(9,13,20,0.88) 38%, rgba(9,13,20,0.32) 66%, transparent 88%),
+      linear-gradient(to top, rgba(9,13,20,0.9) 0%, rgba(9,13,20,0.42) 24%, transparent 46%);
+  }
+
+  /* NARA, al pie del lado libre. Mismo gesto que la Torre. */
+  .biblio__guia {
+    position: relative; flex: none;
+    display: flex; align-items: flex-end; gap: clamp(10px, 1.2vw, 18px);
+    max-width: min(420px, 34vw);
+    margin: 0 0 clamp(20px, 4vh, 44px) clamp(14px, 3vw, 32px);
+  }
+  .biblio__fig { align-self: flex-end; }
+  .biblio__fig img { display: block; width: auto; height: clamp(210px, 34vh, 340px); }
+  .biblio__fig .aura { left: 51%; top: 44.5%; width: 30%; }
+  .biblio__dice { padding-bottom: clamp(16px, 3vh, 34px); }
+  .biblio__txt { margin: 0; font-size: clamp(0.9rem, 1.05vw, 1.02rem); line-height: 1.62; color: var(--moon); text-shadow: 0 2px 14px rgba(9,13,20,0.95), 0 1px 3px rgba(9,13,20,0.9); }
+  .biblio__firma { margin: 0.8rem 0 0; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--mist); text-shadow: 0 1px 8px rgba(9,13,20,0.9); }
+
+  /* EL PANEL. Arriba la clase del mes grande; abajo el mapa del catálogo compacto. Sin
+     scroll: manda la del mes, como en la Torre manda el reto del mes. */
+  .biblio__cat {
+    position: relative; flex: none;
+    width: min(600px, 47vw);
+    margin-right: clamp(14px, 3vw, 32px);
+    padding: calc(var(--alto-shell) + 8px) 0 clamp(16px, 2.4vh, 26px);
+    display: flex; flex-direction: column; gap: clamp(12px, 1.8vh, 20px);
+    /* Igual que la Torre: pensado para caber sin scroll; si la ventana es baja, scrollea
+       por dentro en vez de desbordar bajo el HUD. El hueco del scrollbar reservado. */
+    max-height: 100svh; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    scrollbar-gutter: stable; padding-right: 4px;
+    scrollbar-width: thin; scrollbar-color: rgba(194,205,214,0.2) transparent;
+  }
+
+  .entra .destacado { animation: entra-vivo 0.55s ease-out both; }
+  .entra .mapa { animation: entra-vivo 0.55s ease-out 0.12s both; }
+  @keyframes entra-vivo { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  .entra .biblio__guia { animation: entra-guia 0.6s ease-out both; }
+  @keyframes entra-guia { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* LA TARJETA DESTACADA. Con la forma cortada de la casa (augmented-ui) y badges, igual
+     que la Torre. Su color cambia con el MODO de la clase seleccionada. */
+  /* Comparte el material de piedra del sistema (grano + sombra) y el chaflan canon, como en
+     la Torre: la carta protagonista lee como objeto labrado, no como rectangulo tintado. */
+  .destacado {
+    --aug-tl: var(--corte); --aug-br: var(--corte); --aug-border-all: 1px;
+    --acento: var(--amber); --acento-rgb: 232,169,63;
+    --aug-border-bg: rgba(var(--acento-rgb), 0.55);
+    position: relative; display: block; padding: clamp(18px, 2.2vw, 26px);
+    background-color: rgba(9,13,20,0.72);
+    background-image: var(--grano), linear-gradient(125deg, rgba(var(--acento-rgb), 0.16), rgba(9,13,20,0.42) 55%, rgba(9,13,20,0.86));
+    filter: drop-shadow(0 16px 30px rgba(0,0,0,0.7));
+    transition: background-color 0.35s ease;
+  }
+  /* Los cuatro modos: mes (ámbar), vista (cian), disponible (aqua), bloqueada (gris) */
+  .destacado--mes { --acento: var(--amber); --acento-rgb: 232,169,63; }
+  .destacado--vista { --acento: var(--aqua); --acento-rgb: 95,208,224; }
+  .destacado--disponible { --acento: var(--aqua); --acento-rgb: 95,208,224; }
+  .destacado--bloqueada { --acento: var(--mist); --acento-rgb: 138,154,170; background-image: var(--grano), linear-gradient(125deg, rgba(34,44,56,0.5), rgba(9,13,20,0.86)); }
+
+  /* LOS BADGES. Píldoras chaflanadas: el estado (cambia con el modo) y la posición. */
+  .destacado__badges { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; font-size: 0.64rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+  .badge--estado { color: var(--night-1, #0b111b); background: var(--acento); }
+  .destacado--bloqueada .badge--estado { color: var(--moon); background: rgba(138,154,170,0.28); }
+  .badge--pos { color: var(--acento); background: rgba(var(--acento-rgb), 0.12); border: 1px solid rgba(var(--acento-rgb), 0.3); letter-spacing: 0.04em; }
+  .badge--pos b { font-family: var(--display, serif); font-weight: 600; }
+
+  .destacado__top { display: flex; align-items: center; gap: clamp(14px, 1.6vw, 20px); margin-top: clamp(14px, 1.8vh, 20px); }
+  .destacado__im { width: clamp(60px, 6vw, 80px); height: auto; object-fit: contain; flex: none; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+  .destacado--bloqueada .destacado__im { filter: grayscale(1) brightness(0.55); opacity: 0.85; }
+  .destacado__t { font-family: var(--serif, serif); font-size: clamp(1.35rem, 2vw, 1.75rem); font-weight: 600; color: var(--bone); line-height: 1.1; }
+  .destacado--bloqueada .destacado__t { color: var(--moon); }
+  .destacado__a { margin: clamp(13px, 1.8vh, 18px) 0 0; font-size: clamp(0.88rem, 1.1vw, 1rem); line-height: 1.58; color: var(--moon); }
+  .destacado__pie {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-top: clamp(16px, 2.2vh, 22px); padding-top: clamp(13px, 1.8vh, 18px);
+    border-top: 1px solid rgba(var(--acento-rgb), 0.18);
+  }
+  .destacado__meta { display: flex; align-items: center; gap: 8px; }
+  .badge--paso { color: var(--moon); background: rgba(194,205,214,0.1); border: 1px solid rgba(194,205,214,0.2); }
+  .badge--pf { color: var(--acento); background: rgba(var(--acento-rgb), 0.12); border: 1px solid rgba(var(--acento-rgb), 0.3); }
+  .badge--pf img { width: auto; height: 15px; display: block; margin: -2px 0; }
+  .destacado--bloqueada .badge--pf img { filter: grayscale(1) brightness(0.7); }
+  .destacado__btn { flex: none; padding: 11px 24px; font-size: 0.82rem; --aug-border-bg: rgba(var(--acento-rgb), 0.85); color: var(--acento); background: rgba(var(--acento-rgb), 0.14); }
+  .destacado__lock { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mist); }
+  .destacado__btn[hidden], .destacado__lock[hidden] { display: none; }
+
+  /* LA ESCALERA. Idéntica a la Torre: los doce peldaños en vertical, unidos por el riel.
+     Cambia lo que dice cada estado (aquí, clases vistas), no la forma. */
+  .escalera__k { margin: 0 0 6px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--mist); }
+  .escalera__k b { color: var(--aqua); }
+  .peldanos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+  .peldano {
+    position: relative;
+    width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+    display: grid; grid-template-columns: 26px 28px 1fr auto; align-items: center; gap: 12px;
+    padding: 4px 12px; background: transparent; border: 0;
+    transition: background 0.15s ease;
+  }
+  /* left = padding(12) + col-número(26) + gap(12) + medio-emblema(14) = 64px */
+  .peldano__riel { position: absolute; left: 64px; top: 0; bottom: -1px; width: 2px; transform: translateX(-1px); background: rgba(194,205,214,0.14); z-index: 0; }
+  .peldano:first-child .peldano__riel { top: 50%; }
+  .peldano:last-child .peldano__riel { bottom: 50%; }
+  .peldano--fortalecida .peldano__riel { background: linear-gradient(180deg, rgba(95,208,224,0.7), rgba(63,169,201,0.5)); }
+  .peldano--activa .peldano__riel { background: linear-gradient(180deg, var(--amber), rgba(232,169,63,0.4)); }
+
+  .peldano:hover { background: rgba(28,42,58,0.5); border-radius: 4px; }
+  .peldano:focus-visible { outline: 2px solid var(--aqua); outline-offset: -2px; border-radius: 4px; }
+
+  .peldano__n { position: relative; z-index: 1; font-family: var(--display, serif); font-size: 1.05rem; color: var(--mist); text-align: center; }
+  .peldano--fortalecida .peldano__n { color: var(--aqua); }
+  .peldano--activa .peldano__n { color: var(--amber); font-weight: 600; }
+  .peldano--bloqueada .peldano__n { color: rgba(194,205,214,0.35); }
+
+  .peldano__im {
+    position: relative; z-index: 1; width: 30px; height: 30px; object-fit: contain;
+    background: radial-gradient(circle, var(--night-2, #0e1622) 55%, transparent 72%);
+  }
+  .peldano--bloqueada .peldano__im { filter: grayscale(1) brightness(0.5); opacity: 0.7; }
+  .peldano--activa .peldano__im { filter: grayscale(1) brightness(0.6); }
+  .peldano--disponible .peldano__im { filter: grayscale(1) brightness(0.75); }
+
+  .peldano__t { font-size: 0.82rem; font-weight: 600; color: var(--moon); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peldano--fortalecida .peldano__t { color: var(--bone); }
+  .peldano--bloqueada .peldano__t { color: var(--mist); }
+  .peldano__ic { width: 15px; height: 15px; flex: none; }
+  .peldano__ic--ok { color: var(--aqua); }
+  .peldano__ic--vivo { color: var(--amber); }
+  .peldano__ic--lock { color: rgba(194,205,214,0.35); }
+
+  .peldano.is-sel { background: linear-gradient(90deg, rgba(var(--sel-rgb, 95,208,224), 0.14), transparent 70%); border-radius: 4px; }
+  .peldano.is-sel::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; background: var(--aqua); }
+  .peldano.is-sel.peldano--activa { --sel-rgb: 232,169,63; }
+  .peldano.is-sel.peldano--activa::before { background: var(--amber); }
+
+
+  /* MOVIL Y APAISADO. Mismo umbral que la casa: ancho <=860 o alto <=480 (apaisado). La
+     escena se queda de fondo, Nara se retira (encogida es una pegatina, no ella) y el
+     catalogo ocupa el ancho. El velo cierra entero para que el texto lea sobre la piedra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido > .biblio { display: block; }
+    .biblio__guia { display: none; }
+    .biblio__velo { background: rgba(9,13,20,0.9); }
+    .biblio__cat {
+      width: 100%; margin: 0;
+      padding-left: clamp(14px, 3vw, 32px); padding-right: clamp(14px, 3vw, 32px);
+      /* La escalera de doce no puede quedar bajo la barra inferior (64px): arriba el :has
+         mata el padding-bottom del layout, asi que la holgura del movil la pone la sala. */
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
+    }
+    /* El CTA no cabe junto a los badges en anchos estrechos (a 320 se cortaba "Ver la
+       clase"): el pie envuelve y el boton baja a su linea, a todo el ancho, que ademas es
+       mejor objetivo tactil. */
+    .destacado__pie { flex-wrap: wrap; }
+    .destacado__meta { flex: 1 1 auto; }
+    .destacado__btn { flex: 1 1 100%; }
+  }
+
+  /* APAISADO (poca altura): la destacada se aprieta en vertical para que la escalera asome
+     sin tener que bucear el scroll. Solo tono vertical: la tipografia no se toca. */
+  @media (max-height: 480px) {
+    .destacado { padding-top: clamp(14px, 2.2vw, 26px); padding-bottom: clamp(14px, 2.2vw, 26px); }
+    .destacado__top { margin-top: 10px; }
+    .destacado__a { margin-top: 10px; }
+    .destacado__pie { margin-top: 12px; padding-top: 12px; }
+  }
+</style>

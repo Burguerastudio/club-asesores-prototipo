@@ -49,42 +49,47 @@ const pieces = [
     { img: `${A}/emblemas-insignias/arquetipos/arquetipo-socializador.webp`, cap: 'Socializador' },
     { img: `${A}/emblemas-insignias/arquetipos/arquetipo-killer.webp`, cap: 'Desafio' },
   ]},
-  { grid: 'crests', w: 'clamp(108px,11.5vw,168px)', kicker: 'Hitos del ciclo', title: 'Seis logros globales', line: 'Los grandes hitos del primer ano en la fortaleza.', items: [
+  // Tres, no seis (mecanicas-gamificacion 3.2, 2026-07-20): el sistema recorta a 15 logros
+  // en total, 12 insignias de intervencion mas estos. Los otros tres assets siguen
+  // generados y guardados por si vuelven, pero hoy no los usa nadie.
+  { grid: 'crests', w: 'clamp(108px,11.5vw,168px)', kicker: 'Hitos del ciclo', title: 'Tres logros globales', line: 'Los tres hitos grandes del primer ano en la fortaleza.', items: [
     { img: `${A}/emblemas-insignias/logros-generales/logro-global-entrada.webp`, cap: 'Entrada en la Fortaleza' },
-    { img: `${A}/emblemas-insignias/logros-generales/logro-global-mapa-revelado.webp`, cap: 'Mapa Revelado' },
-    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primera-reparacion.webp`, cap: 'Primera Reparacion' },
-    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primera-grieta.webp`, cap: 'Primera Grieta Sellada' },
-    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primer-tramo.webp`, cap: 'Primer Tramo en Marcha' },
-    { img: `${A}/emblemas-insignias/logros-generales/logro-global-cierre-ciclo.webp`, cap: 'Cierre del Ciclo' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primera-reparacion.webp`, cap: 'Primer Mecanismo Activado' },
+    { img: `${A}/emblemas-insignias/logros-generales/logro-global-primer-tramo.webp`, cap: 'Fortaleza en Marcha' },
   ]},
   { grid: 'runas', w: 'clamp(76px,7.8vw,116px)', kicker: 'Habilidades', title: 'Doce habilidades desbloqueadas', line: 'Una capacidad nueva por cada intervencion fortalecida.', items: [
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-defensa-valor.webp`, cap: 'Defensa del valor' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-arquitectura-oferta.webp`, cap: 'Arquitectura de oferta' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-gobierno-margen.webp`, cap: 'Gobierno del margen' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-defensa-valor.webp`, cap: 'Criterio de valor' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-arquitectura-oferta.webp`, cap: 'Claridad de oferta' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-gobierno-margen.webp`, cap: 'Lectura de rentabilidad' },
     { img: `${A}/emblemas-insignias/habilidades/habilidad-orden-operativo.webp`, cap: 'Orden operativo' },
     { img: `${A}/emblemas-insignias/habilidades/habilidad-visibilidad-estrategica.webp`, cap: 'Visibilidad estrategica' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-experiencia-entrada.webp`, cap: 'Experiencia de entrada' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-delegacion-consciente.webp`, cap: 'Delegacion consciente' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-datos.webp`, cap: 'Direccion por datos' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-valor-visible.webp`, cap: 'Valor visible' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-autoridad-mercado.webp`, cap: 'Autoridad de mercado' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-experiencia-entrada.webp`, cap: 'Experiencia inicial' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-delegacion-consciente.webp`, cap: 'Delegacion segura' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-datos.webp`, cap: 'Decision basada en datos' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-valor-visible.webp`, cap: 'Comunicacion de valor' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-autoridad-mercado.webp`, cap: 'Autoridad profesional' },
     { img: `${A}/emblemas-insignias/habilidades/habilidad-iniciativa-comercial.webp`, cap: 'Iniciativa comercial' },
-    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-estrategica.webp`, cap: 'Direccion estrategica' },
+    { img: `${A}/emblemas-insignias/habilidades/habilidad-direccion-estrategica.webp`, cap: 'Direccion del siguiente ciclo' },
   ]},
-  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignias de Progresion', title: 'Progresion (acero)', line: 'Se gana al recorrer el contenido clave de cada intervencion.', items: insigniaItems('progresion', 'progresion') },
-  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignias de Accion', title: 'Accion (plata)', line: 'Se gana al ejecutar la accion o el reto de la intervencion.', items: insigniaItems('accion', 'accion') },
-  { grid: 'insignias sello', w: 'clamp(78px,8.2vw,118px)', kicker: 'Sello de Fortaleza', title: 'Sello de Fortaleza (oro)', line: 'La implementacion validada. La sala recupera funcionamiento y sube el rango.', items: insigniaItems('sellos', 'sello') },
+  // 2026-07-20: ya no son tres insignias por intervencion, sino UNA con tres cargas. El
+  // arte no cambia ni una pieza; cambia lo que cuenta cada juego, que ahora es un ESTADO.
+  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignia bloqueada', title: 'Sin empezar (acero)', line: 'La intervencion aun no esta abierta. El emblema esta ahi, apagado: se ve lo que falta.', items: insigniaItems('progresion', 'progresion') },
+  { grid: 'insignias', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignia en curso', title: 'En marcha (plata)', line: 'La intervencion esta abierta y su Reto de Torre, pendiente. El emblema se enciende.', items: insigniaItems('accion', 'accion') },
+  { grid: 'insignias sello', w: 'clamp(78px,8.2vw,118px)', kicker: 'Insignia conseguida', title: 'Reparada (oro y laurel)', line: 'La intervencion queda reparada y la sala recupera funcionamiento. Doce de estas hacen el ciclo.', items: insigniaItems('sellos', 'sello') },
   { grid: 'monedas', w: 'clamp(120px,14vw,200px)', kicker: 'Moneda', title: 'Puntos de Fortaleza', line: 'La energia que reactiva la fortaleza. Como fragmento suelto y como cumulo para el medidor.', items: [
     { img: `${A}/moneda/puntos-fortaleza.webp`, cap: 'Fragmento' },
     { img: `${A}/moneda/puntos-fortaleza-cumulo.webp`, cap: 'Cumulo' },
   ]},
-  { grid: 'objetos', w: 'clamp(110px,12vw,178px)', kicker: 'Tienda', title: 'Seis recompensas', line: 'Se canjean por Puntos de Fortaleza. Utiles, nunca decorativas.', items: [
-    { img: `${A}/recompensas/recompensa-kit-entrada.webp`, cap: 'Kit de Entrada' },
-    { img: `${A}/recompensas/recompensa-plantilla-reparacion.webp`, cap: 'Plantilla de Reparacion' },
-    { img: `${A}/recompensas/recompensa-mapa-prioridades.webp`, cap: 'Mapa de Prioridades' },
-    { img: `${A}/recompensas/recompensa-caso-consejo.webp`, cap: 'Caso de Consejo' },
-    { img: `${A}/recompensas/recompensa-biblioteca-herramientas.webp`, cap: 'Biblioteca de Herramientas' },
-    { img: `${A}/recompensas/recompensa-sesion-premium.webp`, cap: 'Sesion Premium' },
+  // No se canjean: se ABREN al cruzar su umbral de puntos, y los puntos no bajan
+  // (mecanicas-gamificacion 6: "no una tienda de canje"). Los nombres son los del
+  // documento del 2026-07-20; el asset de cada uno se asigno por lo que dibuja.
+  { grid: 'objetos', w: 'clamp(110px,12vw,178px)', kicker: 'Recompensas', title: 'Seis recompensas', line: 'Se abren al alcanzar su umbral de Puntos de Fortaleza. Utiles, nunca decorativas.', items: [
+    { img: `${A}/recompensas/recompensa-kit-entrada.webp`, cap: 'Kit de Entrada de Nara' },
+    { img: `${A}/recompensas/recompensa-caso-consejo.webp`, cap: 'Plantilla de Sala de Mandos' },
+    { img: `${A}/recompensas/recompensa-sesion-premium.webp`, cap: 'Pack Biblioteca Aplicada' },
+    { img: `${A}/recompensas/recompensa-mapa-prioridades.webp`, cap: 'Mapa de Fortalecimiento' },
+    { img: `${A}/recompensas/recompensa-plantilla-reparacion.webp`, cap: 'Registro de Grietas' },
+    { img: `${A}/recompensas/recompensa-biblioteca-herramientas.webp`, cap: 'Cofre de Recursos Avanzados' },
   ]},
   { grid: 'texturas', w: 'clamp(96px,10vw,150px)', kicker: 'Materiales', title: 'Nueve texturas base', line: 'Piedra, madera, metal, niebla, plata y mas, para fondos y superficies.', items: [
     { img: `${A}/texturas/textura-piedra.webp`, cap: 'Piedra' },

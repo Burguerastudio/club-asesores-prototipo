@@ -1,0 +1,164 @@
+---
+// El Consejo (P4). La sala de consulta a Conchi: criterio, no juicio (CONTENIDO P4). Sala
+// circular, mesa central bajo luz concentrada, el SÍMBOLO de Conchi (sello celta, sin rostro
+// ni figura: Conchi no se ilustra, es criterio, CONTENIDO 3.4), formulario de consulta e
+// historial. Espacio de VALOR: no da puntos (el motor es Biblioteca→Torre).
+//
+// Estado en la demo: la puerta pesa (desconectada, aún no has preguntado): el historial está
+// vacío y su empty state lo cuenta. Dejar una consulta es lógica del plugin (un 1:1), así que
+// el botón NO navega ni envía: avisa (data-integracion).
+//
+// Escena: el máster en alta vive fuera de ui/ (mapa-escenas/consejo.webp, 2752x1536); la de
+// ui/ es el azulejo de 640px (para el Mapa/Patio). Aquí, a pantalla completa, va el máster.
+import Fortaleza from '../layouts/Fortaleza.astro';
+---
+
+<Fortaleza title="El Consejo, Club de la Asesoría" activa="/consejo">
+  <div class="consejo">
+    <div class="consejo__escena" aria-hidden="true">
+      <img class="consejo__im" src="/assets/mapa-escenas/ui/consejo-fondo.webp" alt="" width="2752" height="1536" />
+    </div>
+    <div class="consejo__velo" aria-hidden="true"></div>
+
+    <section class="consejo__altar" aria-label="Consulta de criterio a Conchi">
+      <div class="consejo__foco" aria-hidden="true"></div>
+
+      <figure class="consejo__sello">
+        <img src="/assets/emblemas-insignias/ui/triskel-sello/sello-conchi.webp" alt="Sello de Conchi, criterio estratégico" width="256" height="256" />
+      </figure>
+      <span class="consejo__firma">Criterio de Conchi</span>
+
+      <p class="consejo__intro">Trae una duda de tu despacho. Aquí se responde con criterio, no con juicio.</p>
+
+      <form class="consulta" autocomplete="off">
+        <label for="pregunta" class="sr-only">Tu consulta</label>
+        <textarea id="pregunta" class="consulta__txt" rows="3" placeholder="¿Qué decisión te pesa?" data-augmented-ui="tl-clip br-clip border"></textarea>
+        <button
+          class="btn-linea consulta__b"
+          type="button"
+          data-integracion="consejo:consulta"
+          data-aviso="Tu consulta llegará a Conchi cuando el Consejo esté conectado."
+          data-augmented-ui="l-clip-y r-clip-y"
+        >
+          Dejar la consulta
+          <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Consultar</span>
+        </button>
+      </form>
+
+      <div class="consejo__historial">
+        <span class="consejo__historial-k">Consultas anteriores</span>
+        <p class="consejo__vacio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          Aún no has consultado. La puerta del Consejo pesa hasta tu primera pregunta.
+        </p>
+      </div>
+    </section>
+  </div>
+</Fortaleza>
+
+<style is:global>
+  .contenido:has(.consejo) { padding: 0; }
+  .contenido > .consejo {
+    width: 100vw; max-width: 100vw;
+    margin-left: 50%; transform: translateX(-50%);
+    margin-top: calc(var(--alto-shell) * -1 - 26px);
+    height: 100svh;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(var(--alto-shell) + clamp(16px, 2.4vh, 28px)) clamp(16px, 4vw, 56px) clamp(22px, 4vh, 44px);
+  }
+
+  .consejo__escena { position: absolute; inset: 0; z-index: 0; }
+  .consejo__im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+  /* En penumbra a propósito (CONTENIDO 7): la sala está a oscuras hasta la primera consulta.
+     La viñeta cierra los bordes y deja respirar la columna de luz del óculo en el centro. */
+  .consejo__velo {
+    position: absolute; inset: 0; z-index: 1;
+    background:
+      radial-gradient(72% 62% at 50% 34%, transparent 0%, rgba(9,13,20,0.4) 66%, rgba(9,13,20,0.82) 100%),
+      linear-gradient(to bottom, rgba(9,13,20,0.7) 0%, transparent 24%, transparent 52%, rgba(9,13,20,0.94) 100%);
+  }
+
+  /* El altar: la columna de la consulta, centrada bajo la luz. */
+  .consejo__altar {
+    position: relative; z-index: 2;
+    width: min(560px, 92vw);
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: clamp(10px, 1.6vh, 18px);
+  }
+  .entra .consejo__altar { animation: sube-c 0.6s ease-out both; }
+  @keyframes sube-c { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Velo suave tras la columna, difuminado por completo (sin canto): da suelo al texto sobre
+     la escena en alta, sin leerse como una caja recortada. */
+  .consejo__foco {
+    position: absolute; z-index: -1; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 168%; height: 158%;
+    background: radial-gradient(closest-side at 50% 46%, rgba(9,13,20,0.72), rgba(9,13,20,0.42) 52%, transparent 80%);
+  }
+
+  .consejo__sello { margin: 0; }
+  .consejo__sello img {
+    width: clamp(92px, 10vw, 132px); height: auto; display: block;
+    filter: drop-shadow(0 0 26px rgba(95,208,224,0.4)) drop-shadow(0 10px 22px rgba(0,0,0,0.6));
+  }
+  .consejo__firma { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--mist); }
+
+  .consejo__intro { margin: clamp(4px, 0.8vh, 10px) 0 clamp(8px, 1.4vh, 16px); max-width: 46ch; font-family: var(--italic, serif); font-style: italic; font-size: clamp(1rem, 1.3vw, 1.2rem); line-height: 1.5; color: var(--moon); text-shadow: 0 2px 14px rgba(9,13,20,0.9); }
+
+  .consulta { width: 100%; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vh, 16px); }
+  .consulta__txt {
+    --aug-tl: 10px; --aug-br: 10px; --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.38);
+    width: 100%; padding: 13px 16px; border: 0; resize: none;
+    color: var(--bone); font-family: var(--sans); font-size: 1rem; line-height: 1.5;
+    background: linear-gradient(180deg, rgba(9,13,20,0.86), rgba(20,32,46,0.6));
+    transition: background 0.25s ease;
+  }
+  .consulta__txt::placeholder { color: rgba(140,160,176,0.5); }
+  .consulta__txt:hover { --aug-border-bg: rgba(194,205,214,0.5); }
+  .consulta__txt:focus { outline: none; --aug-border-bg: var(--cyan); background: linear-gradient(180deg, rgba(16,30,44,0.9), rgba(63,169,201,0.12)); }
+  .consulta__b { position: relative; padding: 12px 26px; font-size: 0.84rem; }
+
+  .consejo__historial { margin-top: clamp(10px, 1.8vh, 20px); padding-top: clamp(12px, 1.8vh, 18px); border-top: 1px solid rgba(194,205,214,0.14); width: 100%; }
+  .consejo__historial-k { display: block; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--mist); margin-bottom: 8px; }
+  .consejo__vacio { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; line-height: 1.5; color: var(--mist); }
+  .consejo__vacio svg { width: 15px; height: 15px; flex: none; opacity: 0.7; }
+
+  /* ============================ RESPONSIVE ============================
+     Escena a sangre: la sala LLENA la ventana; lo que refluye es la columna del altar. */
+
+  /* MOVIL Y APAISADO: el layout pinta una barra inferior fija de 64px, pero
+     .contenido:has(.consejo){padding:0} le borra el padding-bottom que el propio layout
+     le pone en movil, asi que la holgura para no esconder el pie bajo la barra la doy yo.
+     Y si el contenido no cabe (apaisado, poca altura), que fluya y haga scroll en vez de
+     recortar el boton: altura auto + min-height + overflow visible. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido > .consejo {
+      height: auto; min-height: 100svh; overflow: visible;
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + clamp(14px, 3vh, 22px));
+    }
+    .consejo__altar { width: min(520px, 92vw); }
+  }
+
+  /* MOVIL ESTRECHO (<=380): el sello no se come la columna y la cita no aprieta. */
+  @media (max-width: 380px) {
+    .consejo__sello img { width: clamp(76px, 23vw, 96px); }
+    .consejo__intro { font-size: 0.98rem; }
+  }
+
+  /* APAISADO / POCA ALTURA: la sala se comprime para que quepan sello, textarea, boton e
+     historial sin que el pie se esconda bajo la barra. Reusa la vertical (misma query). */
+  @media (max-height: 480px) {
+    .contenido > .consejo { padding-top: calc(var(--alto-shell) + 8px); }
+    .consejo__altar { gap: 6px; }
+    .consejo__sello img { width: clamp(42px, 11vh, 62px); }
+    .consejo__firma { font-size: 0.56rem; }
+    .consejo__intro { font-size: 0.86rem; line-height: 1.34; margin: 1px 0 4px; max-width: 60ch; }
+    .consulta { gap: 8px; }
+    .consulta__txt { padding: 7px 13px; height: 2.6em; font-size: 0.9rem; }
+    .consulta__b { padding: 8px 22px; }
+    .consejo__historial { margin-top: 6px; padding-top: 8px; }
+    .consejo__historial-k { margin-bottom: 4px; }
+    .consejo__vacio { font-size: 0.76rem; }
+  }
+</style>

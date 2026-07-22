@@ -1,26 +1,29 @@
 ---
 // Recompensas (P10). El Shop del sistema, aterrizado en La Fortaleza.
-// Cuelga del avatar del HUD: lo que reclamas con tus PF es tuyo, no un sitio del castro.
+// Cuelga del avatar del HUD: lo que abres con tus PF es tuyo, no un sitio del castro.
 //
-// ES una tienda: el umbral es un PRECIO y al reclamar se gastan los PF (ver demo.js).
-// Y eso cambia de que va la pantalla: no es un escaparate de lo que ya tienes, es una
-// DECISION. Las seis cuestan 6850 y en el ciclo entero solo se ganan 4420, asi que no
-// llegan para todas y hay que elegir. Por eso aqui manda lo que te QUEDA si reclamas.
+// NO ES UNA TIENDA (mecanicas-gamificacion 6, 2026-07-20). Es una ESCALERA: al llegar al
+// umbral la recompensa se abre, y los PF no se gastan. El documento lo dice literal:
+// "un sistema de desbloqueo por umbral de puntos, no una tienda de canje".
 //
-// Lo que no te alcanza SE VE, con cuanto falta. Es lo que dice que hay camino.
+// Eso cambia de que va la pantalla. Ya no es una decision de en que gastas (eso era la
+// version anterior, con la economia vieja): es un camino donde todo lo de arriba llega si
+// sostienes el avance. Por eso no hay "lo que te quedaria": no te quedas sin nada.
+//
+// Lo que aun no alcanzas SE VE, con cuanto falta. Es lo que dice que hay camino.
 import Fortaleza from '../layouts/Fortaleza.astro';
 import Motas from '../components/Motas.astro';
-import { asesora, recompensas } from '../data/demo.js';
+import { asesora, recompensas, abierta, siguienteRecompensa } from '../data/demo.js';
 
 const catalogo = recompensas.map((r) => ({
   ...r,
-  alAlcance: asesora.pf >= r.precio,
-  faltan: Math.max(0, r.precio - asesora.pf),
-  img: `/assets/recompensas/ui/${r.slug}.webp`,
+  abierta: abierta(r),
+  faltan: Math.max(0, r.umbral - asesora.pf),
 }));
 
-// La siguiente que cae: la mas barata de las que faltan. Es la que da la meta corta.
-const siguiente = catalogo.find((r) => !r.alAlcance);
+// La siguiente que cae: la meta corta. Sale de demo.js para que no haya dos criterios.
+const siguiente = siguienteRecompensa && catalogo.find((r) => r.slug === siguienteRecompensa.slug);
+const abiertas = catalogo.filter((r) => r.abierta).length;
 
 const F_AZULEJO = 'tl-clip br-clip border';
 const F_BOTON = 'l-clip-y r-clip-y';
@@ -33,11 +36,18 @@ const F_BOTON = 'l-clip-y r-clip-y';
     <div class="saldo__d">
       <p class="saldo__k">Tus Puntos de Fortaleza</p>
       <p class="saldo__n">
-        <!-- El CUMULO: el deck dice "fragmento suelto y cumulo para el medidor" -->
+        <!-- El CUMULO: el deck dice "fragmento suelto y cumulo para el medidor". Y aqui
+             es literalmente un medidor: con umbral, los PF no bajan nunca. -->
         <img src="/assets/moneda/ui/pf-cumulo.webp" alt="" aria-hidden="true" width="512" height="247" />
-        <b>{asesora.pf.toLocaleString('es-ES')}</b>
+        <!-- data-yo-pf: los PF son un dato GLOBAL, y el director los reescribe segun el rango
+             del conmutador (igual que en el HUD). Sin este gancho el saldo se quedaba clavado
+             en el del build. En rango 3 pinta 725, identico. -->
+        <b data-yo-pf>{asesora.pf.toLocaleString('es-ES')}</b>
       </p>
-
+      <p class="saldo__l">
+        <span data-rec-abiertas>{abiertas}</span> de {catalogo.length} recompensas abiertas. No se gastan: cada umbral que
+        cruzas queda abierto para siempre.
+      </p>
     </div>
 
     {siguiente && (
@@ -61,10 +71,10 @@ const F_BOTON = 'l-clip-y r-clip-y';
         <li class="rec-caja">
           <!-- Las motas van FUERA de la ficha: augmented-ui la recorta y dentro quedarian
                encerradas. Es la caja de siempre (ver docs/DESIGN.md). Solo las sueltan las
-               que ya puedes reclamar: una ficha apagada no desprende luz. -->
-          {r.alAlcance && <Motas base={4} refuerzo={4} />}
+               que ya estan abiertas: una ficha apagada no desprende luz. -->
+          {r.abierta && <Motas base={4} refuerzo={4} />}
 
-          <div class={`rec${r.alAlcance ? ' is-tuya' : ''}`} data-augmented-ui={F_AZULEJO}>
+          <div class={`rec${r.abierta ? ' is-tuya' : ''}`} data-umbral={r.umbral} data-augmented-ui={F_AZULEJO}>
           <!-- La hornacina: el mismo hueco de piedra para las seis. Es lo que las hace
                leer como un set aunque cada pieza tenga su forma (el cofre es alto, el
                pergamino ancho, el disco redondo). CSS puro, que los ornamentos no son
@@ -73,34 +83,38 @@ const F_BOTON = 'l-clip-y r-clip-y';
             <img src={r.img} alt="" aria-hidden="true" width="380" height="420" loading="lazy" />
           </div>
 
-          <!-- El nombre y el precio son la misma cosa (que es y cuanto vale), asi que van
-               juntos y no separados por aire: el precio cuelga del nombre. -->
+          <!-- El nombre y el umbral son la misma cosa (que es y cuando se abre), asi que
+               van juntos y no separados por aire: el umbral cuelga del nombre. -->
           <div class="rec__d">
             <b class="rec__n">{r.nombre}</b>
             <p class="rec__pf">
-              <!-- El FRAGMENTO suelto, no el cumulo: un precio es una cantidad, no un
+              <!-- El FRAGMENTO suelto, no el cumulo: un umbral es una cantidad, no un
                    medidor (el deck separa los dos usos). -->
               <img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />
-              <b>{r.precio.toLocaleString('es-ES')}</b>
+              <b>{r.umbral.toLocaleString('es-ES')}</b>
               <span>PF</span>
             </p>
+            <!-- Que es, en una linea. Lo trae mecanicas-gamificacion 6, y hasta hoy no
+                 existia en ningun sitio: las fichas ensenaban un nombre y un numero. -->
+            <p class="rec__q">{r.que}</p>
           </div>
 
           <div class="rec__pie">
-            {r.alAlcance ? (
-              <!-- Reclamar lo resuelve el plugin: aqui no navega, avisa -->
+            {r.abierta ? (
+              <!-- Abrirla la resuelve el plugin: aqui no navega, avisa. Y es ABRIR, no
+                   reclamar: con umbral no se canjea nada, se accede a lo que ya es tuyo. -->
               <button
                 class="btn-linea rec__b"
                 type="button"
-                data-integracion="gamipress:reclamar-recompensa"
-                data-aviso="Se reclama sola cuando la fortaleza esté conectada."
+                data-integracion="gamipress:abrir-recompensa"
+                data-aviso="Se abre sola cuando la fortaleza esté conectada."
                 data-augmented-ui={F_BOTON}
               >
-                Reclamar recompensa
-                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reclamar</span>
+                Abrir recompensa
+                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Abrir</span>
               </button>
             ) : (
-              <!-- Lo que no alcanzas no se esconde: se ve, y dice cuanto falta -->
+              <!-- Lo que aun no alcanzas no se esconde: se ve, y dice cuanto falta -->
               <span class="rec__falta">Te faltan <b>{r.faltan.toLocaleString('es-ES')} PF</b></span>
             )}
           </div>
@@ -113,7 +127,89 @@ const F_BOTON = 'l-clip-y r-clip-y';
 
 <script>
   // El aviso de lo que resuelve el plugin ya lo monta el layout (integracion.js): los
-  // botones solo tienen que llevar data-integracion. Aqui no hace falta nada.
+  // botones solo tienen que llevar data-integracion.
+  //
+  // EL CONMUTADOR DE DEMO. El build pinta el rango 3 (725 PF: abiertas las de 150, 300 y 500).
+  // Al recargar con otro rango, esto vuelve a derivar el estado PROFUNDO de Recompensas a
+  // partir de los PF elegidos, sobre el DOM ya pintado. Lo GLOBAL (HUD, PF del saldo via
+  // data-yo-pf, rango, barra) lo hace el director; esto reescribe solo lo de esta pantalla:
+  //   - is-tuya de cada ficha (abierta si PF >= su umbral)
+  //   - el pie: boton "Abrir" en las abiertas, aviso "Te faltan X PF" en las cerradas
+  //   - las motas, que solo desprenden las abiertas
+  //   - el contador "X de 6" y el bloque "La siguiente" (la primera aun no alcanzada)
+  // Con umbral no se gasta nada: cruzar es una comparacion, no una resta de saldo.
+  import { estadoDemo } from '../scripts/demo-director.js';
+
+  (() => {
+    const pf = estadoDemo().pf;
+
+    // Moldes del pie y de las motas, clonados ANTES de tocar el DOM: el rango 3 siempre pinta
+    // fichas abiertas (con boton y motas) y cerradas (con aviso), asi que ambos existen y los
+    // reusamos al cambiar de rango sin duplicar su markup.
+    const moldeBtn = document.querySelector('.rec__b')?.cloneNode(true);
+    const moldeFalta = document.querySelector('.rec__falta')?.cloneNode(true);
+    const moldeMotas = document.querySelector('.motas')?.cloneNode(true);
+
+    let abiertas = 0;
+    let siguienteCard = null; // la primera ficha aun no alcanzada, para "La siguiente"
+
+    document.querySelectorAll('.rec').forEach((rec) => {
+      const umbral = Number(rec.dataset.umbral);
+      const abierta = pf >= umbral;
+      const caja = rec.parentElement; // .rec-caja: las motas cuelgan de aqui, fuera del recorte
+
+      rec.classList.toggle('is-tuya', abierta);
+
+      // El pie: cada ficha tiene O boton O aviso, nunca los dos. Solo se cambia si el estado le
+      // da la vuelta al que pinto el build.
+      const pie = rec.querySelector('.rec__pie');
+      if (abierta) {
+        if (pie && moldeBtn && !pie.querySelector('.rec__b')) pie.replaceChildren(moldeBtn.cloneNode(true));
+      } else if (pie) {
+        let falta = pie.querySelector('.rec__falta');
+        if (!falta && moldeFalta) { falta = moldeFalta.cloneNode(true); pie.replaceChildren(falta); }
+        // umbral - pf es positivo aqui (la ficha esta cerrada): es lo que le falta al avance
+        // para llegar, no un saldo que se descuente.
+        if (falta) falta.querySelector('b').textContent = (umbral - pf).toLocaleString('es-ES') + ' PF';
+        if (!siguienteCard) siguienteCard = rec;
+      }
+
+      // Las motas solo las desprenden las abiertas: una ficha apagada no da luz.
+      const motas = caja && caja.querySelector('.motas');
+      if (abierta) {
+        if (caja && moldeMotas && !motas) caja.insertBefore(moldeMotas.cloneNode(true), rec);
+      } else if (motas) {
+        motas.remove();
+      }
+
+      if (abierta) abiertas++;
+    });
+
+    // El contador de cabecera "X de 6 recompensas abiertas".
+    const cont = document.querySelector('[data-rec-abiertas]');
+    if (cont) cont.textContent = String(abiertas);
+
+    // "La siguiente": la primera aun no alcanzada. Copiamos su nombre e imagen de su propia
+    // ficha (ya pintada), asi no inventamos ningun texto. Si estan todas abiertas no hay
+    // siguiente y el bloque se retira (su display:flex gana al [hidden], por eso se quita del
+    // DOM); el contador "6 de 6" ya cuenta que la escalera esta completa.
+    const proxima = document.querySelector('.proxima');
+    if (proxima) {
+      if (!siguienteCard) {
+        proxima.remove();
+      } else {
+        const umbralSig = Number(siguienteCard.dataset.umbral);
+        const nombre = siguienteCard.querySelector('.rec__n')?.textContent;
+        const imgSrc = siguienteCard.querySelector('.rec__nicho img')?.getAttribute('src');
+        const nEl = proxima.querySelector('.proxima__n');
+        const imgEl = proxima.querySelector('img');
+        const fEl = proxima.querySelector('.proxima__f b');
+        if (nEl && nombre != null) nEl.textContent = nombre;
+        if (imgEl && imgSrc) imgEl.setAttribute('src', imgSrc);
+        if (fEl) fEl.textContent = (umbralSig - pf).toLocaleString('es-ES') + ' PF';
+      }
+    }
+  })();
 </script>
 
 <style is:global>
@@ -141,7 +237,13 @@ const F_BOTON = 'l-clip-y r-clip-y';
     font-family: var(--serif); font-weight: 600; letter-spacing: 0.02em;
     font-size: clamp(2rem, 3.6vw, 3rem); color: var(--aqua);
   }
-  .saldo__l { margin: 8px 0 0; max-width: 52ch; font-size: 0.92rem; }
+  .saldo__l { margin: 8px 0 0; max-width: 52ch; font-size: 0.86rem; color: var(--mist); }
+
+  /* Que es la recompensa. Sin esto, la ficha era un nombre y un numero. */
+  .rec__q {
+    margin: 7px 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--mist);
+  }
+  .rec.is-tuya .rec__q { color: var(--moon); }
 
   /* La siguiente que cae: la meta corta. En placa porque es un objeto, no un dato. */
   .proxima {
@@ -183,7 +285,8 @@ const F_BOTON = 'l-clip-y r-clip-y';
       linear-gradient(180deg, rgba(104,132,162,0.13), rgba(9,13,20,0) 60%);
     transition: background-color 0.25s ease;
   }
-  .rec.is-tuya { --aug-border-bg: rgba(232,169,63,0.42); }
+  /* Recompensa abierta = un sello cruzado: su canto va en oro (trofeo), no en ambar (accion). */
+  .rec.is-tuya { --aug-border-bg: rgba(201,162,75,0.5); }
   .rec-caja:hover .rec.is-tuya { background-color: rgba(20,32,46,0.72); }
 
   /* LA HORNACINA. El mismo hueco para las seis: cuadrado, con su luz al fondo y su sombra
@@ -235,15 +338,20 @@ const F_BOTON = 'l-clip-y r-clip-y';
   /* EL PRECIO, con su cristal: es la moneda de la casa y en el HUD se lee asi */
   .rec__pf { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0; }
   .rec__pf img { width: 17px; height: auto; object-fit: contain; }
+  /* El PF va en cian, como el contador de PF del HUD: es el mismo recurso, no debe cambiar de
+     color unos centimetros mas abajo. El ambar se reserva para la accion de la pantalla. */
   .rec__pf b {
     font-family: var(--serif); font-weight: 600; letter-spacing: 0.02em;
-    font-size: 1.34rem; color: var(--amber); line-height: 1;
+    font-size: 1.34rem; color: var(--aqua); line-height: 1;
   }
-  .rec__pf span { font-size: 0.68rem; letter-spacing: 0.1em; color: var(--amber); opacity: 0.75; }
+  .rec__pf span { font-size: 0.68rem; letter-spacing: 0.1em; color: var(--aqua); opacity: 0.75; }
   .rec:not(.is-tuya) .rec__pf b, .rec:not(.is-tuya) .rec__pf span { color: var(--mist); }
   .rec:not(.is-tuya) .rec__pf img { filter: grayscale(1) brightness(0.6); opacity: 0.6; }
 
-  .rec__pie { margin-top: clamp(9px, 1.1vw, 14px); min-height: 36px; display: flex; align-items: center; }
+  /* El pie SIEMPRE abajo del todo (margin-top: auto), no pegado al texto: la descripcion
+     ocupa una o dos lineas segun la recompensa, y sin esto los seis botones caian a
+     alturas distintas dentro de fichas que miden lo mismo. */
+  .rec__pie { margin-top: auto; padding-top: clamp(9px, 1.1vw, 14px); min-height: 36px; display: flex; align-items: center; }
   .rec__b { position: relative; padding-left: 30px; padding-right: 30px; }
   .rec__b .pista { text-transform: none; letter-spacing: 0; font-weight: 400; }
   /* Aqui la pildora es SOLO el aviso: el boton ya dice lo que hace */
@@ -260,5 +368,13 @@ const F_BOTON = 'l-clip-y r-clip-y';
   @media (max-width: 760px) {
     .cat__l { grid-template-columns: 1fr; }
     .saldo { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* MOVIL Y APAISADO: la barra inferior de 64px vive abajo. Como esta pantalla
+     SOBREESCRIBE el padding-bottom de .contenido (regla :has(.saldo) de arriba, mas
+     especifica que la del layout), hay que devolverle aqui la holgura, o el pie de la
+     ultima ficha ("Te faltan X PF" / "Abrir recompensa") queda tapado por la barra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido:has(.saldo) { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 10px); }
   }
 </style>

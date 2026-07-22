@@ -1,0 +1,176 @@
+---
+// El tour del onboarding (P0, segunda parte): recorrido por TODA la plataforma. Coach marks
+// de Nara que CRUZAN PÁGINAS (Patio, Mapa, las cinco salas) con velo recortado + tarjeta
+// anclada. Vive en el layout, así que está en todas las páginas; el paso actual se guarda en
+// sessionStorage para sobrevivir a la navegación. Se dispara con ?tour (desde la entrega) y
+// se puede saltar siempre.
+//
+// Tres modos por paso: 'foco' ilumina una pieza (velo recortado), 'centro' oscurece y centra
+// la tarjeta (bienvenida y cierre), y 'libre' deja la sala a la vista con la tarjeta al pie
+// (para presentar cada sala al llegar a ella).
+---
+
+<div class="tour" data-tour hidden aria-live="polite" role="dialog" aria-label="Recorrido de bienvenida">
+  <div class="tour__spot" aria-hidden="true"></div>
+  <article class="tour__card">
+    <div class="tour__cab">
+      <span class="tour__orbe" aria-hidden="true"><img src="/assets/retratos/ui/nara.webp" alt="" width="256" height="256" /></span>
+      <span class="tour__quien">Nara</span>
+      <span class="tour__paso"><b data-tour-actual>1</b> / <span data-tour-total>1</span></span>
+    </div>
+    <h3 class="tour__t" data-tour-titulo></h3>
+    <p class="tour__txt" data-tour-texto></p>
+    <div class="tour__acc">
+      <button class="tour__saltar" type="button" data-tour-saltar>Saltar el recorrido</button>
+      <div class="tour__botones">
+        <button class="tour__prev" type="button" data-tour-prev>Anterior</button>
+        <button class="btn-linea tour__next" type="button" data-tour-next data-augmented-ui="l-clip-y r-clip-y">Siguiente</button>
+      </div>
+    </div>
+  </article>
+</div>
+
+<script>
+  import { cruzar } from '../scripts/velo.js';
+
+  // Los pasos, por toda la plataforma. page = dónde vive; modo = foco/centro/libre.
+  const PASOS = [
+    { page: '/dashboard', modo: 'centro', t: 'Bienvenida a tu fortaleza', x: 'Soy Nara, tu guardiana. En un minuto te enseño toda tu fortaleza. Puedes saltarte el recorrido cuando quieras.' },
+    { page: '/dashboard', modo: 'foco', sel: '.m-activa-caja', t: 'La intervención del mes', x: 'Esto es lo que toca hoy: una grieta que reparar. Cada mes se abre una, y repararla fortalece tu despacho.' },
+    { page: '/dashboard', modo: 'foco', sel: '.m-activa__reb', t: 'El Rebelde', x: 'El trasno. No tira muros: posterga, desordena, lo convierte todo en «ya lo haré». Cada grieta que cierras le gana terreno.' },
+    { page: '/dashboard', modo: 'foco', sel: '.pasos', t: 'Tu recorrido del mes', x: 'Ves la clase en la Biblioteca, aplicas el reto en la Torre, y la recompensa se enciende sola.' },
+    { page: '/dashboard', modo: 'foco', sel: '.m-ficha', t: 'Tu avance', x: 'Reparando grietas subes de rango y enciendes la fortaleza. Aquí ves por dónde vas y lo que ya has ganado.' },
+    { page: '/mapa', modo: 'libre', t: 'El Mapa: tu viaje', x: 'Las doce intervenciones sobre el castro, en tres sendas. El mapa entero de tu primer ciclo: dónde estás y lo que falta.' },
+    { page: '/biblioteca', modo: 'libre', t: 'La Biblioteca de Recursos', x: 'El catálogo del club: la clase de cada mes con su recurso. Aquí ves el contenido; el reto se hace en la Torre.' },
+    { page: '/torre-retos', modo: 'libre', t: 'La Torre de Retos', x: 'Donde aplicas lo aprendido. Un reto por intervención: cada uno enciende un tramo de la Torre.' },
+    { page: '/sala-mandos', modo: 'libre', t: 'La Sala de Mandos', x: 'Los cuatro pilares de tu despacho: precios, servicios, organización y planificación. Aquí ves cuáles están firmes.' },
+    { page: '/consejo', modo: 'libre', t: 'El Consejo', x: 'La sala de consulta a Conchi. Traes una duda de tu despacho y se te responde con criterio, no con juicio.' },
+    { page: '/mirador', modo: 'libre', t: 'El Mirador de la Fortaleza', x: 'La comunidad: otras fortalezas, no un foro. Aquí compartes avances y bloqueos, y das señales a los demás.' },
+    { page: '/asesor', modo: 'libre', t: 'El asesor: quién eres', x: 'Tu perfil dentro de la fortaleza: tu rango, tu arquetipo y las insignias que vas forjando. Cuelga de tu avatar, arriba a la derecha.' },
+    { page: '/recompensas', modo: 'libre', t: 'Las Recompensas', x: 'Lo que la fortaleza te devuelve al avanzar. No es una tienda: cada recompensa se abre sola al cruzar su umbral, no se compra nada.' },
+    { page: '/dashboard', modo: 'centro', t: 'La fortaleza es tuya', x: 'Ya la conoces entera. Empieza cuando quieras: enciende la primera señal. Estaré por aquí para guiarte.', fin: true },
+  ];
+
+  const raiz = document.querySelector<HTMLElement>('[data-tour]');
+  if (raiz) {
+    const spot = raiz.querySelector<HTMLElement>('.tour__spot')!;
+    const card = raiz.querySelector<HTMLElement>('.tour__card')!;
+    const elTitulo = raiz.querySelector<HTMLElement>('[data-tour-titulo]')!;
+    const elTexto = raiz.querySelector<HTMLElement>('[data-tour-texto]')!;
+    const elActual = raiz.querySelector<HTMLElement>('[data-tour-actual]')!;
+    const elNext = raiz.querySelector<HTMLButtonElement>('[data-tour-next]')!;
+    const elPrev = raiz.querySelector<HTMLButtonElement>('[data-tour-prev]')!;
+    raiz.querySelector('[data-tour-total]')!.textContent = String(PASOS.length);
+
+    const KEY = 'fortaleza-tour-i';
+    const SOMBRA = '0 0 0 9999px rgba(6,9,14,0.82)';
+    const SOMBRA_FOCO = `${SOMBRA}, 0 0 0 1px rgba(95,208,224,0.6), 0 0 26px rgba(95,208,224,0.35)`;
+    const ruta = () => location.pathname.replace(/\/$/, '') || '/';
+    const leerI = () => { const v = sessionStorage.getItem(KEY); return v === null ? -1 : Number(v); };
+
+    const colocarCard = (r: DOMRect) => {
+      card.style.transform = 'none'; card.style.bottom = 'auto';
+      const cw = card.offsetWidth, ch = card.offsetHeight, m = 16;
+      let top = r.bottom + 14;
+      if (top + ch > innerHeight - m) top = Math.max(m, r.top - ch - 14);
+      let left = r.left + r.width / 2 - cw / 2;
+      left = Math.max(m, Math.min(left, innerWidth - cw - m));
+      card.style.top = `${top}px`; card.style.left = `${left}px`;
+    };
+
+    const mostrar = (i: number) => {
+      const paso = PASOS[i];
+      raiz.hidden = false;
+      elTitulo.textContent = paso.t; elTexto.textContent = paso.x; elActual.textContent = String(i + 1);
+      elPrev.style.visibility = i === 0 ? 'hidden' : 'visible';
+      elNext.textContent = paso.fin ? 'Empezar' : 'Siguiente';
+
+      const target = paso.modo === 'foco' && paso.sel ? document.querySelector<HTMLElement>(paso.sel) : null;
+      if (target) {
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        requestAnimationFrame(() => {
+          const r = target.getBoundingClientRect(); const pad = 8;
+          spot.style.boxShadow = SOMBRA_FOCO; spot.style.opacity = '1';
+          spot.style.top = `${r.top - pad}px`; spot.style.left = `${r.left - pad}px`;
+          spot.style.width = `${r.width + pad * 2}px`; spot.style.height = `${r.height + pad * 2}px`;
+          colocarCard(r);
+        });
+      } else if (paso.modo === 'centro') {
+        spot.style.boxShadow = SOMBRA; spot.style.opacity = '1';
+        spot.style.top = '50%'; spot.style.left = '50%'; spot.style.width = '0'; spot.style.height = '0';
+        card.style.top = '50%'; card.style.left = '50%'; card.style.bottom = 'auto'; card.style.transform = 'translate(-50%, -50%)';
+      } else {
+        // libre: la sala queda a la vista, la tarjeta al pie.
+        spot.style.boxShadow = 'none'; spot.style.opacity = '0';
+        card.style.top = 'auto'; card.style.bottom = 'clamp(20px, 5vh, 44px)'; card.style.left = '50%'; card.style.transform = 'translateX(-50%)';
+      }
+    };
+
+    const irA = (i: number) => {
+      sessionStorage.setItem(KEY, String(i));
+      if (PASOS[i].page === ruta()) mostrar(i);
+      else { raiz.hidden = true; cruzar(PASOS[i].page, 300); } // navega; al cargar, resume
+    };
+    const cerrar = () => { sessionStorage.removeItem(KEY); raiz.hidden = true; history.replaceState(null, '', location.pathname); };
+
+    elNext.addEventListener('click', () => { const i = leerI(); if (i < PASOS.length - 1) irA(i + 1); else cerrar(); });
+    elPrev.addEventListener('click', () => { const i = leerI(); if (i > 0) irA(i - 1); });
+    raiz.querySelector('[data-tour-saltar]')!.addEventListener('click', cerrar);
+    addEventListener('keydown', (e) => { if (!raiz.hidden && e.key === 'Escape') cerrar(); });
+    addEventListener('resize', () => { const i = leerI(); if (!raiz.hidden && i >= 0) mostrar(i); });
+
+    // Arranque (?tour desde la entrega) o RESUME (tras cruzar a otra página).
+    const params = new URLSearchParams(location.search);
+    if (params.has('tour')) {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => irA(0), 900); // deja asentar la entrada del Patio
+    } else {
+      const i = leerI();
+      if (i >= 0 && PASOS[i] && PASOS[i].page === ruta()) setTimeout(() => mostrar(i), 650);
+    }
+  }
+</script>
+
+<style is:global>
+  .tour { position: fixed; inset: 0; z-index: 80; }
+  .tour[hidden] { display: none; }
+
+  .tour__spot {
+    position: fixed; border-radius: 8px; pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(6, 9, 14, 0.82), 0 0 0 1px rgba(95, 208, 224, 0.6), 0 0 26px rgba(95, 208, 224, 0.35);
+    transition: top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease, opacity 0.3s ease;
+  }
+
+  .tour__card {
+    position: fixed; z-index: 1; width: min(360px, 90vw);
+    padding: clamp(16px, 2vw, 22px);
+    background: linear-gradient(160deg, rgba(22, 34, 48, 0.98), rgba(9, 13, 20, 0.98));
+    box-shadow: inset 0 0 0 1px rgba(95, 208, 224, 0.3), 0 20px 50px rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    animation: tour-in 0.3s ease-out;
+  }
+  @keyframes tour-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+  .tour__cab { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .tour__orbe { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex: none; box-shadow: inset 0 0 0 1px rgba(95, 208, 224, 0.5), 0 0 14px rgba(63, 169, 201, 0.3); }
+  .tour__orbe img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .tour__quien { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; color: var(--aqua); flex: 1; }
+  .tour__paso { font-size: 0.72rem; color: var(--mist); }
+  .tour__paso b { color: var(--moon); }
+
+  .tour__t { margin: 0; font-family: var(--serif, serif); font-size: 1.12rem; color: var(--bone); }
+  .tour__txt { margin: 7px 0 0; font-size: 0.9rem; line-height: 1.55; color: var(--moon); }
+
+  .tour__acc { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: clamp(14px, 2vh, 18px); }
+  .tour__saltar { padding: 0; font: inherit; font-size: 0.76rem; color: var(--mist); background: none; border: 0; cursor: pointer; }
+  .tour__saltar:hover { color: var(--moon); }
+  .tour__botones { display: flex; align-items: center; gap: 6px; }
+  .tour__prev { padding: 8px 12px; font: inherit; font-size: 0.78rem; color: var(--moon); background: none; border: 0; cursor: pointer; border-radius: 6px; }
+  .tour__prev:hover { background: rgba(194, 205, 214, 0.1); }
+  .tour__next { padding: 9px 20px; font-size: 0.8rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tour__spot { transition: none; }
+    .tour__card { animation: none; }
+  }
+</style>

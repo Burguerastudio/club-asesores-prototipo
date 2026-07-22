@@ -18,6 +18,7 @@
 :root {
   /* Paleta */
   --ink: #090D14;
+  --night-1: #0B111B;  /* tinta oscura sobre chip claro (badges de estado); se usaba con fallback y sin definir */
   --night: #0C1019;
   --night-2: #14202E;
   --steel: #3A4654;
@@ -39,12 +40,11 @@
 
   /* Tipografia */
   --serif: 'Cinzel', Georgia, serif;
+  --display: var(--serif); /* rol titular y numeros: Cinzel. Se pedia por todo el codigo (11 usos) y no estaba definido, asi que caia a sans/Georgia. */
   --sans: 'Hanken Grotesk', system-ui, sans-serif;
   --italic: 'Cormorant Garamond', Georgia, serif;
 
   /* Forma */
-  --radio: 3px;
-  --radio-panel: 6px;
   --alto-shell: 72px;
   --corte: 18px; /* el bisel de las esquinas cortadas */
 
@@ -71,7 +71,7 @@ a { color: inherit; }
 /* Tipografia */
 .display { font-family: var(--serif); font-weight: 600; letter-spacing: 0.03em; line-height: 1.08; }
 .kicker { margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.22em; color: var(--cyan); }
-.cita { font-family: var(--italic); font-style: italic; color: var(--moon); line-height: 1.45; }
+.cita { font-family: var(--italic); font-style: italic; color: var(--moon); line-height: 1.5; }
 
 /* Rotulo de modulo: solo nombra. Sin regla ni adornos, que se repetian en los ocho modulos.
    El cian queda reservado para lo que informa (estados, enlaces), no para etiquetar. */
@@ -188,19 +188,23 @@ a { color: inherit; }
 .btn-linea {
   --aug-l: 11px; --aug-r: 11px;
   --aug-border-all: 1px;
-  --aug-border-bg: rgba(63, 169, 201, 0.7);
+  /* El acento se parametriza por --acento-rgb (por FALLBACK, sin declararlo en el propio
+     boton, para que las pantallas que lo heredan de su card lo sigan mandando). Por defecto
+     cian; una pantalla que ponga --acento-rgb (ambar, peligro) recolorea el boton ENTERO,
+     incluido el hover, que antes revertia a cian y rompia los CTA recoloreados. */
+  --aug-border-bg: rgba(var(--acento-rgb, 63, 169, 201), 0.7);
   display: inline-block; padding: 10px 22px; border: 0; cursor: pointer;
-  background: rgba(63, 169, 201, 0.1);
+  background: rgba(var(--acento-rgb, 63, 169, 201), 0.1);
   color: var(--aqua); font-family: var(--sans); font-weight: 600; font-size: 0.76rem;
   text-transform: uppercase; letter-spacing: 0.1em; text-align: center; text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
 }
 .btn-linea:hover {
-  --aug-border-bg: var(--aqua);
-  background: rgba(63, 169, 201, 0.32);
+  --aug-border-bg: rgba(var(--acento-rgb, 63, 169, 201), 1);
+  background: rgba(var(--acento-rgb, 63, 169, 201), 0.32);
   color: var(--bone);
 }
-.btn-linea:active { background: rgba(63, 169, 201, 0.45); }
+.btn-linea:active { background: rgba(var(--acento-rgb, 63, 169, 201), 0.45); }
 /* El barrido de luz, una pasada al posarse: solo con movimiento permitido */
 @media (prefers-reduced-motion: no-preference) {
   .btn:hover { background-position: -60% 0; transition: background-color 0.2s ease, background-position 0.55s ease; }
@@ -238,15 +242,6 @@ a { color: inherit; }
   transform: translateY(-250%);
 }
 .saltar:focus-visible { transform: none; }
-
-/* Boton secundario: aqui el filo si va dibujado, que no tiene relleno.
-   Pide ademas "border" en el data-augmented-ui. */
-.btn--linea {
-  --aug-border-all: 1px;
-  --aug-border-bg: var(--linea-fuerte);
-  background: transparent; color: var(--moon);
-}
-.btn--linea:hover { background: transparent; color: var(--bone); --aug-border-bg: var(--silver); }
 
 /* CURSOR: una mota de luz con estela, del mismo material que las de las placas.
    Ver src/scripts/cursor.js. Solo se monta con raton y sin prefers-reduced-motion;

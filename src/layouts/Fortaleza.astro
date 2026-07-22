@@ -3,6 +3,8 @@
 // Lo heredan todas las pantallas de dentro (el Login no, que va sin navegacion).
 import '../styles/tokens.css';
 import Velo from '../components/Velo.astro';
+import Tour from '../components/Tour.astro';
+import Conmutador from '../components/Conmutador.astro';
 import { asesora, avisos, avisosSinLeer } from '../data/demo.js';
 
 const { title = 'Club de la Asesoría', activa = '' } = Astro.props;
@@ -35,12 +37,29 @@ const menuJugador = [
 const nav = [
   { href: '/dashboard', label: 'El Patio' },
   { href: '/mapa', label: 'Mapa' },
-  { href: '/sala-mandos', label: 'Sala de Mandos' },
   { href: '/biblioteca', label: 'Biblioteca' },
-  { href: '/consejo', label: 'El Consejo' },
-  { href: '/mirador', label: 'Mirador' },
   { href: '/torre-retos', label: 'Torre de Retos' },
+  { href: '/sala-mandos', label: 'Sala de Mandos' },
+  { href: '/mirador', label: 'Mirador' },
+  { href: '/consejo', label: 'El Consejo' },
 ];
+
+// EN MOVIL el menu de arriba no cabe: baja a una barra inferior fija con los cuatro
+// destinos del recorrido (Patio, Mapa, Biblioteca, Torre) y un boton "Mas" que abre una
+// hoja con el resto (Sala de Mandos, Mirador, Consejo). El label corto es para la barra;
+// el largo, para la hoja y el aria. Ver docs/DESIGN.md (Responsive).
+const ICONO_NAV: Record<string, string> = {
+  '/dashboard': '<path d="M4 11.4 12 5l8 6.4"/><path d="M6.4 10v8.6h11.2V10"/>',
+  '/mapa': '<circle cx="12" cy="12" r="8.4"/><path d="M14.7 9.3l-1.7 4.4-4.4 1.7 1.7-4.4z"/>',
+  '/biblioteca': '<path d="M12 6.6C10.4 5.4 8.2 5.1 6.2 5.6v11.6c2-.5 4.2-.2 5.8 1 1.6-1.2 3.8-1.5 5.8-1V5.6c-2-.5-4.2-.2-5.8 1z"/><path d="M12 6.6v11.6"/>',
+  '/torre-retos': '<path d="M8 20.5V8.5m8 12V8.5"/><path d="M7.4 8.5 8 5.2h8l.6 3.3z"/><path d="M9.6 5.2V3.6m2.4 1.6V3.6m2.4 1.6V3.6"/><path d="M10.6 20.5v-3.2h2.8v3.2"/>',
+  'mas': '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+};
+const CORTO_NAV: Record<string, string> = {
+  '/dashboard': 'Patio', '/mapa': 'Mapa', '/biblioteca': 'Biblioteca', '/torre-retos': 'Torre',
+};
+const navBarra = nav.slice(0, 4); // los cuatro del recorrido
+const navResto = nav.slice(4);    // lo que va en la hoja "Mas"
 ---
 
 <!doctype html>
@@ -177,7 +196,7 @@ const nav = [
                    "como fragmento suelto y como cumulo para el medidor", y esto es el
                    medidor. Llevaba el fragmento desde que se monto el HUD. -->
               <img src="/assets/moneda/ui/pf-cumulo.webp" alt="" aria-hidden="true" width="512" height="247" />
-              {asesora.pf.toLocaleString('es-ES')}
+              <span data-yo-pf>{asesora.pf.toLocaleString('es-ES')}</span>
               <span class="sr-only">Puntos de Fortaleza</span>
             </span>
             <span class="pista pista--baja" role="tooltip" data-augmented-ui="tl-clip br-clip border">Puntos de Fortaleza</span>
@@ -188,9 +207,9 @@ const nav = [
           <div class="jugador">
             <button class="chip" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menu-jugador">
               <span class="chip__marco" data-augmented-ui={`${RANURA} border`}>
-                <img class="chip__av" src={asesora.retrato} alt="" aria-hidden="true" width="160" height="160" />
+                <img class="chip__av" src={asesora.retrato} alt="" aria-hidden="true" width="160" height="160" data-yo-cara />
               </span>
-              <span class="chip__txt"><b>{asesora.nombre}</b><i>{asesora.rango}</i></span>
+              <span class="chip__txt"><b data-yo-nombre>{asesora.nombre}</b><i data-yo-rango>{asesora.rango}</i></span>
               <svg class="chip__flecha" viewBox="0 0 10 6" aria-hidden="true" focusable="false">
                 <path d="M1 1l4 4 4-4" />
               </svg>
@@ -211,15 +230,64 @@ const nav = [
 
     <main class="contenido" id="contenido" tabindex="-1"><slot /></main>
 
+    <!-- El tour de bienvenida (onboarding). En el layout porque CRUZA todas las páginas;
+         solo corre con ?tour o si hay un recorrido a medias en sessionStorage. -->
+    <Tour />
+
+    <!-- El conmutador de demo: andamio del prototipo (docs/DESIGN.md), en todas las
+         pantallas. Deja saltar entre rangos y figura sin rebuildar. -->
+    <Conmutador />
+
+    <!-- NAVEGACION MOVIL. Solo se ve por CSS en movil/apaisado: el menu de arriba no cabe,
+         asi que los cuatro destinos del recorrido bajan a una barra inferior fija y el resto
+         va a la hoja "Mas". En escritorio queda display:none. -->
+    <nav class="mnav" aria-label="Espacios de la fortaleza">
+      {navBarra.map((n) => (
+        <a href={n.href} class:list={['mnav__d', { 'is-activa': activa === n.href }]} aria-current={activa === n.href ? 'page' : undefined}>
+          <svg class="mnav__ic" viewBox="0 0 24 24" aria-hidden="true" set:html={ICONO_NAV[n.href]}></svg>
+          <span>{CORTO_NAV[n.href]}</span>
+        </a>
+      ))}
+      <button
+        class:list={['mnav__d', 'mnav__mas', { 'is-activa': navResto.some((n) => n.href === activa) }]}
+        type="button" data-mnav-mas aria-haspopup="dialog" aria-expanded="false" aria-controls="mnav-hoja"
+      >
+        <svg class="mnav__ic" viewBox="0 0 24 24" aria-hidden="true" set:html={ICONO_NAV['mas']}></svg>
+        <span>Más</span>
+      </button>
+    </nav>
+
+    <div class="hoja" id="mnav-hoja" data-mnav-hoja hidden>
+      <button class="hoja__velo" type="button" data-mnav-cerrar aria-label="Cerrar"></button>
+      <div class="hoja__panel" role="dialog" aria-modal="true" aria-label="Más espacios de la fortaleza">
+        <span class="hoja__tirador" aria-hidden="true"></span>
+        <ul class="hoja__lista">
+          {navResto.map((n) => (
+            <li>
+              <a href={n.href} class={activa === n.href ? 'is-activa' : ''} aria-current={activa === n.href ? 'page' : undefined}>{n.label}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
     <script>
       import { montarCursor } from '../scripts/cursor.js';
       import { montarVelo } from '../scripts/velo.js';
       import { montarIntegracion } from '../scripts/integracion.js';
       import { cablearInterfaz, arrancarMusica } from '../scripts/audio.js';
+      import { aplicarDemo } from '../scripts/demo-director.js';
 
       montarCursor();
       montarVelo();
       montarIntegracion();
+
+      // EL ESTADO DE LA DEMO. El build renderiza siempre el rango 3 (Marta, 4 fortalecidas);
+      // el director lo reescribe con el rango y la figura elegidos en el conmutador (o en el
+      // onboarding), sobre los elementos marcados data-yo-*, en TODA la plataforma. Cada
+      // pantalla remata lo suyo (insignias que arden, estados vacios, endgame) leyendo
+      // document.documentElement.dataset.fortalecidas. Ver src/scripts/demo-director.js.
+      aplicarDemo();
       // El sonido sigue montado igual: cablearInterfaz() escucha sobre el document, asi
       // que cada pantalla nueva nace sonando. Lo que ya no vive aqui es el MANDO: el
       // interruptor y los dos volumenes van en Ajustes (P12). Ver docs/DESIGN.md.
@@ -264,6 +332,22 @@ const nav = [
 
       desplegable(document.querySelector('.jugador .chip'), document.querySelector('.menu'));
       desplegable(document.querySelector('.util[aria-controls="bandeja"]'), document.querySelector('.bandeja'));
+
+      // LA HOJA "MAS" de la barra movil: abre/cierra el bottom sheet con el resto de
+      // destinos. Cierra al tocar el velo, al pulsar Escape o al elegir un destino.
+      (() => {
+        const boton = document.querySelector('[data-mnav-mas]');
+        const hoja = document.querySelector('[data-mnav-hoja]');
+        if (!boton || !hoja) return;
+        const abrir = (v: boolean) => {
+          (hoja as HTMLElement).hidden = !v;
+          boton.setAttribute('aria-expanded', v ? 'true' : 'false');
+        };
+        boton.addEventListener('click', () => abrir((hoja as HTMLElement).hidden));
+        hoja.querySelector('[data-mnav-cerrar]')?.addEventListener('click', () => abrir(false));
+        hoja.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => abrir(false)));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !(hoja as HTMLElement).hidden) abrir(false); });
+      })();
     </script>
 
     <style is:global>
@@ -499,14 +583,94 @@ const nav = [
       /* El ancho de lectura lo ponen los hijos, ya que el padre va a toda la pagina */
       .contenido > * { width: min(1400px, 94%); margin-inline: auto; }
 
-      /* Con la septima entrada (El Patio) el menu ya no cabe entero por debajo de 1100:
-         se aprieta el cuerpo y el tracking antes que dejar que se corte. */
+      /* ============================ RESPONSIVE ============================
+         Matriz: 320 a 2560, mas apaisado. El movil no monta un layout aparte: reusa el
+         vertical y trata el apaisado con max-height en la misma query. Ver docs/DESIGN.md. */
+
+      /* NAVEGACION MOVIL. Existe siempre en el DOM pero solo se ve en movil/apaisado. */
+      .mnav { display: none; }
+      .hoja[hidden] { display: none; }
+      .mnav {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background: linear-gradient(to top, rgba(9,13,20,0.98), rgba(9,13,20,0.9));
+        box-shadow: inset 0 1px 0 rgba(194,205,214,0.12), 0 -12px 30px rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+      }
+      .mnav__d {
+        flex: 1 1 0; min-width: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        padding: 9px 2px 8px; border: 0; background: transparent; cursor: pointer;
+        color: var(--mist); text-decoration: none;
+        font-family: var(--sans); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.03em;
+        transition: color 0.2s ease;
+      }
+      .mnav__ic { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .mnav__d span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .mnav__d:active { color: var(--bone); background: rgba(63,169,201,0.12); }
+      .mnav__d.is-activa { color: var(--aqua); }
+      .mnav__d.is-activa .mnav__ic { filter: drop-shadow(0 0 7px rgba(95,208,224,0.5)); }
+
+      /* Por encima del conmutador de demo (z-70) y de la barra: es un modal y su velo debe
+         tapar todo lo flotante. Por debajo del tour (z-80) y el velo de transicion (z-100). */
+      .hoja { position: fixed; inset: 0; z-index: 78; }
+      .hoja__velo { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: rgba(4,7,12,0.62); cursor: pointer; }
+      .hoja__panel {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        padding: 10px clamp(16px, 5vw, 24px) calc(16px + env(safe-area-inset-bottom, 0px));
+        background-color: rgba(11,17,27,0.98); background-image: var(--grano);
+        border-top: 1px solid rgba(194,205,214,0.14);
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -18px 40px rgba(0,0,0,0.6);
+      }
+      .hoja__tirador { display: block; width: 40px; height: 4px; margin: 2px auto 10px; border-radius: 2px; background: rgba(194,205,214,0.3); }
+      .hoja__lista { list-style: none; margin: 0; padding: 0; }
+      .hoja__lista a {
+        display: block; padding: 15px 12px; border-radius: 8px;
+        color: var(--moon); text-decoration: none;
+        font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .hoja__lista a:active { background: rgba(63,169,201,0.16); }
+      .hoja__lista a.is-activa { color: var(--aqua); background: rgba(63,169,201,0.12); }
+      @media (prefers-reduced-motion: no-preference) {
+        .hoja__panel { animation: hoja-sube 0.26s ease-out; }
+        @keyframes hoja-sube { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      }
+
+      /* TABLET / ESCRITORIO PEQUENO: con la septima entrada el menu de arriba no cabe entero
+         por debajo de 1100, asi que se aprieta el cuerpo y el tracking antes que cortarse. */
       @media (max-width: 1100px) {
         .shell__nav a { padding: 11px 8px; font-size: 0.74rem; letter-spacing: 0.05em; }
       }
       @media (max-width: 980px) {
         .shell__in { gap: 12px; }
         .chip__txt { display: none; }
+      }
+
+      /* MOVIL Y APAISADO: el menu de arriba baja a la barra inferior; el HUD se queda con las
+         herramientas y el avatar, alineados a la derecha. El apaisado entra por max-height. */
+      @media (max-width: 860px), (max-height: 480px) {
+        .shell__nav { display: none; }
+        .shell__yo { margin-left: auto; }
+        .mnav { display: flex; }
+        .contenido { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+      }
+
+      /* MOVIL ESTRECHO (320-360): el HUD no se estrangula. */
+      @media (max-width: 380px) {
+        .shell__in { padding: 0 12px; gap: 8px; }
+        .shell__yo { gap: 7px; }
+        .mnav__d { font-size: 0.56rem; }
+      }
+
+      /* PANTALLA MUY ANCHA: que la columna de lectura no nade en el centro (a 2560 el
+         contenido crece con el viewport en vez de quedarse en 1400 flotando). */
+      @media (min-width: 1800px) {
+        .contenido > * { width: min(1560px, 90%); }
+      }
+      @media (min-width: 2200px) {
+        .contenido > * { width: min(1720px, 82%); }
       }
     </style>
   </body>

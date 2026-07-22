@@ -1,0 +1,273 @@
+---
+// Ajustes (P12). DOS cosas en una (Mati, 2026-07-21), que cierra el cabo de DESIGN 236:
+//   1. El PERFIL DE CURSOS de LearnDash `[ld_profile]`: cabecera (avatar + nombre + email +
+//      Editar perfil + stats) y la lista de cursos con su progreso, expandible a las lecciones.
+//      Club es UN curso ("Primer Ciclo de la Fortaleza") con 12 lecciones (sección 11).
+//   2. Los AJUSTES de cuenta que pide CONTENIDO P12: datos de acceso, notificaciones, SONIDO
+//      (interruptor + volúmenes, que salen del HUD y viven aquí, DESIGN 173) y cerrar sesión.
+//
+// Editar nombre/email/contraseña es lógica del plugin: avisa, no envía (regla de adaptación
+// de `[ld_profile]`). El SONIDO sí es real: cablea audio.js (silencio + volúmenes recordados).
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { asesora, intervenciones } from '../data/demo.js';
+
+const CURSO = 'Primer Ciclo de la Fortaleza';
+const email = 'marta@suasesoria.com';
+const pf = asesora.pf ?? 725;
+
+const estadoLeccion = (i: any) => (i.estado === 'fortalecida' ? 'completada' : i.estado === 'activa' ? 'en-curso' : 'bloqueada');
+const completadas = intervenciones.filter((i) => i.estado === 'fortalecida').length;
+const pct = Math.round((completadas / intervenciones.length) * 100);
+
+const notis = [
+  { id: 'sabotaje', label: 'Sabotaje detectado', desc: 'Cuando el Rebelde abre una grieta nueva en tu fortaleza.', on: true },
+  { id: 'intervencion', label: 'Nueva intervención', desc: 'Cuando se libera la clase del mes.', on: true },
+  { id: 'reto', label: 'Reto pendiente', desc: 'Recordatorio del reto sin cerrar en la Torre.', on: true },
+  { id: 'mirador', label: 'Señales del Mirador', desc: 'Cuando alguien responde a un avance que compartiste.', on: false },
+];
+
+const AVISO_PLUGIN = 'Esto se gestiona en tu cuenta cuando la fortaleza esté conectada.';
+---
+
+<Fortaleza title="Ajustes, Club de la Asesoría" activa="/ajustes">
+  <div class="aj">
+    <!-- 1. [ld_profile]: CABECERA DE PERFIL + CURSO -->
+    <section class="perfil">
+      <div class="perfil__cab">
+        <img class="perfil__ava" src={asesora.retrato} alt="" width="256" height="256" data-yo-cara />
+        <div class="perfil__id">
+          <b class="perfil__nom" data-yo-nombre>{asesora.nombre}</b>
+          <span class="perfil__mail" data-yo-mail>{email}</span>
+          <button class="perfil__editar" type="button" data-integracion="learndash:editar-perfil" data-aviso={AVISO_PLUGIN}>
+            Editar perfil
+            <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Editar</span>
+          </button>
+        </div>
+        <ul class="perfil__stats">
+          <li><b>1</b><span>curso</span></li>
+          <li><b>{completadas}/12</b><span>lecciones</span></li>
+          <li><b>{pf}</b><span>PF</span></li>
+        </ul>
+      </div>
+
+      <!-- Curso registrado (una fila; en Club, un solo curso), expandible a sus lecciones. -->
+      <details class="curso" open>
+        <summary class="curso__fila">
+          <span class="curso__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="rgba(232,169,63,0.3)" stroke-width="2.4"/><path d="M12 2.5a9.5 9.5 0 0 1 8.2 4.7" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+          <span class="curso__d">
+            <b class="curso__t">{CURSO}</b>
+            <span class="curso__barra"><span style={`width:${pct}%`}></span></span>
+          </span>
+          <span class="curso__pct">{completadas} de 12 · {pct}%</span>
+          <svg class="curso__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+
+        <ol class="lecciones">
+          {intervenciones.map((i) => {
+            const e = estadoLeccion(i);
+            const Caja = e === 'bloqueada' ? 'span' : 'a';
+            return (
+              <li class={`lecc lecc--${e}`}>
+                <Caja class="lecc__l" href={e === 'bloqueada' ? undefined : `/reproductor/${i.n}`}>
+                  <span class="lecc__ic" aria-hidden="true">
+                    {e === 'completada' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="var(--night-1,#0b111b)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>}
+                    {e === 'en-curso' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="rgba(232,169,63,0.3)" stroke-width="2.4"/><path d="M12 2.5a9.5 9.5 0 0 1 8.2 4.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>}
+                    {e === 'bloqueada' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8.5" y="11" width="7" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 11v-1.4a2 2 0 0 1 4 0V11" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>}
+                  </span>
+                  <span class="lecc__n"><b>{i.n}.</b> {i.titulo}</span>
+                  <span class="lecc__estado">{e === 'completada' ? 'Completada' : e === 'en-curso' ? 'En curso' : 'Bloqueada'}</span>
+                </Caja>
+              </li>
+            );
+          })}
+        </ol>
+      </details>
+    </section>
+
+    <!-- 2. AJUSTES DE CUENTA -->
+    <!-- Datos de acceso -->
+    <section class="grupo">
+      <h2 class="grupo__t">Datos de acceso</h2>
+      <div class="fila">
+        <div class="fila__d"><b>Correo electrónico</b><span class="fila__v" data-yo-mail>{email}</span></div>
+        <button class="btn-linea fila__b" type="button" data-integracion="cuenta:cambiar-correo" data-aviso={AVISO_PLUGIN} data-augmented-ui="l-clip-y r-clip-y">
+          Cambiar
+          <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Cambiar</span>
+        </button>
+      </div>
+      <div class="fila">
+        <div class="fila__d"><b>Contraseña</b><span class="fila__v">••••••••</span></div>
+        <button class="btn-linea fila__b" type="button" data-integracion="cuenta:cambiar-clave" data-aviso={AVISO_PLUGIN} data-augmented-ui="l-clip-y r-clip-y">
+          Cambiar contraseña
+          <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Cambiar</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Notificaciones -->
+    <section class="grupo">
+      <h2 class="grupo__t">Notificaciones</h2>
+      <p class="grupo__n">Los avisos de Nara. Tono de guía, nunca de alarma.</p>
+      {notis.map((noti) => (
+        <div class="fila">
+          <div class="fila__d"><b>{noti.label}</b><span class="fila__q">{noti.desc}</span></div>
+          <button class={`switch${noti.on ? ' is-on' : ''}`} type="button" role="switch" aria-checked={noti.on ? 'true' : 'false'} data-switch aria-label={noti.label}><span class="switch__p"></span></button>
+        </div>
+      ))}
+    </section>
+
+    <!-- Sonido (real: cablea audio.js). -->
+    <section class="grupo">
+      <h2 class="grupo__t">Sonido</h2>
+      <div class="fila">
+        <div class="fila__d"><b>Sonido de la fortaleza</b><span class="fila__q">Música ambiental y efectos de la interfaz.</span></div>
+        <button class="switch" type="button" role="switch" aria-checked="true" data-sonido-switch aria-label="Activar o silenciar el sonido"><span class="switch__p"></span></button>
+      </div>
+      <div class="fila fila--slider" data-vol>
+        <div class="fila__d"><b>Volumen de la música</b></div>
+        <input class="slider" type="range" min="0" max="100" step="1" data-vol-musica aria-label="Volumen de la música" />
+      </div>
+      <div class="fila fila--slider" data-vol>
+        <div class="fila__d"><b>Volumen de los efectos</b></div>
+        <input class="slider" type="range" min="0" max="100" step="1" data-vol-efectos aria-label="Volumen de los efectos" />
+      </div>
+    </section>
+
+    <!-- Sesión -->
+    <section class="grupo grupo--salir">
+      <div class="fila">
+        <div class="fila__d"><b>Cerrar sesión</b><span class="fila__q">Volverás a la Puerta de la fortaleza.</span></div>
+        <a class="btn-linea salir__b" href="/" data-augmented-ui="l-clip-y r-clip-y">Cerrar sesión</a>
+      </div>
+    </section>
+  </div>
+</Fortaleza>
+
+<script>
+  import { alternarSonido, estaSilenciado, getVolMusica, getVolEfectos, setVolMusica, setVolEfectos, sonar } from '../scripts/audio.js';
+
+  // Interruptores de notificaciones: cosméticos en el prototipo (la preferencia la guarda el
+  // backend). Cambian de estado a la vista.
+  document.querySelectorAll<HTMLButtonElement>('[data-switch]').forEach((sw) => {
+    sw.addEventListener('click', () => {
+      const on = sw.getAttribute('aria-checked') !== 'true';
+      sw.setAttribute('aria-checked', String(on));
+      sw.classList.toggle('is-on', on);
+    });
+  });
+
+  // Sonido: REAL. El interruptor y los dos volúmenes cablean audio.js y se recuerdan.
+  const swSon = document.querySelector<HTMLButtonElement>('[data-sonido-switch]');
+  const pintarSon = () => {
+    const on = !estaSilenciado();
+    swSon?.setAttribute('aria-checked', String(on));
+    swSon?.classList.toggle('is-on', on);
+  };
+  pintarSon();
+  swSon?.addEventListener('click', () => { alternarSonido(); pintarSon(); });
+
+  const vm = document.querySelector<HTMLInputElement>('[data-vol-musica]');
+  const ve = document.querySelector<HTMLInputElement>('[data-vol-efectos]');
+  const pintarSlider = (el: HTMLInputElement | null) => { if (el) el.style.setProperty('--fill', `${el.value}%`); };
+  if (vm) { vm.value = String(Math.round(getVolMusica() * 100)); pintarSlider(vm); vm.addEventListener('input', () => { setVolMusica(Number(vm.value) / 100); pintarSlider(vm); }); }
+  if (ve) {
+    ve.value = String(Math.round(getVolEfectos() * 100)); pintarSlider(ve);
+    ve.addEventListener('input', () => { setVolEfectos(Number(ve.value) / 100); pintarSlider(ve); });
+    ve.addEventListener('change', () => sonar('click')); // una muestra al soltar
+  }
+</script>
+
+<style is:global>
+  .aj { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(16px, 2.4vh, 26px); }
+
+  /* ---- [ld_profile]: perfil + curso ---- */
+  .perfil { background: linear-gradient(180deg, rgba(20,32,46,0.55), rgba(9,13,20,0.6)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.14); border-radius: 10px; overflow: hidden; }
+  .perfil__cab { display: flex; align-items: center; gap: clamp(14px, 2vw, 22px); padding: clamp(16px, 2vw, 24px); flex-wrap: wrap; }
+  .perfil__ava { width: clamp(64px, 7vw, 88px); height: clamp(64px, 7vw, 88px); object-fit: cover; object-position: center top; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(95,208,224,0.4); flex: none; }
+  .perfil__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .perfil__nom { font-family: var(--serif, serif); font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: var(--bone); }
+  .perfil__mail { font-size: 0.82rem; color: var(--mist); }
+  .perfil__editar { position: relative; align-self: flex-start; margin-top: 5px; padding: 0; font: inherit; font-size: 0.76rem; color: var(--aqua); background: none; border: 0; cursor: pointer; }
+  .perfil__editar:hover { text-decoration: underline; }
+  .perfil__stats { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(16px, 2.4vw, 32px); }
+  .perfil__stats li { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .perfil__stats b { font-family: var(--display, serif); font-size: 1.2rem; color: var(--bone); }
+  .perfil__stats span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
+
+  .curso { border-top: 1px solid rgba(194,205,214,0.12); }
+  .curso__fila { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 20px; align-items: center; gap: clamp(12px, 1.6vw, 18px); padding: clamp(14px, 1.8vw, 20px); cursor: pointer; list-style: none; }
+  .curso__fila::-webkit-details-marker { display: none; }
+  .curso__ic { width: 34px; height: 34px; }
+  .curso__ic svg { width: 100%; height: 100%; }
+  .curso__d { min-width: 0; }
+  .curso__t { display: block; font-family: var(--serif, serif); font-size: 1.02rem; color: var(--bone); margin-bottom: 8px; }
+  .curso__barra { display: block; height: 6px; border-radius: 3px; background: rgba(9,13,20,0.6); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+  .curso__barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--amber), rgba(232,169,63,0.5)); }
+  .curso__pct { font-size: 0.78rem; color: var(--moon); white-space: nowrap; }
+  .curso__chev { width: 20px; height: 20px; color: var(--mist); transition: transform 0.2s ease; }
+  .curso[open] .curso__chev { transform: rotate(180deg); }
+
+  .lecciones { list-style: none; margin: 0; padding: 0 clamp(10px, 1.4vw, 16px) clamp(10px, 1.4vw, 16px); }
+  .lecc__l { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 4px; text-decoration: none; color: inherit; }
+  a.lecc__l:hover { background: rgba(28,42,58,0.5); }
+  .lecc__ic { width: 22px; height: 22px; }
+  .lecc__ic svg { width: 100%; height: 100%; }
+  .lecc--completada .lecc__ic { color: var(--aqua); }
+  .lecc--en-curso .lecc__ic { color: var(--amber); }
+  .lecc--bloqueada .lecc__ic { color: rgba(194,205,214,0.35); }
+  .lecc__n { font-size: 0.86rem; color: var(--moon); }
+  .lecc__n b { color: var(--mist); font-weight: 600; }
+  .lecc--completada .lecc__n, .lecc--en-curso .lecc__n { color: var(--bone); }
+  .lecc__estado { font-size: 0.72rem; color: var(--mist); }
+  .lecc--completada .lecc__estado { color: color-mix(in srgb, var(--aqua) 70%, var(--mist)); }
+  .lecc--en-curso .lecc__estado { color: var(--amber); }
+
+  /* ---- Ajustes de cuenta ---- */
+  .grupo { background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.55)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); border-radius: 10px; padding: clamp(16px, 2vw, 22px); }
+  .grupo__t { margin: 0; font-family: var(--serif, serif); font-size: 1.05rem; color: var(--bone); }
+  .grupo__n { margin: 5px 0 0; font-size: 0.82rem; color: var(--mist); }
+
+  .fila { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(194,205,214,0.1); }
+  .fila:last-child { border-bottom: 0; padding-bottom: 0; }
+  .grupo__t + .fila, .grupo__n + .fila { padding-top: 16px; }
+  .fila__d { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .fila__d b { font-size: 0.9rem; color: var(--bone); font-weight: 500; }
+  .fila__v { font-size: 0.82rem; color: var(--moon); }
+  .fila__q { font-size: 0.78rem; color: var(--mist); line-height: 1.4; max-width: 46ch; }
+  .fila__b { position: relative; flex: none; padding: 9px 18px; font-size: 0.78rem; }
+
+  /* Interruptor (switch). */
+  .switch { position: relative; flex: none; width: 46px; height: 26px; padding: 0; border: 0; border-radius: 13px; cursor: pointer; background: rgba(194,205,214,0.18); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.2); transition: background 0.2s ease; }
+  .switch__p { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--moon); transition: transform 0.2s ease, background 0.2s ease; }
+  .switch.is-on { background: rgba(95,208,224,0.4); box-shadow: inset 0 0 0 1px rgba(95,208,224,0.6); }
+  .switch.is-on .switch__p { transform: translateX(20px); background: var(--cyan); }
+  .switch:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+
+  /* Slider de volumen. */
+  .fila--slider { display: grid; grid-template-columns: 1fr minmax(160px, 240px); align-items: center; }
+  .slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--aqua) var(--fill, 30%), rgba(194,205,214,0.18) var(--fill, 30%)); cursor: pointer; }
+  .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--bone); box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(95,208,224,0.5); cursor: pointer; }
+  .slider::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: var(--bone); box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(95,208,224,0.5); cursor: pointer; }
+  .slider:focus-visible { outline: 2px solid var(--aqua); outline-offset: 4px; }
+
+  .grupo--salir { background: linear-gradient(180deg, rgba(40,24,24,0.4), rgba(9,13,20,0.55)); box-shadow: inset 0 0 0 1px rgba(214,120,120,0.2); }
+  /* --acento-rgb pinta tambien el hover (el token .btn-linea lo lee): sin el, al pasar el raton
+     el boton de salir revertia al cian por defecto en vez de mantener su tono de aviso. */
+  .salir__b { flex: none; --acento-rgb: 214, 120, 120; color: #e8a0a0; padding: 10px 20px; font-size: 0.8rem; }
+
+  @media (max-width: 560px) {
+    .fila { flex-wrap: wrap; }
+    .fila--slider { grid-template-columns: 1fr; gap: 10px; }
+    .perfil__stats { width: 100%; justify-content: space-between; }
+  }
+
+  /* Táctil: el riel sigue fino, pero se agarra en un área cómoda (>=40px). El relleno se
+     centra como una línea de 6px dentro de un input alto, así se puede tocar sin pelearse. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .slider {
+      height: 40px;
+      background: linear-gradient(90deg, var(--aqua) var(--fill, 30%), rgba(194,205,214,0.18) var(--fill, 30%)) no-repeat center / 100% 6px;
+    }
+    .slider:focus-visible { outline-offset: 2px; }
+  }
+</style>

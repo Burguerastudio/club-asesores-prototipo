@@ -1,0 +1,342 @@
+---
+// La Sala de Mandos (P2). La sala de decidir: "no es una sala para consultar, es una sala
+// para decidir" (brief 9.2).
+//
+// NO es una lista de intervenciones recortada. Son los CUATRO PILARES estructurales de
+// cualquier despacho: precios, servicios, organización y planificación. Un despacho solo
+// tiene cuatro; Biblioteca y Torre tienen 12 porque son el motor, pero esta sala no es un
+// paso del bucle: es una sala de valor (no da puntos) donde ves qué pilares están firmes.
+//
+// MURO DE SELLOS. Los cuatro pilares lucen su escudo forjado SIEMPRE en oro (premium y
+// consistente); el estado no lo cuenta el metal, lo cuenta el FONDO de la card: firme se
+// asienta sobre un charco de luz fría, en revisión sobre ámbar, y por revisar queda apagada
+// y en penumbra. El texto es editorial: el nombre, la decisión como frase que manda, y la
+// habilidad que forja. Acordeón: el pilar abierto ocupa ~50% y despliega su panel; los demás
+// son lomos. Con lineal solo hay UNO en revisión a la vez (el del mes).
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { intervenciones } from '../data/demo.js';
+
+const AREAS = [
+  { n: 1, area: 'Tus precios' },
+  { n: 2, area: 'Tus servicios' },
+  { n: 4, area: 'Tu organización' },
+  { n: 12, area: 'Tu planificación' },
+];
+
+const decisiones = AREAS.map((a, idx) => {
+  const i = intervenciones.find((x) => x.n === a.n);
+  if (!i) throw new Error(`La Sala de Mandos pide la intervención ${a.n} y demo.js no la tiene.`);
+  const estado = i.estado === 'fortalecida' ? 'tomada' : i.estado === 'activa' ? 'en-curso' : 'por-llegar';
+  return {
+    ...a, idx, n: i.n,
+    resumen: i.sinopsis,
+    decision: i.reto.replace(/\.$/, ''),
+    habilidad: i.habilidad?.nombre,
+    // Siempre el sello en oro: el estado NO lo cuenta el metal, lo cuenta el fondo de la card.
+    emblema: `/assets/emblemas-insignias/ui/insignias-intervencion/sellos/insignia-i${String(i.n).padStart(2, '0')}-sello.webp`,
+    estado,
+  };
+});
+
+const enCurso = decisiones.find((d) => d.estado === 'en-curso');
+const abierto = (enCurso ?? decisiones[0]).idx;
+
+const FORJA = { 'tomada': 'Forjada', 'en-curso': 'Forjarás', 'por-llegar': 'Forjarás' };
+type Estado = keyof typeof FORJA;
+const GEMA = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 4l6 5-6 11L6 9l6-5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+---
+
+<Fortaleza title="Sala de Mandos, Club de la Asesoría" activa="/sala-mandos">
+  <div class="mandos">
+    <div class="mandos__escena" aria-hidden="true">
+      <img class="mandos__im" src="/assets/mapa-escenas/ui/sala-mandos-fondo.webp" alt="" width="2752" height="1536" />
+    </div>
+    <div class="mandos__velo" aria-hidden="true"></div>
+
+    <ul class="planos">
+      {decisiones.map((d) => (
+        <li class={`plano plano--${d.estado}`} data-k={d.idx} data-n={d.n} data-open={d.idx === abierto ? '' : undefined}>
+          <button class="plano__cara" aria-expanded={d.idx === abierto ? 'true' : 'false'} aria-controls={`pilar-${d.idx}`}>
+            <figure class="plano__emblema">
+              <img src={d.emblema} alt="" width="190" height="190" loading="lazy" />
+            </figure>
+            <h2 class="plano__area">{d.area}</h2>
+          </button>
+
+          <div class="plano__detalle" id={`pilar-${d.idx}`}>
+            <p class="plano__resumen">{d.resumen}</p>
+            <p class="plano__decision">{d.decision}.</p>
+            <hr class="plano__regla" />
+            <p class="plano__forja"><Fragment set:html={GEMA} /><span>{FORJA[d.estado as Estado]} · <b>{d.habilidad}</b></span></p>
+            {d.estado === 'en-curso' && <a class="btn-linea plano__cta" href="/dashboard" data-augmented-ui="l-clip-y r-clip-y">Ir a revisarla</a>}
+            {d.estado === 'por-llegar' && <p class="plano__espera">Se levanta al llegar su intervención.</p>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Fortaleza>
+
+<script>
+  // Acordeón: abrir un pilar cierra el resto. Siempre queda uno abierto.
+  const sala = document.querySelector('.mandos .planos');
+  sala?.addEventListener('click', (e) => {
+    const cara = (e.target as HTMLElement).closest('.plano__cara');
+    if (!cara) return;
+    const li = cara.closest('.plano');
+    if (!li || li.hasAttribute('data-open')) return;
+    sala.querySelectorAll('.plano[data-open]').forEach((o) => {
+      o.removeAttribute('data-open');
+      o.querySelector('.plano__cara')?.setAttribute('aria-expanded', 'false');
+    });
+    li.setAttribute('data-open', '');
+    cara.setAttribute('aria-expanded', 'true');
+  });
+</script>
+
+<script>
+  // ── Conmutador de demo · estado PROFUNDO de la Sala de Mandos ──
+  // El build pinta el rango 3 (F=4). Al saltar de rango, cada pilar (atado a UNA
+  // intervencion por su data-n) recalcula su estado desde F y reescribe lo suyo:
+  //   - el FONDO de la card (clase plano--{estado}); el sello sigue SIEMPRE en oro.
+  //   - la palabra de la etiqueta FORJA (Forjada / Forjaras), sin tocar el resto.
+  //   - el pie del panel: el CTA "Ir a revisarla" solo en el pilar en-curso; el aviso
+  //     de espera solo en los por-llegar (su texto se copia del que ya pinta el build).
+  // El pilar abierto no cambia (siempre el primero, igual que en el build).
+  import { estadoDemo, estadoIntervencion } from '../scripts/demo-director.js';
+  (() => {
+    const F = estadoDemo().fortalecidas;
+    // tomada = intervencion fortalecida, en-curso = activa, por-llegar = bloqueada.
+    const AESTADO: Record<string, string> = { fortalecida: 'tomada', activa: 'en-curso', bloqueada: 'por-llegar' };
+    const FORJA: Record<string, string> = { 'tomada': 'Forjada', 'en-curso': 'Forjarás', 'por-llegar': 'Forjarás' };
+    // El aviso de espera es contenido de Sepia: se copia del que el build ya pinta,
+    // nunca se inventa uno nuevo.
+    const ESPERA = (document.querySelector('.plano__espera')?.textContent || '').trim();
+
+    document.querySelectorAll('.mandos .plano').forEach((li) => {
+      const n = Number(li.getAttribute('data-n'));
+      const estado = AESTADO[estadoIntervencion(n, F)];
+
+      // 1) El fondo de la card cuenta el estado (el sello, intacto y en oro).
+      li.className = 'plano plano--' + estado;
+
+      const detalle = li.querySelector('.plano__detalle');
+      if (!detalle) return;
+
+      // 2) FORJA: solo se cambia la palabra inicial, conservando separador y habilidad.
+      const b = detalle.querySelector('.plano__forja b');
+      const span = b?.parentNode;
+      if (b && span) {
+        let lead = '';
+        const previos = [];
+        for (const nd of span.childNodes) {
+          if (nd === b) break;
+          previos.push(nd);
+          if (nd.nodeType === 3) lead += nd.nodeValue;
+        }
+        previos.forEach((nd) => nd.remove());
+        span.insertBefore(document.createTextNode(lead.replace(/^(\s*)(Forjada|Forjarás)/, '$1' + FORJA[estado])), b);
+      }
+
+      // 3) Pie del panel: se rehace segun estado. CTA solo en-curso; espera solo por-llegar.
+      detalle.querySelector('.plano__cta')?.remove();
+      detalle.querySelector('.plano__espera')?.remove();
+      if (estado === 'en-curso') {
+        const a = document.createElement('a');
+        a.className = 'btn-linea plano__cta';
+        a.href = '/dashboard';
+        a.setAttribute('data-augmented-ui', 'l-clip-y r-clip-y');
+        a.textContent = 'Ir a revisarla';
+        detalle.appendChild(a);
+      } else if (estado === 'por-llegar' && ESPERA) {
+        const p = document.createElement('p');
+        p.className = 'plano__espera';
+        p.textContent = ESPERA;
+        detalle.appendChild(p);
+      }
+    });
+  })();
+</script>
+
+<style is:global>
+  .contenido:has(.mandos) { padding: 0; }
+  .contenido > .mandos {
+    width: 100vw; max-width: 100vw;
+    margin-left: 50%; transform: translateX(-50%);
+    margin-top: calc(var(--alto-shell) * -1 - 26px);
+    height: 100svh;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: calc(var(--alto-shell) + clamp(14px, 2.4vh, 26px)) clamp(16px, 4vw, 56px) clamp(22px, 4.5vh, 48px);
+  }
+
+  .mandos__escena { position: absolute; inset: 0; z-index: 0; }
+  .mandos__im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+  .mandos__velo {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(to bottom, rgba(9,13,20,0.9) 0%, rgba(9,13,20,0.28) 20%, transparent 36%, rgba(9,13,20,0.5) 56%, rgba(9,13,20,0.96) 100%);
+  }
+
+  .planos { position: relative; z-index: 2; }
+  .entra .plano { animation: sube-m 0.55s ease-out both; }
+  .entra .plano:nth-child(1) { animation-delay: 0.08s; }
+  .entra .plano:nth-child(2) { animation-delay: 0.15s; }
+  .entra .plano:nth-child(3) { animation-delay: 0.22s; }
+  .entra .plano:nth-child(4) { animation-delay: 0.29s; }
+  @keyframes sube-m { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- Muro de sellos (acordeón horizontal) ---- */
+  .planos {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; gap: clamp(12px, 1.2vw, 20px); align-items: stretch;
+    height: clamp(270px, 38vh, 400px);
+  }
+  .plano {
+    position: relative;
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid rgba(194,205,214,0.16);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    /* El estado vive en el color del fondo: azul si está firme, gris si está por revisar.
+       El tinte sube desde el suelo y se difumina arriba (sin borde de caja). */
+    background: linear-gradient(180deg, transparent 0%, rgba(16,22,30,0.28) 42%, rgba(18,26,36,0.44) 100%);
+    transition: flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .plano--tomada { background: linear-gradient(180deg, transparent 0%, rgba(30,62,94,0.34) 40%, rgba(38,84,124,0.62) 100%); }
+  .plano--en-curso { background: linear-gradient(180deg, transparent 0%, rgba(60,46,16,0.36) 40%, rgba(92,68,22,0.62) 100%); }
+  .plano--por-llegar { background: linear-gradient(180deg, transparent 0%, rgba(42,47,54,0.34) 40%, rgba(56,62,70,0.58) 100%); }
+  .plano[data-open] { flex-grow: 3; }  /* abierto ~50% con cuatro cartas */
+  /* Velo suave tras el pilar abierto. Rebosa por encima de la carta (top negativo) para
+     difuminarse contra la escena: da suelo al texto y foco al activo, sin borde de caja. */
+  .plano[data-open]::before {
+    content: ''; position: absolute; z-index: 0; pointer-events: none;
+    left: -5%; right: -3%; top: -32%; bottom: -8%;
+    background: radial-gradient(78% 92% at 54% 56%, rgba(8,11,17,0.9), rgba(8,11,17,0.55) 52%, transparent 78%);
+  }
+  .plano__cara, .plano__detalle { position: relative; z-index: 1; }
+  .plano--tomada { border-bottom-color: rgba(95,208,224,0.4); }
+  .plano--en-curso { border-bottom-color: rgba(232,169,63,0.6); }
+  /* Por revisar: el fondo gris ya la marca como dormida; solo un leve retroceso de brillo. */
+  .plano--por-llegar:not([data-open]) { opacity: 0.9; }
+
+  /* La cara: escudo + nombre. Cerrada ocupa toda la carta; abierta es la columna izquierda. */
+  .plano__cara {
+    appearance: none; background: none; border: 0; color: inherit; cursor: pointer;
+    flex: 1; min-height: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: clamp(10px, 1.4vh, 18px);
+    padding: clamp(14px, 1.6vw, 24px) clamp(10px, 1vw, 16px);
+    transition: transform 0.25s ease;
+  }
+  .plano:not([data-open]) .plano__cara:hover { transform: translateY(-4px); }
+
+  .plano__emblema { position: relative; margin: 0; display: grid; place-items: center; }
+  .plano__emblema::before {
+    content: ''; position: absolute; inset: -14%; border-radius: 50%; z-index: 0;
+    background: radial-gradient(circle, rgba(150,165,185,0.12), transparent 70%);
+  }
+  .plano__emblema img {
+    position: relative; z-index: 1; display: block;
+    width: clamp(84px, 11vw, 132px); height: auto;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.5));
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .plano--por-llegar .plano__emblema img { opacity: 0.9; }
+
+  .plano__area {
+    margin: 0; text-align: center; font-family: var(--serif, serif); font-weight: 600;
+    font-size: clamp(1rem, 1.3vw, 1.25rem); line-height: 1.2; color: var(--moon);
+  }
+  .plano--tomada .plano__area, .plano--en-curso .plano__area { color: var(--bone); }
+
+  /* Abierto: la cara se ancla a la izquierda y el escudo crece. */
+  .plano[data-open] { flex-direction: row; align-items: stretch; }
+  .plano[data-open] .plano__cara { flex: 0 0 40%; cursor: default; gap: clamp(14px, 1.8vh, 22px); }
+  .plano[data-open] .plano__emblema img { width: clamp(150px, 15vw, 200px); }
+  .plano[data-open] .plano__area { font-size: clamp(1.2rem, 1.6vw, 1.55rem); }
+
+  /* El panel editorial: solo en el pilar abierto. */
+  .plano__detalle { display: none; }
+  .plano[data-open] .plano__detalle {
+    display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0;
+    justify-content: flex-end; gap: clamp(8px, 1.3vh, 15px);
+    padding: clamp(18px, 2vw, 30px) clamp(20px, 2vw, 32px) clamp(18px, 2vw, 30px) 0;
+    overflow: hidden;  /* nada de barra de scroll parpadeando durante la animación */
+    /* El texto entra con un fundido tras un retardo: para entonces la anchura ya ha cuajado,
+       así no se ve el reflujo de las líneas al ensancharse la card. */
+    animation: aparece-detalle 0.4s ease 0.18s both;
+  }
+  @keyframes aparece-detalle { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .plano__resumen { margin: 0; font-size: clamp(0.88rem, 1.05vw, 0.98rem); line-height: 1.5; color: var(--mist); }
+  /* La decisión: la frase que manda. Sin etiqueta, sin caja. */
+  .plano__decision { margin: 0; font-family: var(--serif, serif); font-size: clamp(1.15rem, 1.6vw, 1.5rem); line-height: 1.35; color: var(--bone); }
+  .plano__regla { width: 46px; height: 2px; margin: clamp(4px, 0.8vh, 8px) 0; border: 0; background: var(--acento, var(--aqua)); opacity: 0.7; }
+  .plano--tomada { --acento: var(--aqua); }
+  .plano--en-curso { --acento: var(--amber); --acento-rgb: 232, 169, 63; }
+  .plano--por-llegar { --acento: var(--mist); }
+  .plano__forja { display: flex; align-items: center; gap: 8px; margin: 2px 0 0; font-size: 0.82rem; color: var(--acento, var(--aqua)); }
+  .plano__forja b { color: var(--bone); font-weight: 600; }
+  .plano--por-llegar .plano__forja { color: var(--mist); }
+  .plano--por-llegar .plano__forja b { color: var(--moon); }
+  .plano__cta {
+    align-self: flex-start; margin-top: 6px; padding: 9px 20px; font-size: 0.78rem;
+    --aug-border-bg: rgba(232,169,63,0.85); color: var(--amber); background: rgba(232,169,63,0.14);
+  }
+  .plano__espera { margin: 4px 0 0; font-size: 0.78rem; color: var(--mist); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plano, .plano__cara, .plano__emblema img { transition: none; }
+    .plano[data-open] .plano__detalle { animation: none; }
+  }
+
+  /* ============================ RESPONSIVE (Fase 8) ============================
+     Movil y apaisado (breakpoints de la casa). La escena sigue a sangre y LLENA; lo que
+     refluye es el muro de sellos: el acordeon horizontal pasa a acordeon VERTICAL. Cada
+     pilar es una fila compacta (escudo + nombre) que se toca para abrirse, y el pilar
+     abierto despliega su panel debajo, a lo ancho. Sigue habiendo uno abierto siempre,
+     como en escritorio, asi que ningun panel se solapa ni desborda. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido > .mandos {
+      justify-content: flex-start;
+      height: auto; min-height: 100svh; overflow: visible;
+      /* La barra inferior tapa 64px. Esta pantalla anula el padding-bottom que el layout
+         da a .contenido en movil, asi que la holgura del ultimo pilar la ponemos aqui. */
+      padding: calc(var(--alto-shell) + clamp(12px, 2.4vh, 22px)) clamp(14px, 4vw, 26px) calc(64px + env(safe-area-inset-bottom, 0px) + 20px);
+    }
+    .planos { flex-direction: column; height: auto; gap: 10px; }
+
+    /* Apilado: la cara es la fila que se toca; el detalle cuelga debajo (no en columna al lado). */
+    .plano, .plano[data-open] { flex: none; flex-direction: column; align-items: stretch; }
+    .plano[data-open]::before { display: none; }  /* sin halo radial dentro de la pila */
+    .plano--por-llegar:not([data-open]) { opacity: 1; }
+
+    .plano__cara, .plano[data-open] .plano__cara {
+      flex: none; flex-direction: row; align-items: center; justify-content: flex-start;
+      gap: 14px; width: 100%; padding: 12px clamp(14px, 4vw, 18px); min-height: 64px;
+      cursor: pointer;
+    }
+    .plano[data-open] .plano__cara { cursor: default; }
+    .plano:not([data-open]) .plano__cara:hover { transform: none; }
+    .plano__emblema::before { inset: -10%; }
+    .plano__emblema img, .plano[data-open] .plano__emblema img { width: 56px; }
+    .plano__area, .plano[data-open] .plano__area { text-align: left; font-size: 1.08rem; line-height: 1.22; }
+
+    /* El panel editorial: solo el abierto, en columna y a lo ancho, debajo de su cara. */
+    .plano__detalle { display: none; }
+    .plano[data-open] .plano__detalle {
+      display: flex; flex-direction: column; flex: none;
+      justify-content: flex-start; overflow: visible;
+      gap: 11px; padding: 2px clamp(14px, 4vw, 18px) 18px;
+    }
+    .plano__resumen { font-size: 0.9rem; }
+    .plano__decision { font-size: clamp(1.12rem, 4.6vw, 1.4rem); }
+    .plano__cta { min-height: 44px; padding: 12px 22px; }
+  }
+
+  /* MOVIL ESTRECHO (<=380): escudo y nombre se ajustan sin estrangularse. */
+  @media (max-width: 380px) {
+    .plano__cara, .plano[data-open] .plano__cara { gap: 11px; padding: 11px 13px; }
+    .plano__emblema img, .plano[data-open] .plano__emblema img { width: 50px; }
+    .plano__area, .plano[data-open] .plano__area { font-size: 1rem; }
+    .plano[data-open] .plano__detalle { padding: 2px 13px 16px; }
+  }
+</style>

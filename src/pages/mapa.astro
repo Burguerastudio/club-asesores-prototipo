@@ -9,9 +9,13 @@
 import Fortaleza from '../layouts/Fortaleza.astro';
 import { salas, sitiosDelMapa, sendas, sendaDelMes, intervenciones, ETIQUETA_ESTADO } from '../data/demo.js';
 
-// Cada sitio del mapa se cruza con su sala para heredar nombre, nota y estado. La Puerta
-// no es sala y trae los suyos propios.
-const sitios = sitiosDelMapa.map((s) => {
+// Cada sitio del mapa se cruza con su sala para heredar nombre, nota y estado.
+//
+// La Puerta Principal se queda FUERA del mapa (Mati, 2026-07-20): no es una sala, es el
+// login, y no se entra en ella desde aquí. Pintarla con su chincheta la hacía leer como un
+// sitio más al que se entra, justo la confusión que el mapa tiene que evitar. El dato sigue
+// en sitiosDelMapa (calibrado) por si vuelve, pero solo se pintan las cinco salas.
+const sitios = sitiosDelMapa.filter((s) => s.sala).map((s) => {
   const sala = salas.find((x) => x.slug === s.slug);
   return {
     ...s,
@@ -82,6 +86,7 @@ const MAPA = { w: 2752, h: 1536 };
             <li class="hitos__li" style={`left:${s.x}%; top:${s.y}%`}>
               <Caja
                 class={`hito hito--${s.estado}${s.sala ? '' : ' hito--pieza'}`}
+                data-slug={s.slug}
                 href={s.href}
                 aria-label={s.href ? `Entrar en ${s.nombre}: ${ETIQUETA_ESTADO[s.estado as EstadoSala]}. ${s.nota}` : `${s.nombre}: ${s.nota}`}
               >
@@ -161,7 +166,7 @@ const MAPA = { w: 2752, h: 1536 };
                 const Caja = i.estado === 'activa' ? 'a' : 'span';
                 return (
                   <li>
-                    <Caja class={`interv interv--${i.estado}`} href={i.estado === 'activa' ? '/intervencion' : undefined}>
+                    <Caja class={`interv interv--${i.estado}`} href={i.estado === 'activa' ? '/dashboard' : undefined}>
                       <span class="interv__n" aria-hidden="true">{i.n}</span>
                       <span class="interv__d">
                         <b class="interv__t">{i.titulo}</b>
@@ -205,7 +210,77 @@ const MAPA = { w: 2752, h: 1536 };
 
 <script>
   import { montarVisor } from '../scripts/visor.js';
+  import { estadoDemo, estadoIntervencion } from '../scripts/demo-director.js';
   montarVisor();
+
+  // CONMUTADOR DE DEMO. Lo global (HUD, PF, rango, barra) ya lo reescribe demo-director.js;
+  // aqui se re-deriva el estado PROFUNDO propio del Mapa para el rango elegido. Solo se tocan
+  // ESTADOS (clases), etiquetas de estado (diccionarios fijos) y el contador x/y de cada
+  // senda. La narrativa de Sepia (las notas de cada sala, los titulos de las intervenciones)
+  // NO se toca: en rangos altos una nota puede contradecir su nuevo estado, y eso es preferible
+  // a inventar texto. En el rango 3 (F=4) todo esto re-deriva a lo mismo que ya pinta el build.
+  (() => {
+    const { r, fortalecidas: F } = estadoDemo();
+
+    // (1) LAS SALAS del castro. Estado de cada chincheta por rango (tabla fija; en r3 coincide
+    // con demo.js). Se identifica cada sitio por su data-slug, no por indice: el orden del DOM
+    // no es el de la tabla. Se re-derivan la clase de estado (de ella cuelgan en CSS el halo, el
+    // filo, el tinte y el color de la etiqueta) y el texto de la etiqueta. La nota se deja como
+    // esta: es narrativa y describe el estado por defecto de la sala.
+    const SITIOS_POR_RANGO: Record<number, Record<string, string>> = {
+      1: { 'sala-mandos': 'reparacion',  'biblioteca': 'desconectada', 'torre-retos': 'desconectada', 'consejo': 'desconectada', 'mirador': 'desconectada' },
+      2: { 'sala-mandos': 'fortalecida', 'biblioteca': 'reparacion',   'torre-retos': 'desconectada', 'consejo': 'desconectada', 'mirador': 'desconectada' },
+      3: { 'sala-mandos': 'fortalecida', 'biblioteca': 'reparacion',   'torre-retos': 'reparacion',   'consejo': 'desconectada', 'mirador': 'desconectada' },
+      4: { 'sala-mandos': 'fortalecida', 'biblioteca': 'fortalecida',  'torre-retos': 'fortalecida',  'consejo': 'reparacion',   'mirador': 'desconectada' },
+      5: { 'sala-mandos': 'fortalecida', 'biblioteca': 'fortalecida',  'torre-retos': 'fortalecida',  'consejo': 'fortalecida',  'mirador': 'fortalecida' },
+    };
+    // Espejo de ETIQUETA_ESTADO (demo.js): la clave interna sigue siendo 'fortalecida', lo que
+    // se lee es 'Activada'.
+    const ETIQUETA_ESTADO: Record<string, string> = { fortalecida: 'Activada', reparacion: 'En reparación', desconectada: 'Desconectada' };
+    const tabla = SITIOS_POR_RANGO[r] || SITIOS_POR_RANGO[3];
+    document.querySelectorAll<HTMLElement>('.hito').forEach((hito) => {
+      const slug = hito.dataset.slug;
+      const estado = slug ? tabla[slug] : undefined;
+      if (!estado) return; // pieza sin sala (la Puerta): no esta en la tabla, se deja como esta
+      hito.classList.remove('hito--fortalecida', 'hito--reparacion', 'hito--desconectada');
+      hito.classList.add('hito--' + estado);
+      const et = hito.querySelector('.hito__e');
+      if (et) et.textContent = ETIQUETA_ESTADO[estado];
+      // El aria-label rehace SOLO su etiqueta de estado; nombre y nota se leen del propio cartel.
+      if (hito.hasAttribute('aria-label')) {
+        const nombre = hito.querySelector('.hito__n')?.textContent ?? '';
+        const nota = hito.querySelector('.hito__no')?.textContent ?? '';
+        hito.setAttribute('aria-label', `Entrar en ${nombre}: ${ETIQUETA_ESTADO[estado]}. ${nota}`);
+      }
+    });
+
+    // (2) LAS SENDAS de la banda. Cada .ruta (las tres del triskel y el Cierre) lleva su lista de
+    // intervenciones; el numero de cada una esta en su .interv__n. Se re-deriva el estado de cada
+    // intervencion con estadoIntervencion(n, F), se cuenta cuantas quedan fortalecidas para el
+    // contador x/y y se refresca su etiqueta. Se lee el numero del DOM, asi no hay que saber que
+    // senda es ni repetir el reparto de intervenciones.
+    const ETIQUETA_INTERV: Record<string, string> = { fortalecida: 'Fortalecida', activa: 'Sabotaje detectado', bloqueada: 'Bloqueada' };
+    document.querySelectorAll('.banda .ruta').forEach((ruta) => {
+      let fort = 0;
+      ruta.querySelectorAll('.intervs .interv').forEach((item) => {
+        const n = parseInt(item.querySelector('.interv__n')?.textContent ?? '', 10);
+        const estado = estadoIntervencion(n, F);
+        if (estado === 'fortalecida') fort++;
+        item.classList.remove('interv--fortalecida', 'interv--activa', 'interv--bloqueada');
+        item.classList.add('interv--' + estado);
+        const et = item.querySelector('.interv__e');
+        if (et) et.textContent = ETIQUETA_INTERV[estado];
+        // Solo la activa es puerta (lleva al Patio). Si un enlace deja de ser la activa, se le
+        // quita el href para que no navegue con su estado nuevo.
+        if (item.tagName === 'A') {
+          if (estado === 'activa') item.setAttribute('href', '/dashboard');
+          else item.removeAttribute('href');
+        }
+      });
+      const cont = ruta.querySelector('.ruta__p b');
+      if (cont) cont.textContent = String(fort);
+    });
+  })();
 </script>
 
 <style is:global>
@@ -295,7 +370,7 @@ const MAPA = { w: 2752, h: 1536 };
 
   /* El estado se ve en la materia, como en toda la casa: la fortalecida arde en ambar,
      la que esta en reparacion late en cian, y la desconectada esta apagada. */
-  .hito--fortalecida { --luz: var(--amber); --luz-rgb: 232, 169, 63; }
+  .hito--fortalecida { --luz: var(--gold); --luz-rgb: 201, 162, 75; }
 
   /* Apagada: es lo que significa desconectada, asi que aqui NO se sube el brillo. Si
      brillan las cinco igual, el estado deja de contar nada. */
@@ -345,7 +420,7 @@ const MAPA = { w: 2752, h: 1536 };
   .hito:hover .hito__cartel, .hito:focus-visible .hito__cartel { opacity: 1; visibility: visible; }
   .hito__n { font-family: var(--display); font-weight: 600; font-size: 0.84rem; color: var(--bone); letter-spacing: 0.03em; }
   .hito__e { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--aqua); }
-  .hito--fortalecida .hito__e { color: var(--amber); }
+  .hito--fortalecida .hito__e { color: var(--gold); }
   .hito--desconectada .hito__e { color: var(--mist); }
   .hito__no { font-size: 0.72rem; line-height: 1.4; color: var(--moon); }
 
@@ -395,7 +470,9 @@ const MAPA = { w: 2752, h: 1536 };
   .ruta__t::-webkit-details-marker { display: none; }
   .ruta__t:hover { background: rgba(63,169,201,0.22); }
   .ruta[open] > .ruta__t { --aug-border-bg: var(--cyan); background: rgba(63,169,201,0.2); }
-  .ruta__n { font-family: var(--display); font-size: 0.86rem; font-weight: 600; color: var(--bone); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Cinzel renderiza en versalitas (mas anchas que la sans): a 0.86rem "Senda del Crecimiento"
+     se cortaba en la banda. 0.78 la deja entrar entera manteniendo el titular en Cinzel. */
+  .ruta__n { font-family: var(--display); font-size: 0.78rem; font-weight: 600; color: var(--bone); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ruta__p { margin-left: auto; font-size: 0.76rem; color: var(--mist); white-space: nowrap; }
   .ruta__p b { color: var(--aqua); }
   .ruta__mes { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--amber); white-space: nowrap; }
@@ -427,21 +504,68 @@ const MAPA = { w: 2752, h: 1536 };
   .interv__t { font-size: 0.76rem; font-weight: 600; color: var(--moon); line-height: 1.25; }
   .interv__e { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
 
-  .interv--fortalecida { border-left-color: var(--amber); }
-  .interv--fortalecida .interv__n, .interv--fortalecida .interv__e { color: var(--amber); }
+  /* Canon de color: fortalecida en oro (trofeo), activa en ambar (la del mes, la accion de
+     ahora), bloqueada en mist. Igual que las filas de El asesor. */
+  .interv--fortalecida { border-left-color: var(--gold); }
+  .interv--fortalecida .interv__n, .interv--fortalecida .interv__e { color: var(--gold); }
   .interv--fortalecida .interv__t { color: var(--bone); }
 
   /* La activa es la unica que es puerta: las otras son estado y no prometen clic */
-  .interv--activa { border-left-color: var(--cyan); background: rgba(63,169,201,0.16); }
+  .interv--activa { border-left-color: var(--amber); background: rgba(232,169,63,0.16); }
   .interv--activa .interv__t { color: var(--bone); }
-  .interv--activa .interv__n, .interv--activa .interv__e { color: var(--aqua); }
-  .interv--activa:hover { background: rgba(63,169,201,0.28); }
+  .interv--activa .interv__n, .interv--activa .interv__e { color: var(--amber); }
+  .interv--activa:hover { background: rgba(232,169,63,0.26); }
 
   /* Bloqueada: no se anuncia con un cartel, se ve apagada */
   .interv--bloqueada { opacity: 0.45; }
 
+  /* ============================ RESPONSIVE ============================ */
+
+  /* TABLET / ESCRITORIO PEQUENO: las cuatro sendas no caben en una fila; se reparten en dos. */
   @media (max-width: 980px) {
     .banda { flex-wrap: wrap; }
-    .ruta, .ruta--cierre { flex: 1 1 44%; max-width: none; margin-left: 0; }
+    .ruta, .ruta--cierre { flex: 1 1 42%; max-width: none; margin-left: 0; }
+  }
+
+  /* MOVIL Y APAISADO: abajo vive la barra de navegacion fija (64px). La banda se despega de
+     ese borde para no quedar tapada por ella, deja libre a la izquierda el hueco de la
+     pestana Demo (que en movil se ancla justo encima de la barra) y saca los mandos del
+     visor de la esquina inferior derecha, que es donde ahora se sienta la banda. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .banda {
+      bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+      gap: 7px;
+      /* El hueco de la izquierda es para la pestana Demo: ningun rotulo cae detras de ella. */
+      padding-left: 58px;
+      padding-right: clamp(12px, 3vw, 20px);
+      padding-top: clamp(34px, 6vh, 60px);
+      padding-bottom: 6px;
+    }
+    /* La ranura estrecha no da para nombre y contador en la misma linea sin comerse el
+       nombre. Se parte en dos: el titulo entero arriba (Cinzel a dos lineas si hace falta,
+       sin puntos suspensivos) y debajo el contador, la marca del mes y la flecha. */
+    .ruta__t { flex-wrap: wrap; row-gap: 5px; padding: 10px 12px; }
+    .ruta__n { flex: 1 1 100%; white-space: normal; line-height: 1.15; overflow: visible; }
+    .ruta__p { margin-left: 0; }
+    .ruta__v { margin-left: auto; }
+    /* Un panel abierto no debe crecer mas que la ventana: si no cabe, rueda por dentro. */
+    .ruta__c { max-height: 46svh; overflow-y: auto; }
+    /* Los mandos se van al centro derecha: la esquina de abajo es de la banda. */
+    .mandos {
+      top: 50%; bottom: auto; transform: translateY(-50%);
+      right: clamp(8px, 2.5vw, 14px);
+    }
+    /* Objetivo tactil comodo para acercar, alejar y centrar. */
+    .mando { width: 40px; height: 40px; }
+    .mando svg { width: 19px; height: 19px; }
+  }
+
+  /* APAISADO (poca altura): sobra ancho pero falta alto, asi que las cuatro sendas vuelven a
+     una sola fila para no comerse el mapa, y el nombre cabe entero de nuevo. */
+  @media (max-height: 480px) {
+    .banda { flex-wrap: nowrap; padding-top: clamp(26px, 6vh, 44px); }
+    .ruta, .ruta--cierre { flex: 1 1 0; max-width: none; margin-left: 0; }
+    /* Con el alto justo, el panel abierto se queda por debajo del HUD y rueda por dentro. */
+    .ruta__c { max-height: calc(100svh - 200px); }
   }
 </style>

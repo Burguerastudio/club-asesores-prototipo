@@ -1,0 +1,284 @@
+---
+// Onboarding: la entrega de la fortaleza (P0). El paso entre la Puerta (Login) y el Patio:
+// Nara te recibe en el patio de entrada, te presentas (nombre) y eliges tu figura (asesor o
+// asesora, rango base). "Entrada, no venta" (CONTENIDO P0). Después vendrá el tour guiado con
+// coach marks; esta es la entrega en sí.
+//
+// Hermana de la Puerta (index.astro): misma escena, mismo lenguaje (ranuras chaflanadas,
+// Nara en el umbral, velo de la casa), sin el shell de navegación (aún no has entrado).
+import '../styles/tokens.css';
+import Velo from '../components/Velo.astro';
+
+const POSTER = '/assets/mapa-escenas/ui/patio-entrada.webp';
+const RANURA = 'tl-clip br-clip border';
+
+// Las dos figuras del rango base (Asesor Base). El miembro elige, y evolucionará una skin por
+// rango (CONTENIDO 4.2). Marca la femenina por defecto (la demo es Marta).
+const FIGURAS = [
+  { id: 'asesora', nombre: 'Asesora', img: '/assets/avatares/ui/asesora-r1.webp' },
+  { id: 'asesor', nombre: 'Asesor', img: '/assets/avatares/ui/asesor-r1.webp' },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>La entrega de la fortaleza, Club de la Asesoría</title>
+    <meta name="description" content="Nara te recibe en la fortaleza." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" as="image" href={POSTER} fetchpriority="high" />
+    <meta name="theme-color" content="#090D14" />
+    <script is:inline>
+      if (matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('entra');
+    </script>
+  </head>
+  <body>
+    <Velo />
+
+    <main class="entrega" style={`background-image:url('${POSTER}')`}>
+      <button class="sonido entrega__sonido" type="button" aria-label="Silenciar el sonido" aria-pressed="false" data-augmented-ui="tl-clip br-clip">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path class="sonido__bocina" d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" />
+          <g class="sonido__ondas">
+            <path d="M15.2 9.4a3.6 3.6 0 0 1 0 5.2" />
+            <path d="M17.8 7.2a7 7 0 0 1 0 9.6" />
+          </g>
+          <path class="sonido__tacha" d="M15.5 9.5l5 5m0-5l-5 5" />
+        </svg>
+      </button>
+      <div class="veil" aria-hidden="true"></div>
+
+      <div class="wrap">
+        <section class="acceso">
+          <span class="kicker">La entrega de la fortaleza</span>
+          <h1 class="display titulo">Toma el mando de tu fortaleza</h1>
+          <p class="lead">Sigue en pie, pero lleva tiempo sin quien la dirija. No vas a levantarla de cero: vas a devolverle el pulso, grieta a grieta. Preséntate y cruza el umbral.</p>
+          <p class="lead-firma">Nara, guardiana de la fortaleza</p>
+
+          <form class="form" action="/dashboard" method="get">
+            <div class="campo">
+              <label for="nombre">Tu nombre</label>
+              <input id="nombre" type="text" name="nombre" autocomplete="given-name" spellcheck="false" placeholder="¿Cómo te presentas?" data-augmented-ui={RANURA} />
+            </div>
+
+            <fieldset class="figuras">
+              <legend>Elige tu figura</legend>
+              <div class="figuras__op">
+                {FIGURAS.map((f, i) => (
+                  <label class="figura-op">
+                    <input type="radio" name="figura" value={f.id} checked={i === 0} />
+                    <span class="figura-op__card" data-augmented-ui="tl-clip br-clip border">
+                      <img src={f.img} alt={`Avatar ${f.nombre}, rango base`} width="433" height="580" loading="lazy" />
+                      <b class="figura-op__n">{f.nombre}</b>
+                      <svg class="figura-op__ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <button class="btn" type="submit" data-sonido="entrar" data-augmented-ui="l-clip-y r-clip-y">Cruzar el umbral</button>
+          </form>
+
+          <p class="nota">Entras como <b>Asesor Base</b>. Nara te acompañará en tu primer recorrido por la fortaleza.</p>
+        </section>
+
+        <figure class="nara">
+          <img src="/assets/personajes/ui/nara-umbral.webp" alt="Nara, la guardiana de la fortaleza" width="1165" height="1560" />
+          <span class="aura" aria-hidden="true"></span>
+        </figure>
+      </div>
+    </main>
+
+    <script>
+      import { montarCursor } from '../scripts/cursor.js';
+      import { montarVelo, cruzar } from '../scripts/velo.js';
+      import { cablearInterfaz, alternarSonido, estaSilenciado, sonar } from '../scripts/audio.js';
+
+      montarCursor();
+      montarVelo();
+      cablearInterfaz();
+
+      // La elección de figura pinta la card marcada (el radio nativo queda oculto).
+      const ops = [...document.querySelectorAll<HTMLInputElement>('input[name="figura"]')];
+      const pintarFiguras = () => ops.forEach((o) => o.closest('.figura-op')?.classList.toggle('is-sel', o.checked));
+      ops.forEach((o) => o.addEventListener('change', pintarFiguras));
+      pintarFiguras();
+
+      // Cruzar el umbral: guarda la elección (cosmética en el prototipo), cierra el velo y
+      // entra al Patio. Mismo gesto que la Puerta.
+      const form = document.querySelector('.form');
+      if (form) {
+        const btn = form.querySelector<HTMLButtonElement>('.btn');
+        let golpeDado = false;
+        btn?.addEventListener('pointerdown', () => { golpeDado = true; });
+
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const nombre = (form.querySelector<HTMLInputElement>('#nombre')?.value || '').trim();
+          const figura = ops.find((o) => o.checked)?.value || 'asesora';
+          try { localStorage.setItem('fortaleza-onboarding', JSON.stringify({ nombre, figura })); } catch {}
+
+          const silencio = estaSilenciado();
+          if (!silencio && !golpeDado) sonar('entrar', 0.4);
+          if (btn) { btn.disabled = true; btn.textContent = 'Cruzando el umbral'; }
+          // Al Patio, con el tour de Nara (segunda parte del onboarding).
+          cruzar('/dashboard?tour', silencio ? 280 : 550);
+        });
+      }
+
+      const sonido = document.querySelector('.sonido');
+      if (sonido) {
+        const pintar = () => {
+          const off = estaSilenciado();
+          sonido.setAttribute('aria-pressed', String(off));
+          sonido.setAttribute('aria-label', off ? 'Activar el sonido' : 'Silenciar el sonido');
+        };
+        pintar();
+        sonido.addEventListener('click', () => { alternarSonido(); pintar(); });
+      }
+    </script>
+
+    <style is:global>
+      .entrega { position: relative; min-height: 100svh; overflow: hidden; background-size: cover; background-position: center; }
+      .entrega__sonido { position: absolute; top: 20px; right: max(3vw, 20px); z-index: 3; }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .kicker, .titulo, .lead, .lead-firma, .campo, .figuras, .form .btn, .nota, .nara {
+          animation: umbral 0.5s ease-out both;
+        }
+        .titulo { animation-delay: 70ms; }
+        .lead { animation-delay: 140ms; }
+        .lead-firma { animation-delay: 180ms; }
+        .campo { animation-delay: 220ms; }
+        .figuras { animation-delay: 280ms; }
+        .form .btn { animation-delay: 360ms; }
+        .nota { animation-delay: 430ms; }
+        .nara { animation-name: revela; animation-duration: 0.9s; animation-delay: 150ms; }
+        @keyframes umbral { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes revela { from { opacity: 0; } to { opacity: 1; } }
+      }
+
+      .veil {
+        position: absolute; inset: 0; z-index: 1;
+        background:
+          linear-gradient(to right, rgba(9,13,20,0.96) 0%, rgba(9,13,20,0.82) 34%, rgba(9,13,20,0.25) 66%, rgba(9,13,20,0.55) 100%),
+          linear-gradient(to top, rgba(9,13,20,0.9) 0%, transparent 45%);
+      }
+
+      .wrap {
+        position: relative; z-index: 2;
+        width: min(1240px, 92vw); margin: 0 auto; min-height: 100svh;
+        display: grid; grid-template-columns: minmax(360px, 520px) 1fr;
+        align-items: center; gap: clamp(24px, 5vw, 72px);
+      }
+
+      .acceso { padding: clamp(14px, 3vh, 48px) 0; }
+      .kicker { display: block; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--amber-2, #f2c471); margin-bottom: clamp(10px, 1.6vh, 16px); }
+      .titulo { margin: 0; font-size: clamp(1.5rem, min(3.1vw, 4.2vh), 2.9rem); color: var(--bone); line-height: 1.08; }
+      .lead { margin: clamp(8px, 1.4vh, 14px) 0 0; font-family: var(--italic); font-style: italic; font-size: clamp(1rem, min(1.4vw, 2vh), 1.28rem); color: var(--moon); line-height: 1.5; max-width: 48ch; }
+      .lead-firma { margin: 0.7rem 0 clamp(16px, 3vh, 34px); font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
+
+      .form { display: flex; flex-direction: column; gap: clamp(14px, 2.2vh, 22px); }
+      .campo { display: flex; flex-direction: column; gap: 9px; }
+      .campo label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--mist); }
+      .campo input {
+        --aug-tl: 10px; --aug-br: 10px; --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.42);
+        width: 100%; padding: clamp(11px, 1.8vh, 14px) 16px; border: 0;
+        color: var(--bone); font-family: var(--sans); font-size: 1rem;
+        background: linear-gradient(180deg, rgba(9,13,20,0.8), rgba(20,32,46,0.55));
+        transition: background 0.25s ease;
+      }
+      .campo input::placeholder { color: rgba(140,160,176,0.5); }
+      .campo input:hover { --aug-border-bg: rgba(194,205,214,0.5); }
+      .campo input:focus { outline: none; --aug-border-bg: var(--cyan); background: linear-gradient(180deg, rgba(16,30,44,0.85), rgba(63,169,201,0.13)); }
+
+      /* Elección de figura: dos cards seleccionables (radio nativo oculto). */
+      .figuras { border: 0; margin: 0; padding: 0; min-width: 0; }
+      .figuras legend { padding: 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--mist); margin-bottom: 11px; }
+      .figuras__op { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px, 1.4vw, 16px); }
+      .figura-op { cursor: pointer; }
+      .figura-op input { position: absolute; opacity: 0; width: 0; height: 0; }
+      .figura-op__card {
+        --aug-tl: 12px; --aug-br: 12px; --aug-border-all: 1px; --aug-border-bg: rgba(194,205,214,0.28);
+        position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        padding: clamp(12px, 1.6vh, 18px) 12px 12px;
+        background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.5));
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .figura-op:hover .figura-op__card { transform: translateY(-3px); --aug-border-bg: rgba(194,205,214,0.5); }
+      .figura-op__card img { display: block; height: clamp(150px, 20vh, 210px); width: auto; object-fit: contain; filter: drop-shadow(0 14px 24px rgba(0,0,0,0.6)); }
+      .figura-op__n { font-family: var(--serif, serif); font-size: 0.98rem; font-weight: 600; color: var(--moon); }
+      .figura-op__ok { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; padding: 3px; border-radius: 50%; background: var(--cyan); color: var(--night-1, #0b111b); opacity: 0; transform: scale(0.6); transition: opacity 0.2s ease, transform 0.2s ease; }
+      .figura-op.is-sel .figura-op__card { --aug-border-bg: var(--cyan); background: linear-gradient(180deg, rgba(63,169,201,0.16), rgba(9,13,20,0.5)); }
+      .figura-op.is-sel .figura-op__n { color: var(--bone); }
+      .figura-op.is-sel .figura-op__ok { opacity: 1; transform: scale(1); }
+      .figura-op input:focus-visible + .figura-op__card { --aug-border-bg: var(--cyan); outline: 2px solid var(--aqua); outline-offset: 3px; }
+
+      .btn { margin-top: clamp(4px, 1vh, 8px); padding: clamp(12px, 1.9vh, 15px) 22px; font-size: 0.86rem; }
+      .nota { margin: clamp(14px, 2.4vh, 32px) 0 0; max-width: 44ch; font-size: 0.82rem; line-height: 1.55; color: var(--mist); }
+      .nota b { color: var(--moon); }
+
+      .nara { position: relative; margin: 0; align-self: end; justify-self: center; pointer-events: none; }
+      .nara .aura { left: 50%; top: 47%; width: 17%; }
+      .nara img { display: block; height: clamp(380px, 72vh, 780px); width: auto; object-fit: contain; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.7)); }
+
+      /* Sin la columna de Nara: la entrega cae a una sola columna. Cubre el movil vertical
+         y tambien el apaisado (poca altura), que ademas se recompone abajo. */
+      @media (max-width: 860px), (max-height: 480px) {
+        .wrap { grid-template-columns: 1fr; align-items: start; padding: clamp(28px, 6vh, 56px) 0; }
+        .veil { background: linear-gradient(to top, rgba(9,13,20,0.96) 30%, rgba(9,13,20,0.72) 70%, rgba(9,13,20,0.5) 100%); }
+        .nara { display: none; }
+        .acceso { padding-top: clamp(16px, 4vh, 32px); }
+      }
+
+      /* Movil estrecho: las dos figuras siguen cabiendo, solo se aprietan un poco. */
+      @media (max-width: 380px) {
+        .figuras__op { gap: 8px; }
+        .figura-op__card { padding: 10px 8px 10px; }
+        .figura-op__card img { height: clamp(132px, 42vw, 168px); }
+      }
+
+      /* Apaisado (poca altura, movil tumbado): dos columnas para que el umbral quepa sin
+         perseguirlo. El texto de Nara a la izquierda, el mecanismo (nombre, figuras, boton)
+         a la derecha; las figuras se encogen y el ritmo se aprieta. */
+      @media (max-height: 480px) and (min-width: 680px) {
+        .wrap { align-items: center; padding: clamp(12px, 4vh, 22px) 0; }
+        .veil {
+          background:
+            linear-gradient(to right, rgba(9,13,20,0.95) 0%, rgba(9,13,20,0.85) 52%, rgba(9,13,20,0.62) 100%),
+            linear-gradient(to top, rgba(9,13,20,0.82) 0%, transparent 62%);
+        }
+        .acceso {
+          display: grid; padding: 0;
+          grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+          grid-template-rows: auto auto auto auto auto 1fr;
+          grid-template-areas:
+            "kick form"
+            "titl form"
+            "lead form"
+            "firm form"
+            "nota form"
+            ".    form";
+          column-gap: clamp(24px, 5vw, 52px);
+        }
+        .kicker { grid-area: kick; margin-bottom: 6px; }
+        .titulo { grid-area: titl; font-size: clamp(1.35rem, 4.2vw, 1.9rem); }
+        .lead { grid-area: lead; font-size: clamp(0.88rem, 2.3vw, 1rem); line-height: 1.45; margin: 6px 0 0; }
+        .lead-firma { grid-area: firm; margin: 0.5rem 0 0; }
+        .form { grid-area: form; align-self: start; gap: clamp(9px, 2vh, 15px); }
+        .nota { grid-area: nota; margin: clamp(10px, 3vh, 18px) 0 0; }
+        .campo { gap: 7px; }
+        .campo input { padding: 10px 14px; }
+        .figuras legend { margin-bottom: 7px; }
+        .figuras__op { gap: clamp(8px, 1.4vw, 14px); }
+        .figura-op__card { padding: 9px 9px 10px; gap: 6px; }
+        .figura-op__card img { height: clamp(80px, 24vh, 116px); }
+        .figura-op__n { font-size: 0.9rem; }
+        .btn { margin-top: 4px; }
+      }
+    </style>
+  </body>
+</html>

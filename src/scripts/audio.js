@@ -10,8 +10,12 @@
 // El gesto que la enciende de verdad es el boton Entrar del Login.
 
 const LLAVE = 'fortaleza-audio'; // 'on' | 'off', se recuerda entre visitas
-const VOL_MUSICA = 0.3;
-const VOL_EFECTOS = 0.32;
+// Los volumenes ya no son constantes: los mueve Ajustes (P12, DESIGN 173) y se recuerdan.
+const LLAVE_VM = 'fortaleza-vol-musica';
+const LLAVE_VE = 'fortaleza-vol-efectos';
+const leerVol = (llave, def) => { const n = parseFloat(localStorage.getItem(llave)); return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : def; };
+let VOL_MUSICA = leerVol(LLAVE_VM, 0.3);
+let VOL_EFECTOS = leerVol(LLAVE_VE, 0.32);
 
 const silenciado = () => localStorage.getItem(LLAVE) === 'off';
 
@@ -107,10 +111,23 @@ export function alternarSonido() {
 
 export const estaSilenciado = silenciado;
 
+// Los volumenes viven aqui y los mueve Ajustes (P12): variables y recordados (DESIGN 173).
+export const getVolMusica = () => VOL_MUSICA;
+export const getVolEfectos = () => VOL_EFECTOS;
+export function setVolMusica(v) {
+  VOL_MUSICA = Math.min(1, Math.max(0, Number(v) || 0));
+  localStorage.setItem(LLAVE_VM, String(VOL_MUSICA));
+  if (musica && !silenciado()) musica.volume = VOL_MUSICA; // en vivo
+}
+export function setVolEfectos(v) {
+  VOL_EFECTOS = Math.min(1, Math.max(0, Number(v) || 0));
+  localStorage.setItem(LLAVE_VE, String(VOL_EFECTOS)); // lo recoge el siguiente sonar()
+}
+
 // --- Cableado comun ---
 // Por delegacion: asi vale para lo que ya hay y para lo que venga.
 export function cablearInterfaz() {
-  const esAccion = (el) => el.closest('.btn:not(.btn--linea)');
+  const esAccion = (el) => el.closest('.btn');
 
   document.addEventListener('pointerover', (e) => {
     const el = e.target.closest('a, button, .sala');

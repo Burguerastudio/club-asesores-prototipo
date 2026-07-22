@@ -1,38 +1,60 @@
 ---
-// El Patio (Dashboard). El patio de armas del castro: donde caes al cruzar la Puerta
-// (el Login), donde ves como esta tu fortaleza y de donde salen los caminos a cada sala.
-// Responde a "que toca hoy". El Mapa es otra pagina: el viaje.
-// Solo van en placa las cosas que son objeto (la intervencion, el mapa, las salas).
-// El resto flota sobre el fondo, sin marco y sin etiqueta: lo que es, se ve.
+// El Patio (Dashboard). El parte de tu fortaleza: de un vistazo, qué toca hoy y cómo vas.
+// Fundido el 2026-07-21: absorbe la página de intervención (P7) y suelta los azulejos de
+// salas (los cubre el Mapa). Queda COHERENTE en dos bloques:
+//   1. La intervención del mes: el problema (El Rebelde), los tres pasos como PUERTAS a su
+//      sala (la clase→Biblioteca, el reto→Torre), la recompensa que se enciende sola, y Nara
+//      guiando ahí mismo el siguiente paso. Sin botón suelto: el paso que toca ES la acción.
+//   2. Tu avance: rango, el año en tramos y tus últimos logros, rotulados.
 import Fortaleza from '../layouts/Fortaleza.astro';
 import Motas from '../components/Motas.astro';
-import { asesora, activa, avisoNara, estadoFortaleza, salas, intervenciones, logrosRecientes, ETIQUETA_ESTADO } from '../data/demo.js';
+import { asesora, activa, intervenciones, logrosRecientes } from '../data/demo.js';
 
-// La barra va por tramos y cada tramo es SU intervencion, con su estado real.
-// Antes encendia los primeros N y mentia: el tramo 3 salia como hecho siendo la activa,
-// y el 5 (fortalecida de verdad) salia apagado, contradiciendo a la placa de encima.
+// La habilidad que forja esta intervención (junto con la insignia, la recompensa completa).
+const habilidadMes = intervenciones.find((i) => i.n === activa.n)?.habilidad?.nombre;
+
+// Cada paso, dónde se hace. Los dos primeros son PUERTAS (llevan a su sala); el tercero no
+// es destino, es la recompensa automática. Nombre exacto del tier -> su puerta.
+const PASOS: Record<string, { href: string | null; ir: string }> = {
+  'Progresión': { href: '/biblioteca', ir: 'Ver la clase en la Biblioteca' },
+  'Reto de Torre': { href: '/torre-retos', ir: 'Encender la señal en la Torre' },
+  'Evolución': { href: null, ir: '' },
+};
+
+// Nara guía el paso que toca, aquí mismo (ya no cuelga sola abajo).
+const guiaNara = 'Ya bajaste el saber a tu despacho. Enciende ahora la señal en la Torre y esta grieta quedará reparada.';
+
+// La barra de rango: un tramo por intervención, con su estado real.
 const tramos = intervenciones.map((i) => i.estado);
 
-// Formas de augmented-ui. Cada cosa lleva la suya segun lo que es (ver docs/DESIGN.md):
-// la placa mayor va labrada, el azulejo callado y el boton en punta.
-// El doble chaflan va en vertical (-y) y no en horizontal: asi muerde el lateral
-// y deja entero el borde de arriba, donde va la banda con el rotulo.
+// --- EL ENDGAME: la cara COMPLETADA de El Patio (12/12). No es ruta aparte, es un ESTADO:
+// cuando cierras el ciclo, el Patio deja de mostrar "qué toca hoy" y muestra el cierre. Lo
+// enseñará el conmutador de demo; mientras no exista, con ?fin en la URL. Usa el mapa de la
+// fortaleza en alta (el Mirador solo hay en tamaño azulejo: pedir -fondo a Mati si se quiere
+// su vista literal; el mapa completo encaja con "mapa iluminado, piezas colocadas", P9).
+const sello = (n: number) => `/assets/emblemas-insignias/ui/insignias-intervencion/sellos/insignia-i${String(n).padStart(2, '0')}-sello.webp`;
+const sellosFin = intervenciones.map((i) => ({ n: i.n, titulo: i.titulo, sinopsis: i.sinopsis, img: sello(i.n) }));
+const rangoFinal = 'Asesora Fortalecida';
+const naraFin = 'Doce grietas, reparadas. Tu fortaleza ya se sostiene sola. Desde aquí se ven las que vendrán: el segundo ciclo asoma en el horizonte.';
+
 const F_MAYOR = 'tl-2-clip-y tr-2-clip-y bl-2-clip-y br-2-clip-y border';
-const F_AZULEJO = 'tl-clip br-clip border';
 const F_RANURA = 'tl-clip tr-clip bl-clip br-clip border';
-const F_BOTON = 'l-clip-y r-clip-y';
 ---
 
 <Fortaleza title="El Patio, Club de la Asesoría" activa="/dashboard">
-  <!-- La clase .entra (que aqui deja la pagina oculta hasta que la timeline la
-       descubre) y el velo del cruce los pone ya Fortaleza.astro, desde el <head>. -->
+  <!-- El estado completado (Endgame). Lo dispara el conmutador de demo en rango 5 (leido de
+       localStorage aqui, antes del paint, para que no parpadee); tambien con ?fin o #fin en la
+       URL como atajo. En rango 5 El Patio muestra el cierre del ciclo en vez del mes. -->
+  <script is:inline>
+    (() => {
+      let r = 3; try { r = JSON.parse(localStorage.getItem('fortaleza-demo') || '{}').rango || 3; } catch {}
+      if (r === 5 || location.search.includes('fin') || location.hash === '#fin')
+        document.documentElement.classList.add('es-fin');
+    })();
+  </script>
+
   <header class="cab">
-    <h1 class="display cab__t"><span data-saludo>Buenos días</span>, {asesora.nombre}</h1>
-    <!-- El Patio recoge la promesa del Login: el saludo no es de SaaS, es el parte
-         de la guardia. Sin marco ni rotulo: una linea en la voz de la casa. -->
-    <p class="cita cab__estado">{estadoFortaleza}</p>
-    <!-- Astro genera HTML fijo en build: sin esto, "Buenos dias" queda desmentido por el
-         reloj en cualquier demo de tarde. is:inline y pegado al h1 para ganar al primer paint. -->
+    <h1 class="display cab__t"><span data-saludo>Buenos días</span>, <span data-yo-nombre>{asesora.nombre}</span></h1>
     <script is:inline>
       (() => {
         const h = new Date().getHours();
@@ -43,45 +65,63 @@ const F_BOTON = 'l-clip-y r-clip-y';
   </header>
 
   <div class="grid">
-    <!-- LO PRIMERO Y UNICO ARRIBA: la intervencion. Es lo que responde a "que hago hoy",
-         asi que va sola y a todo el ancho. Nada compite con ella.
-         El Rebelde va fuera de la placa y por encima: la forma recortada lo encerraria,
-         y ademas asi se apoya en el marco y lo pisa, que es lo suyo para el villano. -->
+    <!-- 1. LA INTERVENCIÓN DEL MES. El foco: qué toca hoy, de principio a fin. -->
     <div class="placa-caja m-activa-caja">
       <Motas base={9} refuerzo={7} />
 
-      <section class="placa forma-mayor m-activa" aria-label="Intervención activa" data-augmented-ui={F_MAYOR}>
+      <section class="placa forma-mayor m-activa" aria-label="La intervención de este mes" data-augmented-ui={F_MAYOR}>
         <div class="placa__cab">
           <p class="rotulo">Intervención {activa.n} de 12, Senda del {activa.senda}</p>
         </div>
 
         <div class="m-activa__cuerpo">
+          <!-- IZQUIERDA: el relato. El problema (El Rebelde) y la guía (Nara). -->
           <div class="m-activa__txt">
             <h2 class="display m-activa__t">{activa.titulo}</h2>
             <p class="m-activa__sab"><b>Sabotaje detectado.</b> {activa.sabotaje}</p>
-            <p class="m-activa__acc">{activa.accion}</p>
-            <a class="btn" href={activa.ctaHref} data-augmented-ui={F_BOTON}>{activa.cta}</a>
+
+            <div class="m-activa__guia">
+              <img class="m-activa__nara" src="/assets/retratos/ui/nara.webp" alt="Nara" width="256" height="256" />
+              <p class="m-activa__guia-txt">{guiaNara}<span class="m-activa__guia-firma">Nara, guardiana de la fortaleza</span></p>
+            </div>
           </div>
 
-          <!-- Solo el tier que toca es puerta (enlace real): los otros dos son estado.
-               Antes los tres prometian clic (cursor y sonido) y ninguno hacia nada. -->
-          <ol class="tiers">
+          <!-- DERECHA: los tres pasos. Cada acción es una PUERTA a su sala; la recompensa
+               se enciende sola. La flecha marca lo que se pulsa. -->
+          <ol class="pasos" aria-label="Los tres pasos de la intervención">
             {activa.tiers.map((t) => {
-              const Caja = t.toca ? 'a' : 'span';
+              const paso = PASOS[t.nombre] ?? { href: null, ir: '' };
+              const estado = t.hecho ? 'hecho' : t.toca ? 'toca' : 'premio';
+              const esPuerta = !!paso.href;
+              const Caja = esPuerta ? 'a' : 'div';
               return (
-                <li class="tiers__li">
-                  <Caja
-                    class={`tier${t.hecho ? ' is-hecho' : ''}${t.toca ? ' is-toca' : ''}`}
-                    href={t.toca ? activa.ctaHref : undefined}
-                    data-augmented-ui={F_RANURA}
-                  >
-                    <img class="tier__im" src={t.img} alt="" aria-hidden="true" width="256" height="256" />
-                    <span class="tier__d">
-                      <b class="tier__n">{t.nombre}</b>
-                      <span class="tier__i">{t.insignia}</span>
+                <li class="paso-li">
+                  <Caja class={`paso paso--${estado}`} href={esPuerta ? paso.href : undefined} data-augmented-ui={F_RANURA}>
+                    <span class="paso__nodo" aria-hidden="true">
+                      <img class="paso__im" src={t.img} alt="" width="256" height="256" />
+                      {estado === 'hecho' && <svg class="paso__mk paso__mk--ok" viewBox="0 0 24 24"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>}
                     </span>
-                    <span class="tier__pf">+{t.pf} PF</span>
-                    <span class="sr-only">{t.hecho ? 'conseguida' : t.toca ? 'la que toca hoy' : 'pendiente'}</span>
+
+                    <span class="paso__d">
+                      <span class="paso__cab">
+                        <b class="paso__n">{t.nombre}</b>
+                        <span class="paso__pf">+{t.pf} PF</span>
+                      </span>
+
+                      {estado === 'premio' ? (
+                        <>
+                          <span class="paso__rec">Insignia <b>{t.insignia}</b> · Habilidad <b>{habilidadMes}</b></span>
+                          <span class="paso__nota">Se enciende sola al completar el reto</span>
+                        </>
+                      ) : (
+                        <>
+                          <span class="paso__q">{t.que}</span>
+                          <span class="paso__ir">{paso.ir}<svg class="paso__flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        </>
+                      )}
+                    </span>
+
+                    <span class="sr-only">{estado === 'hecho' ? 'hecho' : estado === 'toca' ? 'lo que toca ahora' : 'recompensa, automática'}</span>
                   </Caja>
                 </li>
               );
@@ -91,36 +131,31 @@ const F_BOTON = 'l-clip-y r-clip-y';
       </section>
 
       <img class="m-activa__reb" src="/assets/personajes/ui/rebelde.webp" alt="El Rebelde" width="292" height="649" />
-
     </div>
 
-    <!-- Tu ficha: progreso y logros juntos, que cuentan lo mismo (tu avance y su premio).
-         Por separado eran dos modulos flojos. El nombre, el rango y los PF ya estan en el
-         HUD, asi que aqui solo va lo que el HUD no cuenta: los 12 tramos, lo que falta,
-         la figura del rango (verla cambiar es la recompensa) y las ultimas insignias. -->
-    <section class="mod m-ficha" aria-label="Tu progreso">
+    <!-- 2. TU AVANCE. Rango y año a un lado, tus últimos logros al otro, con su rótulo. -->
+    <section class="mod m-ficha" aria-label="Tu avance">
       <div class="m-ficha__c">
-        <span class="figura">
-          <img class="m-ficha__av" src={asesora.avatar} alt="" aria-hidden="true" width="433" height="580" />
+        <span class="figura m-ficha__figwrap">
+          <img class="m-ficha__av" src={asesora.avatar} alt="" aria-hidden="true" width="433" height="580" data-yo-cara />
         </span>
 
-        <div class="m-ficha__d">
-          <h2 class="display m-ficha__r">{asesora.rango}</h2>
-          <p class="m-ficha__sub">{asesora.fortalecidas} de {asesora.totalIntervenciones} intervenciones fortalecidas</p>
+        <div class="m-ficha__prog">
+          <h2 class="display m-ficha__r" data-yo-rango>{asesora.rango}</h2>
+          <p class="m-ficha__sub"><span data-yo-fort>{asesora.fortalecidas}</span> de {asesora.totalIntervenciones} intervenciones fortalecidas</p>
           <div class="barra" aria-hidden="true">
             {tramos.map((e) => <span class={e === 'fortalecida' ? 'is-on' : e === 'activa' ? 'is-toca' : ''}></span>)}
           </div>
-          <p class="m-ficha__falta">Te faltan {asesora.faltanParaSiguiente} para {asesora.rangoSiguiente}</p>
+          <p class="m-ficha__falta">Te faltan <span data-yo-faltan>{asesora.faltanParaSiguiente}</span> para <span data-yo-rango-sig>{asesora.rangoSiguiente}</span></p>
         </div>
 
         <div class="m-ficha__logros">
+          <p class="m-ficha__logros-k">Últimos logros</p>
           <ul class="logros">
             {logrosRecientes.map((l) => (
               <li class="logro" tabindex="0">
                 <img src={l.img} alt="" width="256" height="256" loading="lazy" decoding="async" />
                 <b>{l.nombre}</b>
-                <!-- La historia del logro, solo bajo demanda: en reposo la insignia se
-                     reconoce sola (el pie visible esta vetado a proposito) -->
                 <span class="pista" role="tooltip" data-augmented-ui="tl-clip br-clip border">{l.pie}</span>
               </li>
             ))}
@@ -129,76 +164,69 @@ const F_BOTON = 'l-clip-y r-clip-y';
       </div>
     </section>
 
-    <!-- Los espacios: adonde puedes ir. Van antes que la banda de abajo. -->
-    <section class="mod m-salas" aria-label="Espacios de la fortaleza">
-      <div class="salas">
-        {salas.map((s) => (
-          <div class="placa-caja">
-            <Motas base={3} refuerzo={3} />
-
-            <a class={`placa placa--foto forma-azulejo sala sala--${s.estado}`} href={s.href} aria-label={`${s.nombre}: ${ETIQUETA_ESTADO[s.estado as keyof typeof ETIQUETA_ESTADO]}. ${s.nota}`} data-augmented-ui={F_AZULEJO}>
-              <img class="sala__img" src={s.img} alt="" aria-hidden="true" width="640" height="357" loading="lazy" decoding="async" />
-              <!-- La sala respira al acercarte: el webm ya producido, sin descarga hasta
-                   el primer hover (preload none) y fundido sobre el estatico -->
-              <video class="sala__vid" src={`/assets/animaciones/${s.slug}.webm`} muted playsinline preload="none" aria-hidden="true"></video>
-              <span class="sala__ov">
-                <span class={`estado estado--${s.estado}`}>{ETIQUETA_ESTADO[s.estado as keyof typeof ETIQUETA_ESTADO]}</span>
-                <b class="sala__n">{s.nombre}</b>
-                <span class="sala__nota">{s.nota}</span>
-              </span>
-            </a>
-          </div>
-        ))}
+    <!-- EL ENDGAME. Solo visible en estado completado (.es-fin). El ciclo cerrado: el mapa
+         iluminado de fondo, las doce grietas reparadas y Nara cerrando de cara al horizonte. -->
+    <section class="m-fin" aria-label="Fin del primer ciclo">
+      <div class="m-fin__escena" aria-hidden="true">
+        <img class="m-fin__im" src="/assets/mapa-escenas/ui/mapa-fortaleza.webp" alt="" width="2752" height="1536" />
       </div>
-    </section>
+      <div class="m-fin__velo" aria-hidden="true"></div>
 
-    <!-- Aviso de Nara. Flota: es una voz, no un objeto.
-         Va con su figura entera y no con un retrato de 62px: es la guia del programa y
-         su aviso es lo que dice que pasa. Hace pareja con el Rebelde, que custodia la
-         intervencion. Y la cita se firma debajo, como se firma una cita. -->
-    <section class="mod m-nara" aria-label="Aviso de Nara">
-      <div class="m-nara__c">
-        <span class="figura figura--luz">
-          <img class="m-nara__fig" src="/assets/personajes/ui/nara.webp" alt="Nara, la guardiana de la fortaleza" width="184" height="580" loading="lazy" decoding="async" />
-          <!-- El orbe respira: la unica luz viva del universo no puede estar congelada -->
-          <span class="aura" aria-hidden="true"></span>
-        </span>
-        <div class="m-nara__d">
-          <p class="cita m-nara__txt">{avisoNara}</p>
-          <p class="m-nara__firma">Nara, guardiana de la fortaleza</p>
+      <!-- El cuerpo: Nara de pie mirando su fortaleza, y el mensaje del cierre a su lado. -->
+      <div class="m-fin__cuerpo">
+        <aside class="m-fin__nara-fig" aria-hidden="true">
+          <span class="figura figura--luz">
+            <img src="/assets/personajes/ui/nara.webp" alt="" width="184" height="580" loading="lazy" />
+            <span class="aura"></span>
+          </span>
+        </aside>
+
+        <div class="m-fin__txt">
+          <span class="m-fin__k">Primer ciclo completado · {rangoFinal}</span>
+          <h2 class="display m-fin__t">Tu fortaleza ya está en marcha.</h2>
+          <p class="m-fin__sub">Ahora empieza la responsabilidad de seguir fortaleciéndola.</p>
+          <p class="m-fin__nara cita">{naraFin}<span class="m-fin__firma">Nara, guardiana de la fortaleza</span></p>
         </div>
       </div>
-    </section>
 
-    <!-- Aqui vivia la convocatoria del proximo evento. Fuera el 2026-07-17: el proyecto
-         no tiene directos, ni talleres, ni sesiones, asi que la placa se quedaba sin nada
-         que clavar. El aviso de Nara se queda solo en la ultima banda y pasa a las 12
-         columnas, que es lo que cierra la pagina sin dejar el hueco. -->
+      <!-- El friso: las doce insignias en oro, repartidas a lo ancho como un muro de sellos. -->
+      <div class="m-fin__friso">
+        <p class="m-fin__friso-k">Las doce grietas, reparadas</p>
+        <ul class="fin-sellos">
+          {sellosFin.map((s) => (
+            <li class="fin-sello" tabindex="0">
+              <img src={s.img} alt={`${s.n}. ${s.titulo}`} width="256" height="256" loading="lazy" />
+              <span class="pista" role="tooltip" data-augmented-ui="tl-clip br-clip border"><b class="fin-sello__t">{s.titulo}</b><span class="fin-sello__q">{s.sinopsis}</span></span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   </div>
 </Fortaleza>
 
 <script>
   import gsap from 'gsap';
   import { sonar } from '../scripts/audio.js';
+  import { estadoDemo } from '../scripts/demo-director.js';
 
-  // La llegada al Patio: timeline sobria (solo opacity y translate, nada de rebotes)
-  // que ordena la lectura: saludo, la intervencion (el Rebelde entra el ultimo, pisando
-  // el marco), tu ficha, las salas y la banda baja. Debajo, la ceremonia de datos.
+  // La llegada al Patio: timeline sobria que ordena la lectura (saludo, intervención con el
+  // Rebelde entrando el último, tu avance) y luego la ceremonia de datos (la barra se
+  // enciende en cascada y los logros asientan).
   const motionOk = matchMedia('(prefers-reduced-motion: no-preference)').matches;
   const primeraVez = !sessionStorage.getItem('patio-visto');
 
-  // La ceremonia se gana una vez por sesion: se apagan los tramos ANTES de que la ficha
-  // sea visible (la pagina entera sigue oculta por .entra) y se reencienden en cascada.
-  let estadosBarra: string[] = [];
+  // El estado real lo manda el conmutador de demo (fortalecidas 0..12), no el DOM inicial:
+  // si la barra se lee del DOM, la ceremonia repinta el estado por defecto encima del que el
+  // director acaba de aplicar. Asi la cascada enciende SIEMPRE los tramos del rango elegido.
+  const demo = estadoDemo();
   const spansBarra = [...document.querySelectorAll('.barra span')];
-  const nodoPF = (() => {
-    const pf = document.querySelector('.pf');
-    return pf ? [...pf.childNodes].find((n) => n.nodeType === 3 && (n.textContent || '').trim()) : null;
-  })();
-  const objetivoPF = nodoPF ? parseInt((nodoPF.textContent || '').replace(/\D/g, ''), 10) : 0;
+  const estadosBarra: string[] = spansBarra.map((_, i) =>
+    i < demo.fortalecidas ? 'is-on' : (i === demo.fortalecidas && demo.r !== 5) ? 'is-toca' : '');
+  const nodoPF = document.querySelector('[data-yo-pf]');
+  const objetivoPF = demo.pf;
 
   if (motionOk && primeraVez) {
-    estadosBarra = spansBarra.map((s) => (s.classList.contains('is-on') ? 'is-on' : s.classList.contains('is-toca') ? 'is-toca' : ''));
     spansBarra.forEach((s) => s.classList.remove('is-on', 'is-toca'));
     if (nodoPF) nodoPF.textContent = '0';
   }
@@ -207,7 +235,6 @@ const F_BOTON = 'l-clip-y r-clip-y';
     if (!primeraVez) return;
     sessionStorage.setItem('patio-visto', '1');
 
-    // Los tramos se encienden en cascada, con su chispa. Verse ganar es la recompensa.
     spansBarra.forEach((s, i) => {
       const clase = estadosBarra[i];
       if (!clase) return;
@@ -217,7 +244,6 @@ const F_BOTON = 'l-clip-y r-clip-y';
       }, i * 75);
     });
 
-    // El contador de PF cuenta hasta su valor y asienta con un tic
     if (nodoPF && objetivoPF > 0) {
       const cuenta = { v: 0 };
       gsap.to(cuenta, {
@@ -229,28 +255,7 @@ const F_BOTON = 'l-clip-y r-clip-y';
       });
     }
 
-    // Las insignias asientan al final, como piezas que caen en su repisa
     gsap.fromTo('.logro', { scale: 0.94, opacity: 0.55 }, { scale: 1, opacity: 1, duration: 0.32, stagger: 0.09, ease: 'power2.out', delay: 0.45 });
-  }
-
-  // Vida idle en los azulejos: el webm respira en hover/focus y se calma al salir
-  // o al terminar (no van en loop: la sala se asienta sola y al volver arranca de cero).
-  // Con menos movimiento, nada: se queda el estatico.
-  if (motionOk) {
-    document.querySelectorAll('.sala').forEach((sala) => {
-      const vid = sala.querySelector('video');
-      if (!(vid instanceof HTMLVideoElement)) return;
-      const vivir = () => { sala.classList.add('is-viva'); vid.play().catch(() => {}); };
-      const calmar = () => {
-        sala.classList.remove('is-viva');
-        setTimeout(() => { if (!sala.classList.contains('is-viva')) vid.pause(); }, 320);
-      };
-      sala.addEventListener('mouseenter', vivir);
-      sala.addEventListener('mouseleave', calmar);
-      sala.addEventListener('focusin', vivir);
-      sala.addEventListener('focusout', calmar);
-      vid.addEventListener('ended', () => sala.classList.remove('is-viva'));
-    });
   }
 
   const mm = gsap.matchMedia();
@@ -259,86 +264,31 @@ const F_BOTON = 'l-clip-y r-clip-y';
     tl.fromTo('.cab', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55 }, 0)
       .fromTo('.m-activa-caja', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, 0.12)
       .fromTo('.m-activa__reb', { x: 12, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5 }, 0.35)
-      .fromTo('.m-ficha', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55 }, 0.28)
-      .fromTo('.m-salas .placa-caja', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07 }, 0.4)
-      .fromTo('.m-nara', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5 }, 0.55)
+      .fromTo('.m-ficha', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55 }, 0.3)
       .then(ceremonia);
   });
 </script>
 
 <style is:global>
-  /* LA LLEGADA. Con .entra (solo si hay movimiento permitido, la pone Fortaleza.astro
-     desde el <head>) los modulos arrancan ocultos y la timeline los descubre.
-     La animacion destape es la red de seguridad: si el JS fallara, a los 1.6s todo
-     aparece igualmente (las animaciones CSS ganan al inline style de GSAP, y a esa
-     altura GSAP ya ha dejado opacity 1: no se pisa nada). */
   .entra .cab,
   .entra .m-activa-caja,
-  .entra .m-ficha,
-  .entra .m-salas .placa-caja,
-  .entra .m-nara {
+  .entra .m-ficha {
     opacity: 0;
     animation: destape 0.01s linear 1.6s forwards;
   }
   @keyframes destape { to { opacity: 1; } }
 
-  /* La chispa del tramo al encenderse en la ceremonia */
   .barra span.is-chispa { animation: chispa 0.4s ease-out; }
   @keyframes chispa { from { filter: brightness(2.2); } to { filter: brightness(1); } }
 
-  /* Solo el margen de abajo: el lateral lo pone .contenido > * para centrarlo.
-     El saludo es cortesia, no protagonista: la escala grande es de la intervencion. */
   .cab { margin-bottom: clamp(14px, 2vh, 22px); }
   .cab__t { margin: 0; font-size: clamp(1.4rem, 1.9vw, 1.8rem); }
-  .cab__estado { margin: 0.45rem 0 0; font-size: clamp(0.95rem, 1.05vw, 1.08rem); }
 
-  /* Aire entre bandas: la jerarquia tambien se lee en el espacio */
-  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(22px, 2.2vw, 38px) clamp(20px, 2vw, 34px); }
-
-  /* Modulo flotante: sin marco y sin rotulo. Lo que es, se ve. */
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(22px, 2.4vw, 40px) clamp(20px, 2vw, 34px); }
   .mod { position: relative; display: flex; flex-direction: column; }
 
-  /* Las figuras pisan suelo: elipse de contacto bajo los pies, que el drop-shadow
-     difuso las dejaba flotando como pegatinas. Bajo Nara ademas un charco de luz fria:
-     su orbe lo justifica (bajo el avatar seria glow decorativo, regla 3). */
-  .figura--luz::after {
-    content: ''; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%);
-    width: 150%; height: 34px;
-    background: radial-gradient(ellipse at center, rgba(63, 169, 201, 0.1), transparent 70%);
-  }
-  .m-nara__c > .figura { align-self: flex-end; }
-  .m-nara__c .aura { left: 51%; top: 44.5%; width: 30%; }
-
-  /* Ficha: progreso y logros en la misma banda. Ya no compite con la intervencion. */
-  .m-ficha { grid-column: span 12; }
-  .m-ficha__c { display: flex; align-items: center; gap: clamp(18px, 2.2vw, 36px); }
-  .m-ficha__av {
-    flex: none; width: auto; height: clamp(190px, 19vw, 290px);
-    object-fit: contain; object-position: center bottom;
-    filter: drop-shadow(0 18px 30px rgba(0,0,0,0.75));
-  }
-  /* Mide lo que mide su contenido: estirado dejaba un agujero entre la barra y el filo,
-     y ademas la barra salia con tramos de 67px y dejaba de leerse como barra. */
-  .m-ficha__d { flex: 0 1 auto; width: min(500px, 42%); min-width: 0; }
-  .m-ficha__r { margin: 0; font-size: clamp(1.15rem, 1.6vw, 1.5rem); }
-  .m-ficha__sub { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--mist); }
-  .m-ficha__falta { margin: 0; font-size: 0.74rem; color: var(--moon); }
-  /* Los logros, al otro lado de un filo: misma banda, otra cosa */
-  /* Sin filo que los separe del rango: agrupa el hueco, que para eso esta */
-  .m-ficha__logros {
-    flex: 1; min-width: 0;
-    display: flex; flex-direction: column; justify-content: center;
-    padding-left: clamp(24px, 3.4vw, 64px);
-  }
-
-
-  /* .barra y .figura viven ya en tokens.css: las usa tambien El asesor */
-
-  /* La caja deja salir de la placa al Rebelde y a las motas.
-     A todo el ancho y sola: es el unico foco de la pantalla. */
+  /* ---- 1. LA INTERVENCIÓN ---- */
   .m-activa-caja { grid-column: span 12; }
-
-  /* Intervencion activa: es el modulo caliente, asi que el canto y la banda van en ambar */
   .m-activa {
     height: 100%; display: flex; flex-direction: column;
     --aug-border-bg: linear-gradient(150deg,
@@ -348,162 +298,234 @@ const F_BOTON = 'l-clip-y r-clip-y';
   .m-activa .placa__cab { position: relative; z-index: 1; background: linear-gradient(180deg, rgba(232,169,63,0.14), rgba(9,13,20,0)); border-bottom-color: rgba(232,169,63,0.22); }
   .m-activa .placa__cab .rotulo { color: var(--amber-2); }
 
-  /* Dos columnas: el relato a la izquierda y las tres ranuras a la derecha.
-     El hueco de la derecha del todo es para el Rebelde, que va por fuera. */
   .m-activa__cuerpo {
     position: relative; z-index: 1; flex: 1; min-width: 0;
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
     gap: clamp(26px, 3.4vw, 56px);
     padding-right: clamp(104px, 10.5vw, 168px);
   }
   .m-activa__txt { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-  /* La escala grande es suya: es lo que responde a que toca hoy */
   .m-activa__t { margin: 0; font-size: clamp(1.8rem, 2.6vw, 2.4rem); }
   .m-activa__sab { margin: 0.7rem 0 0; font-size: 0.92rem; line-height: 1.55; color: var(--silver); max-width: 54ch; }
   .m-activa__sab b { color: var(--amber); }
-  .m-activa__acc { margin: auto 0 16px; padding-top: 16px; font-size: 0.85rem; color: var(--moon); }
-  /* El Rebelde se apoya en el marco y lo pisa: cruza el borde derecho y asoma por abajo.
-     Usa el recorte ajustado (el original lleva un 24% de aire a cada lado y nunca llegaria
-     al borde). Solo sobresale 20px, que caben de sobra en el margen de la pagina: sin scroll. */
-  /* Su alto sale del ancho (la figura es 0.45), asi que el ancho se limita para que
-     no sobresalga por encima del canto: la placa mide ~330 y el se queda dentro. */
+
+  /* Nara guía, aquí mismo: retrato en moneda + su voz, firmada. Anclada abajo del relato. */
+  .m-activa__guia { display: flex; align-items: center; gap: 13px; margin-top: auto; padding-top: clamp(16px, 2.2vh, 24px); }
+  .m-activa__nara {
+    flex: none; width: clamp(44px, 4vw, 56px); height: clamp(44px, 4vw, 56px);
+    border-radius: 50%; object-fit: cover; object-position: center top;
+    box-shadow: inset 0 0 0 1px rgba(95,208,224,0.4), 0 0 18px rgba(63,169,201,0.25);
+  }
+  .m-activa__guia-txt { margin: 0; font-family: var(--italic, serif); font-style: italic; font-size: 0.9rem; line-height: 1.5; color: var(--moon); }
+  .m-activa__guia-firma { display: block; margin-top: 4px; font-style: normal; font-size: 0.68rem; letter-spacing: 0.05em; color: var(--mist); }
+
   .m-activa__reb {
     position: absolute; z-index: 5; right: -20px; bottom: -18px;
-    width: clamp(104px, 9.8vw, 146px);
-    height: auto; /* el atributo height del img solo reserva hueco, no manda */
-    pointer-events: none;
+    width: clamp(104px, 9.8vw, 146px); height: auto; pointer-events: none;
     filter: drop-shadow(-16px 16px 26px rgba(0,0,0,0.9));
   }
 
-  /* Los tres tiers, cada uno con su insignia: apagada mientras no se gana */
-  .tiers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-  .tiers__li { display: block; }
-  .tier { text-decoration: none; color: inherit; }
-  /* Cada tier es una ranura: mismo chaflan que las placas, mas pequeno */
-  .tier {
-    --aug-tl: 7px; --aug-tr: 7px; --aug-bl: 7px; --aug-br: 7px;
-    --aug-border-all: 1px;
-    --aug-border-bg: rgba(194,205,214,0.13);
-    display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 14px;
-    padding: 10px 14px;
+  /* Los tres pasos. Puerta = enlace con flecha; recompensa = sin flecha, no se pulsa. */
+  .pasos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .paso-li { display: block; }
+  .paso {
+    --aug-tl: 7px; --aug-tr: 7px; --aug-bl: 7px; --aug-br: 7px; --aug-border-all: 1px;
+    --acento: 194,205,214;
+    display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 14px;
+    padding: 11px 15px; text-decoration: none; color: inherit;
+    --aug-border-bg: rgba(var(--acento), 0.16);
     background: linear-gradient(180deg, rgba(32,44,62,0.5), rgba(9,13,20,0.5));
   }
-  .tier__im { width: 48px; height: 48px; object-fit: contain; filter: grayscale(1) brightness(0.5); opacity: 0.5; }
-  .tier__d { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .tier__n { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--mist); }
-  .tier__i { font-size: 0.82rem; color: var(--mist); }
-  .tier__pf { font-size: 0.72rem; letter-spacing: 0.05em; color: var(--mist); }
+  a.paso { transition: background 0.18s ease, transform 0.18s ease; }
+  a.paso:hover { background: linear-gradient(180deg, rgba(var(--acento), 0.2), rgba(9,13,20,0.5)); }
+  a.paso:hover .paso__flecha { transform: translateX(3px); }
+  a.paso:focus-visible { outline: 2px solid rgb(var(--acento)); outline-offset: 2px; }
 
-  .tier.is-hecho { --aug-border-bg: rgba(63,169,201,0.42); background: linear-gradient(180deg, rgba(63,169,201,0.14), rgba(9,13,20,0.5)); }
-  .tier.is-hecho .tier__n { color: var(--cyan); }
-  .tier.is-hecho .tier__i { color: var(--bone); }
+  .paso--hecho { --acento: 95,208,224; --aug-border-bg: rgba(95,208,224,0.42); background: linear-gradient(180deg, rgba(63,169,201,0.14), rgba(9,13,20,0.5)); }
+  .paso--toca { --acento: 232,169,63; --aug-border-bg: rgba(232,169,63,0.7); background: linear-gradient(180deg, rgba(232,169,63,0.18), rgba(9,13,20,0.5)); }
+  .paso--premio { --acento: 138,154,170; }
 
-  .tier.is-toca {
-    --aug-border-bg: rgba(232,169,63,0.7);
-    background: linear-gradient(180deg, rgba(232,169,63,0.17), rgba(9,13,20,0.5));
-  }
-  .tier.is-toca .tier__n, .tier.is-toca .tier__pf { color: var(--amber); }
-  .tier.is-toca .tier__i { color: var(--bone); }
+  .paso__nodo { position: relative; width: 52px; height: 52px; display: grid; place-items: center; }
+  .paso__im { width: 48px; height: 48px; object-fit: contain; filter: grayscale(1) brightness(0.5); opacity: 0.5; }
+  .paso--hecho .paso__im, .paso--toca .paso__im { filter: none; opacity: 1; }
+  .paso__mk { position: absolute; right: -2px; bottom: -2px; width: 17px; height: 17px; padding: 2px; border-radius: 50%; background: var(--night-1, #0b111b); color: var(--cyan); }
 
-  .tier.is-hecho .tier__im, .tier.is-toca .tier__im { filter: none; opacity: 1; }
+  .paso__d { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .paso__cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .paso__n { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--mist); }
+  .paso--hecho .paso__n { color: var(--cyan); }
+  .paso--toca .paso__n { color: var(--amber); }
+  .paso__pf { flex: none; font-size: 0.72rem; letter-spacing: 0.04em; color: var(--mist); }
+  .paso--toca .paso__pf { color: var(--amber); }
+  .paso__q { font-size: 0.86rem; line-height: 1.35; color: var(--moon); }
+  .paso--hecho .paso__q, .paso--toca .paso__q { color: var(--bone); }
 
-  /* LA tarea del dia late (regla 3: un solo halo y significa). El halo vive en un
-     ::after del li (sin recortar) y late SOLO por opacity: animar drop-shadow sobre
-     la ranura entera re-rasterizaba 900px en cada frame y se notaba como lag. */
-  .tiers__li:has(> .tier.is-toca) { position: relative; }
-  .tiers__li:has(> .tier.is-toca)::after {
+  /* La flecha: la señal de que ES una puerta. Solo en los pasos que se pulsan. */
+  .paso__ir { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 0.76rem; font-weight: 600; color: rgb(var(--acento)); }
+  .paso__flecha { width: 15px; height: 15px; flex: none; transition: transform 0.18s ease; }
+
+  /* La recompensa: insignia + habilidad, y la nota de que llega sola (sin flecha). */
+  .paso__rec { font-size: 0.82rem; line-height: 1.4; color: var(--mist); }
+  .paso__rec b { color: var(--moon); font-weight: 600; }
+  .paso__nota { margin-top: 2px; font-size: 0.68rem; font-style: italic; color: rgba(194,205,214,0.5); }
+
+  /* La que toca late (un solo halo, y significa). */
+  .paso-li:has(.paso--toca) { position: relative; }
+  .paso-li:has(.paso--toca)::after {
     content: ''; position: absolute; inset: -7px; z-index: -1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(232, 169, 63, 0.32), transparent);
+    background: radial-gradient(closest-side, rgba(232,169,63,0.3), transparent);
     filter: blur(9px); opacity: 0.55;
   }
   @media (prefers-reduced-motion: no-preference) {
-    .tiers__li:has(> .tier.is-toca)::after { animation: late 3.2s ease-in-out infinite alternate; }
-    @keyframes late { from { opacity: 0.3; } to { opacity: 0.9; } }
+    .paso-li:has(.paso--toca)::after { animation: late 3.2s ease-in-out infinite alternate; }
+    @keyframes late { from { opacity: 0.3; } to { opacity: 0.85; } }
   }
 
-  /* Nara: la fila la manda ella, que es la voz que dice que pasa */
-  .m-nara { grid-column: span 12; }
-  /* Sin flex: 1, para que arranque arriba. Ella si va centrada contra el texto.
-     Y el bloque entero va centrado en la fila: al irse la placa del evento, Nara se
-     quedaba pegada a la izquierda con media pagina muerta a su derecha, y eso lee como
-     que falta algo. Centrada, el hueco se reparte y cierra la pagina como lo que es:
-     la ultima voz. */
-  .m-nara__c { display: flex; justify-content: center; gap: clamp(14px, 1.4vw, 22px); align-items: center; }
-  .m-nara__fig {
-    width: auto; height: clamp(190px, 19vw, 288px);
-    object-fit: contain; filter: drop-shadow(0 18px 30px rgba(0,0,0,0.7));
+  /* ---- 2. TU AVANCE ---- */
+  .m-ficha { grid-column: span 12; }
+  .m-ficha__c { display: flex; align-items: center; gap: clamp(20px, 2.6vw, 46px); }
+  .m-ficha__av {
+    flex: none; width: auto; height: clamp(180px, 18vw, 270px);
+    object-fit: contain; object-position: center bottom;
+    filter: drop-shadow(0 18px 30px rgba(0,0,0,0.75));
   }
-  .m-nara__d { min-width: 0; }
-  /* Con medida, pero la justa: sin tope se desparrama a lo ancho. Eran 50ch, que era lo
-     que llenaba su banda de 7 columnas cuando al lado estaba la placa del evento; sin
-     ella la fila es entera y la cita respira hasta el limite de lo legible. */
-  .m-nara__txt { margin: 0; max-width: 62ch; font-size: clamp(1.12rem, 1.32vw, 1.4rem); }
-  /* La cita se firma, no se etiqueta */
-  .m-nara__firma { margin: 1rem 0 0; font-size: 0.74rem; letter-spacing: 0.06em; color: var(--mist); }
+  /* El progreso crece para llenar; la barra se limita para seguir leyéndose como barra. */
+  .m-ficha__prog { flex: 1 1 auto; min-width: 0; }
+  .m-ficha__r { margin: 0; font-size: clamp(1.15rem, 1.6vw, 1.5rem); }
+  .m-ficha__sub { margin: 0.5rem 0 0.7rem; font-size: 0.78rem; color: var(--mist); }
+  .m-ficha__prog .barra { max-width: 460px; margin: 0 0 9px; }
+  .m-ficha__falta { margin: 0; font-size: 0.74rem; color: var(--moon); }
 
-  /* Logros: viven dentro de la ficha */
-  /* Repisa de trofeos: manda la insignia, el nombre debajo y pequeno. Sin pie de texto:
-     la insignia ya se reconoce sola y el detalle vive en la pagina de perfil. */
-  /* Grupo denso anclado a la derecha: regados por toda la banda leian como restos */
-  .logros { list-style: none; margin: 0; padding: 0; display: flex; justify-content: flex-end; gap: clamp(28px, 3vw, 48px); }
+  /* Los logros, con su rótulo y tras un filo: se leen como una repisa aparte. */
+  .m-ficha__logros {
+    flex: none; align-self: stretch;
+    display: flex; flex-direction: column; justify-content: center; gap: 14px;
+    padding-left: clamp(24px, 3vw, 52px);
+    border-left: 1px solid rgba(194,205,214,0.14);
+  }
+  .m-ficha__logros-k { margin: 0; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--mist); }
+  .logros { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(24px, 2.6vw, 42px); }
   .logro {
-    position: relative; /* ancla de su pildora */
-    flex: none; max-width: 15ch; display: flex; flex-direction: column; align-items: center;
-    gap: 11px; text-align: center;
+    position: relative; flex: none; max-width: 14ch;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
   }
-  .logro img { width: clamp(56px, 5.6vw, 84px); height: auto; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.55)); }
+  .logro img { width: clamp(54px, 5.2vw, 78px); height: auto; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.55)); }
   .logro b { font-size: 0.72rem; font-weight: 500; line-height: 1.3; color: var(--moon); }
 
-  /* Salas: cada una su propia placa, sin marco alrededor del conjunto */
-  .m-salas { grid-column: span 12; }
-  .salas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  .sala { --corte: 11px; --aug-border-all: 1px; display: block; height: 100%; min-height: 176px; text-decoration: none; }
-  .sala__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.72; transition: transform 0.5s ease, opacity 0.4s ease, filter 0.4s ease; }
+  /* ---- EL ENDGAME (estado completado, .es-fin) ---- */
+  .m-fin { display: none; }
+  .es-fin .cab, .es-fin .m-activa-caja, .es-fin .m-ficha { display: none; }
+  /* Toma el viewport entero con position:fixed (inset:0), no con el truco de 100vw: al vivir
+     dentro de la rejilla del Patio, el 100vw + margin no tomaba el viewport como referencia y
+     desplazaba y cortaba la escena. z-index por debajo del HUD (sticky, z-50). */
+  .es-fin .m-fin {
+    position: fixed; inset: 0; z-index: 5; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: clamp(18px, 3vh, 38px);
+    padding: calc(var(--alto-shell) + clamp(16px, 2.4vh, 28px)) clamp(20px, 5vw, 72px) clamp(22px, 4vh, 44px);
+    animation: fin-entra 0.7s ease-out both;
+  }
+  @keyframes fin-entra { from { opacity: 0; } to { opacity: 1; } }
 
-  /* EL ESTADO EN LA MATERIA, no solo en la etiqueta: la desconectada esta gris y
-     apagada, la fortalecida vive y su canto es de oro (el mismo oro del estado). */
-  .sala--desconectada .sala__img { opacity: 0.6; filter: grayscale(0.55) brightness(0.62); }
-  .sala--reparacion { --aug-border-bg: linear-gradient(150deg, rgba(95,208,224,0.5), rgba(63,169,201,0.24) 45%, rgba(58,70,84,0.35)); }
-  .sala--fortalecida { --aug-border-bg: linear-gradient(150deg, rgba(242,213,138,0.55), rgba(201,162,75,0.32) 45%, rgba(120,96,44,0.4)); }
-  .sala--fortalecida .sala__img { opacity: 0.9; filter: saturate(1.05); }
+  /* El mapa manda: a pantalla completa, y el velo solo oscurece el pie para el cierre. */
+  .m-fin__escena { position: absolute; inset: 0; z-index: 0; }
+  .m-fin__im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+  .m-fin__velo {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(to top, rgba(9,13,20,0.96) 0%, rgba(9,13,20,0.82) 16%, rgba(9,13,20,0.34) 40%, rgba(9,13,20,0.05) 62%, transparent 78%);
+  }
 
-  /* El video de la sala: dormido bajo el velo, respira al acercarte */
-  .sala__vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s ease; }
-  .sala.is-viva .sala__vid { opacity: 0.92; }
-  .sala--desconectada.is-viva .sala__vid { opacity: 0.75; filter: grayscale(0.35) brightness(0.78); }
+  /* CUERPO: Nara de pie, apoyada en la línea del friso, y el mensaje a su lado. */
+  .m-fin__cuerpo { position: relative; z-index: 2; display: flex; align-items: flex-end; gap: clamp(14px, 2.4vw, 44px); }
+  .m-fin__nara-fig { flex: none; }
+  .m-fin__nara-fig img { display: block; width: auto; height: clamp(210px, 32vh, 350px); }
+  .m-fin__nara-fig .aura { left: 51%; top: 44.5%; width: 30%; }
 
-  /* El hover lo cuentan la imagen y el video: cambiar el drop-shadow de la placa
-     transicionaba filter y re-rasterizaba el azulejo entero en cada frame (lag) */
-  .sala:hover .sala__img { transform: scale(1.06); opacity: 0.92; filter: none; }
-  .sala:active .sala__img { transform: scale(1.03); }
-  /* La desconectada apenas despierta: ni se acerca ni se ilumina como las vivas */
-  .sala--desconectada:hover .sala__img { transform: none; opacity: 0.78; filter: grayscale(0.35) brightness(0.78); }
-  .sala__ov { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; height: 100%; justify-content: flex-end; padding: 13px; background: linear-gradient(to top, rgba(9,13,20,0.94) 30%, rgba(9,13,20,0.2)); }
-  .sala__n { font-size: 0.8rem; color: var(--bone); line-height: 1.2; }
-  .sala__nota { font-size: 0.72rem; color: var(--mist); line-height: 1.3; }
+  .m-fin__txt {
+    min-width: 0; max-width: 60ch; padding-bottom: clamp(6px, 1.6vh, 18px);
+    display: flex; flex-direction: column; gap: clamp(7px, 1.1vh, 13px);
+    text-shadow: 0 2px 16px rgba(9,13,20,0.92);
+  }
+  .m-fin__k { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--amber-2, #f2c471); }
+  .m-fin__t { margin: 0; font-size: clamp(1.9rem, 3.4vw, 3rem); line-height: 1.05; color: var(--bone); }
+  .m-fin__sub { margin: 0; font-size: clamp(1rem, 1.3vw, 1.2rem); line-height: 1.5; color: var(--moon); }
+  .m-fin__nara { margin: clamp(4px, 0.8vh, 10px) 0 0; max-width: 58ch; font-size: clamp(0.9rem, 1.08vw, 1.02rem); line-height: 1.55; color: var(--silver); }
+  .m-fin__firma { display: block; margin-top: 6px; font-style: normal; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--mist); }
+
+  /* FRISO: las doce en oro, repartidas a lo ancho, sobre un filo de laurel. */
+  .m-fin__friso { position: relative; z-index: 2; padding-top: clamp(14px, 2.2vh, 24px); border-top: 1px solid rgba(233,196,120,0.28); }
+  .m-fin__friso-k { margin: 0 0 clamp(10px, 1.4vh, 16px); text-align: center; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.2em; color: color-mix(in srgb, var(--amber-2, #f2c471) 60%, var(--mist)); }
+  .fin-sellos { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; justify-content: space-between; gap: clamp(6px, 0.8vw, 14px); }
+  .fin-sello { position: relative; flex: 0 1 auto; cursor: help; }
+  .fin-sello img { display: block; width: clamp(42px, 4.6vw, 68px); height: auto; object-fit: contain; filter: drop-shadow(0 5px 14px rgba(0,0,0,0.55)); transition: transform 0.25s ease; }
+  .fin-sello:hover img, .fin-sello:focus-visible img { transform: translateY(-4px); }
+  .fin-sello:focus-visible { outline: none; }
+  /* La pista (base en tokens.css) sale al pasar por encima: qué insignia y qué habilidad.
+     Aquí se refina para el cierre: filo en oro, más aire, sombra y una tabla limpia. */
+  .fin-sello .pista {
+    width: max-content; max-width: 290px; padding: 12px 15px; bottom: calc(100% + 12px);
+    --aug-border-bg: rgba(233,196,120,0.45);
+    background-color: rgba(10,15,23,0.98);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.62);
+    text-align: left; line-height: 1.4;
+  }
+  .fin-sello__t { display: block; font-size: 0.82rem; font-weight: 600; color: var(--bone); }
+  /* Lo que se vio y se aprendió en esa intervención: la sinopsis de su clase. */
+  .fin-sello__q { display: block; margin-top: 7px; padding-top: 7px; border-top: 1px solid rgba(233,196,120,0.16); font-size: 0.72rem; line-height: 1.5; color: var(--moon); }
+  /* Los de los extremos no se centran: se alinean a su borde para no cortarse con la pantalla. */
+  .fin-sello:first-child .pista { left: 0; right: auto; transform: none; }
+  .fin-sello:last-child .pista { left: auto; right: 0; transform: none; }
+
+  @media (max-width: 900px) {
+    .m-fin__nara-fig { display: none; }
+    .fin-sellos { flex-wrap: wrap; justify-content: center; gap: 14px; }
+  }
+
+  /* ENDGAME EN MOVIL / APAISADO: al aparecer la barra inferior (64px), el .m-fin (fijo a
+     pantalla completa, fuera del flujo de .contenido) no hereda su holgura. Se la damos
+     aqui para que el friso de sellos nunca quede tapado por la barra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .es-fin .m-fin {
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + clamp(14px, 2.4vh, 22px));
+    }
+    /* Los doce sellos en rejilla pareja (seis por fila): envuelven limpio, sin fila coja. */
+    .fin-sellos { display: grid; grid-template-columns: repeat(6, 1fr); justify-items: center; gap: clamp(10px, 2.4vw, 18px); }
+    .fin-sello { flex: none; }
+    .fin-sello img { width: clamp(38px, 8vw, 58px); }
+  }
+
+  /* APAISADO (poca altura): el endgame se comprime en vertical. El friso vuelve a una sola
+     fila (hay ancho de sobra) y la cita se recoge, para que cabecera y friso quepan enteros
+     sobre la barra sin cortarse por arriba. */
+  @media (max-height: 480px) {
+    .es-fin .m-fin {
+      padding-top: calc(var(--alto-shell) + clamp(8px, 1.5vh, 14px));
+      gap: clamp(10px, 2vh, 18px);
+    }
+    .m-fin__t { font-size: clamp(1.35rem, 4.4vw, 1.9rem); }
+    .m-fin__sub { font-size: clamp(0.92rem, 2.2vw, 1.05rem); }
+    .m-fin__nara { display: none; }
+    .m-fin__friso { padding-top: clamp(8px, 1.6vh, 14px); }
+    .m-fin__friso-k { margin: 0 0 clamp(6px, 1.2vh, 10px); }
+    .fin-sellos { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: clamp(4px, 0.8vw, 10px); }
+    .fin-sello img { width: clamp(34px, 5.2vw, 48px); }
+  }
 
   @media (max-width: 1180px) {
-    /* Los logros se bajan de la ficha y se ponen debajo */
     .m-ficha__c { flex-wrap: wrap; }
-    .m-ficha__logros { width: 100%; padding-left: 0; padding-top: 26px; }
+    .m-ficha__logros { width: 100%; align-self: auto; padding-left: 0; padding-top: 22px; border-left: 0; border-top: 1px solid rgba(194,205,214,0.14); }
     .m-ficha__logros .logros { justify-content: flex-start; }
   }
   @media (max-width: 980px) {
-    /* La placa deja de ir a dos columnas: el relato y las ranuras se apilan */
     .m-activa__cuerpo { grid-template-columns: 1fr; gap: 22px; }
-    .m-activa__acc { margin-top: 4px; padding-top: 0; }
+    .m-activa__guia { margin-top: 4px; }
   }
   @media (max-width: 760px) {
     .grid > * { grid-column: span 12 !important; }
-    .salas { grid-template-columns: repeat(2, 1fr); }
-    /* Sin sitio para el Rebelde: se va y el texto recupera el ancho */
     .m-activa__reb { display: none; }
-    .m-nara__fig { height: 128px; }
-    /* Sin ancho: el rango se pone debajo de la figura */
-    .m-ficha__c { flex-direction: column; align-items: flex-start; gap: 18px; }
-    .m-ficha__d { width: 100%; }
     .m-activa__cuerpo { padding-right: 0; }
-    .tier { grid-template-columns: 40px 1fr auto; gap: 10px; }
-    .tier__im { width: 40px; height: 40px; }
+    .m-ficha__c { flex-direction: column; align-items: flex-start; gap: 18px; }
+    .m-ficha__prog { width: 100%; }
+    .paso { grid-template-columns: 44px 1fr; gap: 11px; }
+    .paso__im { width: 42px; height: 42px; }
   }
 </style>

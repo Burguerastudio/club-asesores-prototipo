@@ -1,0 +1,480 @@
+---
+// El Mirador de la Fortaleza (P5). La COMUNIDAD: "otras fortalezas, no un foro" (CONTENIDO
+// P5). Adaptada de BuddyBoss (+ GamiPress como widgets): se respeta la anatomía del plugin y
+// el balcón vive en la piel (decidido 2026-07-17). Espacio de valor: no da puntos.
+//
+// Cabecera = HERO CARD de BuddyBoss (ReadyLaunch): cover contenido con esquinas redondeadas,
+// avatar solapado, cuerpo en panel (identidad + stats + acción) y la barra de pestañas dentro
+// de la card. Debajo, las tres columnas: sidebar izq + feed + sidebar der.
+//
+// Las pestañas cambian de sección en cliente (Actividad / Miembros / Fotos / Documentos). El
+// feed y el composer NO se rediseñan por dentro: cambia la piel, se conservan las piezas y su
+// orden. Toda acción del plugin (compartir, me gusta, comentar, conectar) avisa, no navega.
+// Sin "Próximos eventos" (Club no tiene Calendar) ni Leaderboard (no se compite): conscientes.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { asesora, logrosRecientes } from '../data/demo.js';
+
+const RET = (s: string) => `/assets/retratos/ui/${s}.webp`;
+
+const online = [
+  { nombre: 'Elena Ruiz', rango: 'Asesora Fortalecida', img: RET('asesora-r5') },
+  { nombre: 'Lucía Márquez', rango: 'Asesora Estratega', img: RET('asesora-r4') },
+  { nombre: 'David Fernández', rango: 'Asesor Constructor', img: RET('asesor-r3') },
+  { nombre: 'Javier Soler', rango: 'Asesor en Guardia', img: RET('asesor-r2') },
+  { nombre: 'Nuria Alba', rango: 'Asesora Constructora', img: RET('asesora-r3') },
+];
+const miembros = [
+  ...online,
+  { nombre: 'Carlos Vidal', rango: 'Asesor Estratega', img: RET('asesor-r4') },
+  { nombre: 'Ana Belmonte', rango: 'Asesora en Guardia', img: RET('asesora-r2') },
+  { nombre: 'Pablo Serra', rango: 'Asesor Fortalecido', img: RET('asesor-r5') },
+];
+const comunidad = { asesores: 148, enLinea: online.length };
+
+const posts = [
+  {
+    autor: 'Elena Ruiz', rango: 'Asesora Fortalecida', img: RET('asesora-r5'),
+    cuando: 'hace 2 h', accion: 'reparó la última grieta',
+    texto: 'Cerré el primer ciclo esta semana: doce grietas reparadas. Lo que más me ha cambiado no es cobrar más, es dejar de justificar mis precios. Gracias a quien me leyó por aquí cuando dudaba.',
+    senales: 14, comentarios: 5, gustada: true,
+  },
+  {
+    autor: 'David Fernández', rango: 'Asesor Constructor', img: RET('asesor-r3'),
+    cuando: 'hace 5 h', accion: 'compartió un bloqueo',
+    texto: 'Bloqueo del mes: no consigo delegar la recogida de documentación sin que se me caiga la calidad. ¿Cómo lo tenéis montado los que ya habéis pasado por la intervención de delegar?',
+    senales: 6, comentarios: 9, gustada: false,
+  },
+  {
+    autor: 'Lucía Márquez', rango: 'Asesora Estratega', img: RET('asesora-r4'),
+    cuando: 'ayer', accion: 'encendió una señal',
+    texto: 'Encendí la señal de mi Torre: reordené mi presencia en Google y en un par de directorios. Dos clientes que han llegado solos esta semana. La visibilidad no era publicidad, era estar donde me buscan.',
+    senales: 11, comentarios: 3, gustada: false,
+  },
+];
+
+const pestanas = [
+  { id: 'actividad', label: 'Actividad', n: null },
+  { id: 'miembros', label: 'Miembros', n: comunidad.asesores },
+  { id: 'fotos', label: 'Fotos', n: null },
+  { id: 'documentos', label: 'Documentos', n: null },
+];
+
+const AVISO_PLUGIN = 'Esto se cablea con la comunidad cuando el Mirador esté conectado.';
+---
+
+<Fortaleza title="Mirador de la Fortaleza, Club de la Asesoría" activa="/mirador">
+  <div class="mir">
+    <!-- El Mirador difuminado de fondo: el balcón se cuela tras la comunidad. -->
+    <div class="mir__fondo" aria-hidden="true"></div>
+
+    <!-- HERO CARD (BuddyBoss): cover + avatar solapado + identidad + acción + pestañas. -->
+    <section class="hero">
+      <div class="hero__cover">
+        <img src="/assets/mapa-escenas/ui/mirador-fondo.webp" alt="" width="2752" height="1536" />
+        <span class="hero__cover-velo" aria-hidden="true"></span>
+      </div>
+
+      <div class="hero__body">
+        <span class="hero__ava">
+          <img src={asesora.retrato} alt={asesora.nombre} width="256" height="256" data-yo-cara />
+          <span class="hero__pres" title="En línea" aria-hidden="true"></span>
+        </span>
+
+        <div class="hero__id">
+          <span class="hero__pill">Comunidad del Club</span>
+          <p class="hero__stats"><b>{comunidad.asesores}</b> fortalezas · <b>{comunidad.enLinea}</b> en línea · otras fortalezas, no un foro</p>
+        </div>
+
+        <div class="hero__acc">
+          <button class="btn hero__b" type="button" data-integracion="buddyboss:compartir" data-aviso={AVISO_PLUGIN} data-augmented-ui="l-clip-y r-clip-y">
+            Compartir avance
+            <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Compartir</span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="hero__tabs" aria-label="Secciones de la comunidad">
+        {pestanas.map((t, i) => (
+          <button class={`hero__tab${i === 0 ? ' is-activa' : ''}`} type="button" data-tab={t.id} aria-current={i === 0 ? 'page' : undefined}>
+            {t.label}{t.n !== null && <span class="hero__tab-n">{t.n}</span>}
+          </button>
+        ))}
+      </nav>
+    </section>
+
+    <!-- TRES COLUMNAS -->
+    <div class="mir__cols">
+      <!-- IZQUIERDA -->
+      <aside class="mir__lado mir__lado--izq" aria-label="Miembros de la comunidad">
+        <section class="widget">
+          <h2 class="widget__t">En línea ahora</h2>
+          <ul class="online">
+            {online.map((m) => (
+              <li class="online__m" title={`${m.nombre} · ${m.rango}`}>
+                <span class="online__ava"><img src={m.img} alt={m.nombre} width="256" height="256" loading="lazy" /><span class="online__p" aria-hidden="true"></span></span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section class="widget">
+          <h2 class="widget__t">Fortalezas del club</h2>
+          <ul class="miembros">
+            {online.slice(0, 4).map((m) => (
+              <li class="miembro">
+                <img class="miembro__ava" src={m.img} alt="" width="256" height="256" loading="lazy" />
+                <span class="miembro__d"><b>{m.nombre}</b><span class="miembro__r">{m.rango}</span></span>
+                <button class="miembro__b" type="button" aria-label={`Conectar con ${m.nombre}`} data-integracion="buddyboss:conectar" data-aviso={AVISO_PLUGIN}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Conectar</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </aside>
+
+      <!-- CENTRO: paneles que conmutan con las pestañas. -->
+      <div class="mir__feed">
+        <!-- Actividad: composer + feed. -->
+        <div class="mir__panel" data-panel="actividad">
+          <form class="composer" autocomplete="off" onsubmit="return false">
+            <img class="composer__ava" src={asesora.retrato} alt="" width="256" height="256" data-yo-cara />
+            <div class="composer__campo">
+              <span class="composer__ph">Comparte tu avance, <span data-yo-nombre="corto">{asesora.nombre.split(' ')[0]}</span>…</span>
+              <div class="composer__acc" aria-hidden="true">
+                <span class="composer__ic" title="Imagen"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="M5 18l4.5-4 3 2.5L16 12l3 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                <span class="composer__ic" title="Vídeo"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 10l5-3v10l-5-3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                <span class="composer__ic" title="Adjunto"><svg viewBox="0 0 24 24"><path d="M8 12l6-6a3 3 0 0 1 4 4l-7 7a5 5 0 0 1-7-7l7-7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span class="composer__ic" title="Mención"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 12v1.5a2.5 2.5 0 0 0 5 0V12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+              </div>
+            </div>
+            <button class="btn-linea composer__b" type="button" data-integracion="buddyboss:publicar" data-aviso={AVISO_PLUGIN} data-augmented-ui="l-clip-y r-clip-y">
+              Publicar
+              <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Publicar</span>
+            </button>
+          </form>
+
+          {posts.map((post) => (
+            <article class="post">
+              <header class="post__cab">
+                <img class="post__ava" src={post.img} alt="" width="256" height="256" loading="lazy" />
+                <div class="post__meta">
+                  <p class="post__accion"><b>{post.autor}</b> {post.accion}</p>
+                  <span class="post__sub"><span class="post__rango">{post.rango}</span> · <span class="post__cuando">{post.cuando}</span></span>
+                </div>
+                <button class="post__opts" type="button" aria-label="Opciones del post" data-integracion="buddyboss:post-opciones" data-aviso={AVISO_PLUGIN}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Opciones</span>
+                </button>
+              </header>
+              <p class="post__txt">{post.texto}</p>
+              <footer class="post__pie">
+                <button class={`post__b${post.gustada ? ' is-on' : ''}`} type="button" data-integracion="buddyboss:me-gusta" data-aviso={AVISO_PLUGIN}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3l-1.1-1C6.1 15 3 12.2 3 8.7 3 6 5 4 7.5 4c1.4 0 2.8.7 3.7 1.8l.8 1 .8-1C13.7 4.7 15.1 4 16.5 4 19 4 21 6 21 8.7c0 3.5-3.1 6.3-7.9 10.6l-1.1 1z" fill={post.gustada ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                  Señal<b>{post.senales}</b>
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Enviar una señal</span>
+                </button>
+                <button class="post__b" type="button" data-integracion="buddyboss:comentar" data-aviso={AVISO_PLUGIN}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                  Comentar<b>{post.comentarios}</b>
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Comentar</span>
+                </button>
+              </footer>
+            </article>
+          ))}
+        </div>
+
+        <!-- Miembros: rejilla de fortalezas. -->
+        <div class="mir__panel" data-panel="miembros" hidden>
+          <ul class="rejilla">
+            {miembros.map((m) => (
+              <li class="carta">
+                <img class="carta__ava" src={m.img} alt="" width="256" height="256" loading="lazy" />
+                <b class="carta__n">{m.nombre}</b>
+                <span class="carta__r">{m.rango}</span>
+                <button class="btn-linea carta__b" type="button" data-integracion="buddyboss:conectar" data-aviso={AVISO_PLUGIN} data-augmented-ui="l-clip-y r-clip-y">
+                  Conectar
+                  <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Conectar</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <!-- Fotos: estado vacío temático. -->
+        <div class="mir__panel mir__vacio" data-panel="fotos" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8.5" cy="10" r="1.8" fill="currentColor"/><path d="M4 18l5.5-5 3.5 3L17 12l3 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <b>Aún no hay fotos en el Mirador</b>
+          <p>Cuando la comunidad comparta imágenes de sus fortalezas, aparecerán aquí.</p>
+        </div>
+
+        <!-- Documentos: estado vacío temático. -->
+        <div class="mir__panel mir__vacio" data-panel="documentos" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v5h5M14 3l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <b>Aún no hay documentos compartidos</b>
+          <p>Los recursos que comparta la comunidad se recogerán en esta sección.</p>
+        </div>
+      </div>
+
+      <!-- DERECHA: GamiPress (no da puntos: solo muestra tu progreso). -->
+      <aside class="mir__lado mir__lado--der" aria-label="Tu progreso">
+        <section class="widget">
+          <h2 class="widget__t">Tu rango</h2>
+          <div class="rango">
+            <img class="rango__ava" src={asesora.retrato} alt="" width="256" height="256" data-yo-cara />
+            <div class="rango__d">
+              <b class="rango__n" data-yo-rango>{asesora.rango}</b>
+              <span class="rango__sub">{asesora.fortalecidas} de {asesora.totalIntervenciones} intervenciones</span>
+              <div class="rango__barra"><span style={`width:${Math.round(asesora.fortalecidas / asesora.totalIntervenciones * 100)}%`}></span></div>
+              <span class="rango__falta">Te faltan {asesora.faltanParaSiguiente} para {asesora.rangoSiguiente}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="widget">
+          <h2 class="widget__t">Tus insignias</h2>
+          <ul class="insig">
+            {logrosRecientes.map((l) => (
+              <li class="insig__i" title={l.nombre}><img src={l.img} alt={l.nombre} width="256" height="256" loading="lazy" /></li>
+            ))}
+          </ul>
+          <a class="widget__link" href="/asesor">Ver todas en El asesor</a>
+        </section>
+      </aside>
+    </div>
+  </div>
+</Fortaleza>
+
+<script>
+  import { estadoDemo } from '../scripts/demo-director.js';
+  import { intervenciones } from '../data/demo.js';
+
+  // Las pestañas conmutan el panel del centro (Actividad / Miembros / Fotos / Documentos).
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.hero__tab')];
+  const paneles = [...document.querySelectorAll<HTMLElement>('.mir__panel')];
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.tab;
+      tabs.forEach((t) => { const on = t === tab; t.classList.toggle('is-activa', on); t.setAttribute('aria-current', on ? 'page' : 'false'); });
+      paneles.forEach((p) => { p.hidden = p.dataset.panel !== id; });
+    });
+  });
+
+  // EL CONMUTADOR DE DEMO. El Mirador es COMUNIDAD: el feed, los miembros, el balcón y las
+  // pestañas son estáticos y NO cambian por rango. Lo único que depende del alumno es su
+  // widget "Tu rango" (GamiPress, a la derecha) y sus insignias, que se re-derivan aquí del
+  // número de fortalecidas (F) que elija la demo. El build renderiza el rango 3 (F=4) y en
+  // ese rango esto no cambia nada. El rango (rango__n) y el avatar los pone el director; no
+  // se duplican. Solo se re-derivan estados, contadores y visibilidad: nada de texto nuevo.
+  (() => {
+    const { fortalecidas: F, faltan, rangoSigTxt, esMax } = estadoDemo();
+
+    // "Tu rango": subtexto (X de 12) y ancho de la barra de avance (F de 12).
+    const sub = document.querySelector('.rango__sub');
+    if (sub) sub.textContent = `${F} de 12 intervenciones`;
+    const barra = document.querySelector<HTMLElement>('.rango__barra span');
+    if (barra) barra.style.width = `${Math.round((F / 12) * 100)}%`;
+
+    // "Te faltan N para <rango siguiente>": la N y el rango salen del director (no se
+    // inventan). En rango máximo ya no queda nada por subir, así que la línea sobra.
+    const falta = document.querySelector<HTMLElement>('.rango__falta');
+    if (falta) {
+      // .rango__falta lleva display:block de autor, que gana al atributo [hidden]; por eso se
+      // oculta con el style en linea, no con .hidden. En rango maximo la linea sobra.
+      if (esMax) { falta.style.display = 'none'; }
+      else { falta.style.display = ''; falta.textContent = `Te faltan ${faltan} para ${rangoSigTxt}`; }
+    }
+
+    // "Tus insignias": un vistazo a lo último conseguido (los 3 recientes). Se re-deriva a
+    // las dos últimas intervenciones fortalecidas (sellos de la F y la F-1) más el logro
+    // global de la primera reparación, que ya vive fijo en el DOM: solo se muestra u oculta.
+    // Los nombres salen de intervenciones[].insignia (dato existente), no se inventan.
+    const sello = (n) => `/assets/emblemas-insignias/ui/insignias-intervencion/sellos/insignia-i${String(n).padStart(2, '0')}-sello.webp`;
+    const insig = [...document.querySelectorAll<HTMLLIElement>('.insig__i')];
+    [F, F - 1].forEach((n, idx) => {
+      const li = insig[idx];
+      if (!li) return;
+      if (n >= 1) {
+        const iv = intervenciones.find((x) => x.n === n);
+        const nombre = iv ? iv.insignia : '';
+        li.hidden = false;
+        li.title = nombre;
+        const img = li.querySelector('img');
+        if (img) { img.src = sello(n); img.alt = nombre; }
+      } else {
+        li.hidden = true;
+      }
+    });
+    // El logro global (tercer hueco) refleja la primera reparación: aparece con la primera
+    // fortalecida y se apaga solo en la fortaleza vacía (F = 0).
+    if (insig[2]) insig[2].hidden = F < 1;
+  })();
+</script>
+
+<style is:global>
+  .mir { max-width: 1240px; margin: 0 auto; }
+
+  /* El balcón del Mirador, difuminado, tras toda la comunidad. Fijo y oscurecido para que
+     las cards y el texto se lean; la escala evita el borde limpio del desenfoque. */
+  .mir__fondo {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: url('/assets/mapa-escenas/ui/mirador-fondo.webp') center 42% / cover no-repeat;
+    filter: blur(26px) brightness(0.66) saturate(1);
+    transform: scale(1.16);
+  }
+  .mir__fondo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(9,13,20,0.28), rgba(9,13,20,0.52)); }
+
+  /* ---- HERO CARD ---- */
+  .hero { background: linear-gradient(180deg, rgba(20,32,46,0.6), rgba(9,13,20,0.66)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.14); border-radius: 12px; overflow: hidden; }
+  .hero__cover { position: relative; height: clamp(180px, 26vh, 300px); }
+  .hero__cover img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+  .hero__cover-velo { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(9,13,20,0.15) 0%, transparent 45%, rgba(9,13,20,0.55) 100%); }
+
+  .hero__body { position: relative; display: flex; align-items: flex-end; gap: clamp(14px, 2vw, 24px); padding: 0 clamp(16px, 2.4vw, 30px) clamp(16px, 2vh, 22px); }
+  .hero__ava {
+    position: relative; flex: none; margin-top: clamp(-52px, -5vw, -64px);
+    width: clamp(92px, 10vw, 128px); height: clamp(92px, 10vw, 128px);
+    border-radius: 50%; overflow: hidden;
+    background: rgba(9,13,20,0.92); box-shadow: 0 0 0 4px rgba(9,13,20,0.85), inset 0 0 0 1px rgba(95,208,224,0.4);
+  }
+  .hero__ava img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .hero__pres { position: absolute; right: 8px; bottom: 8px; width: 15px; height: 15px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 3px rgba(9,13,20,0.92), 0 0 10px rgba(95,208,224,0.7); }
+  .hero__id { flex: 1; min-width: 0; padding-bottom: 2px; }
+  .hero__pill { display: inline-block; padding: 3px 10px; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--aqua); background: rgba(95,208,224,0.14); border: 1px solid rgba(95,208,224,0.32); clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+  .hero__nom { margin: 8px 0 0; font-size: clamp(1.4rem, 2.4vw, 2.1rem); color: var(--bone); line-height: 1.05; }
+  .hero__stats { margin: 5px 0 0; font-size: 0.84rem; color: var(--mist); }
+  .hero__stats b { color: var(--moon); }
+  .hero__acc { flex: none; padding-bottom: 4px; }
+  .hero__b { position: relative; padding: 11px 22px; font-size: 0.82rem; }
+
+  .hero__tabs { display: flex; gap: 2px; padding: 0 clamp(10px, 1.6vw, 20px); border-top: 1px solid rgba(194,205,214,0.14); overflow-x: auto; scrollbar-width: none; }
+  .hero__tabs::-webkit-scrollbar { display: none; }
+  .hero__tab { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 14px 16px; font: inherit; font-size: 0.84rem; color: var(--mist); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; transition: color 0.15s ease; }
+  .hero__tab:hover { color: var(--moon); }
+  .hero__tab.is-activa { color: var(--bone); border-bottom-color: var(--aqua); }
+  .hero__tab-n { font-size: 0.7rem; padding: 1px 7px; border-radius: 9px; background: rgba(194,205,214,0.14); color: var(--moon); }
+  .hero__tab.is-activa .hero__tab-n { background: rgba(95,208,224,0.18); color: var(--aqua); }
+
+  /* ---- Tres columnas ---- */
+  .mir__cols { display: grid; grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(220px, 280px); gap: clamp(16px, 2vw, 28px); align-items: start; padding: clamp(18px, 2.4vh, 26px) 0 clamp(30px, 5vh, 60px); }
+  .mir__lado { display: flex; flex-direction: column; gap: clamp(14px, 2vh, 20px); position: sticky; top: calc(var(--alto-shell) + 16px); }
+
+  .widget { padding: clamp(14px, 1.6vw, 18px); background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.55)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); border-radius: 4px; }
+  .widget__t { margin: 0 0 12px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--mist); }
+  .widget__link { display: inline-block; margin-top: 12px; font-size: 0.76rem; color: var(--aqua); text-decoration: none; }
+  .widget__link:hover { text-decoration: underline; }
+
+  .online { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .online__ava { position: relative; display: block; width: 42px; height: 42px; }
+  .online__ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .online__p { position: absolute; right: 0; bottom: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 2px rgba(9,13,20,0.9); }
+
+  .miembros { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .miembro { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px; }
+  .miembro__ava { width: 38px; height: 38px; object-fit: cover; border-radius: 50%; }
+  .miembro__d { min-width: 0; display: flex; flex-direction: column; }
+  .miembro__d b { font-size: 0.82rem; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .miembro__r { font-size: 0.72rem; color: var(--mist); }
+  .miembro__b { position: relative; width: 30px; height: 30px; display: grid; place-items: center; color: var(--aqua); background: rgba(95,208,224,0.12); border: 1px solid rgba(95,208,224,0.3); border-radius: 50%; cursor: pointer; }
+  .miembro__b svg { width: 15px; height: 15px; }
+  .miembro__b:hover { background: rgba(95,208,224,0.2); }
+
+  /* Centro */
+  .mir__feed { min-width: 0; }
+  .mir__panel { display: flex; flex-direction: column; gap: clamp(14px, 2vh, 18px); }
+  .mir__panel[hidden] { display: none; }
+
+  .composer { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; background: linear-gradient(180deg, rgba(20,32,46,0.55), rgba(9,13,20,0.6)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.14); border-radius: 4px; }
+  .composer__ava { width: 44px; height: 44px; object-fit: cover; border-radius: 50%; }
+  .composer__campo { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 9px 14px; background: rgba(9,13,20,0.5); border-radius: 22px; box-shadow: inset 0 0 0 1px rgba(194,205,214,0.14); }
+  .composer__ph { font-size: 0.9rem; color: var(--mist); }
+  .composer__acc { display: flex; gap: 12px; }
+  .composer__ic { width: 20px; height: 20px; color: var(--mist); }
+  .composer__ic svg { width: 100%; height: 100%; }
+  .composer__b { position: relative; padding: 10px 20px; font-size: 0.8rem; }
+
+  .post { padding: clamp(14px, 1.8vw, 20px); background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.55)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); border-radius: 4px; }
+  .post__cab { display: grid; grid-template-columns: 46px 1fr auto; align-items: center; gap: 12px; }
+  .post__ava { width: 46px; height: 46px; object-fit: cover; border-radius: 50%; }
+  .post__meta { min-width: 0; }
+  .post__accion { margin: 0; font-size: 0.9rem; color: var(--moon); }
+  .post__accion b { color: var(--bone); font-weight: 600; }
+  .post__sub { font-size: 0.74rem; color: var(--mist); }
+  .post__rango { color: var(--aqua); }
+  .post__opts { position: relative; width: 30px; height: 30px; display: grid; place-items: center; color: var(--mist); background: none; border: 0; border-radius: 50%; cursor: pointer; }
+  .post__opts:hover { background: rgba(194,205,214,0.1); color: var(--moon); }
+  .post__opts svg { width: 18px; height: 18px; }
+  .post__txt { margin: 13px 0 0; font-size: 0.95rem; line-height: 1.6; color: var(--moon); }
+  .post__pie { display: flex; gap: 8px; margin-top: 15px; padding-top: 13px; border-top: 1px solid rgba(194,205,214,0.12); }
+  .post__b { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font: inherit; font-size: 0.8rem; color: var(--moon); background: none; border: 0; border-radius: 6px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+  .post__b svg { width: 17px; height: 17px; }
+  .post__b b { color: var(--mist); font-weight: 600; }
+  .post__b:hover { background: rgba(194,205,214,0.08); color: var(--bone); }
+  .post__b.is-on, .post__b.is-on b { color: var(--aqua); }
+
+  /* Miembros: rejilla de cartas. */
+  .rejilla { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .carta { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: clamp(14px, 1.6vw, 18px); background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.55)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); border-radius: 4px; }
+  .carta__ava { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; }
+  .carta__n { margin-top: 6px; font-size: 0.9rem; color: var(--bone); }
+  .carta__r { font-size: 0.74rem; color: var(--mist); margin-bottom: 10px; }
+  .carta__b { position: relative; padding: 8px 18px; font-size: 0.76rem; }
+
+  /* Estados vacíos (Fotos, Documentos). */
+  .mir__vacio { align-items: center; text-align: center; gap: 10px; padding: clamp(46px, 9vh, 100px) 20px; background: linear-gradient(180deg, rgba(20,32,46,0.4), rgba(9,13,20,0.5)); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.1); border-radius: 4px; }
+  .mir__vacio svg { width: 40px; height: 40px; color: var(--mist); opacity: 0.6; }
+  .mir__vacio b { font-size: 1.02rem; color: var(--moon); }
+  .mir__vacio p { margin: 0; max-width: 42ch; font-size: 0.86rem; line-height: 1.55; color: var(--mist); }
+
+  /* Derecha */
+  .rango { display: flex; gap: 12px; align-items: center; }
+  .rango__ava { width: 52px; height: 52px; object-fit: cover; object-position: center top; border-radius: 50%; flex: none; }
+  .rango__d { min-width: 0; flex: 1; }
+  .rango__n { font-family: var(--serif, serif); font-size: 0.98rem; color: var(--bone); }
+  .rango__sub { display: block; margin: 2px 0 8px; font-size: 0.72rem; color: var(--mist); }
+  .rango__barra { height: 6px; border-radius: 3px; background: rgba(9,13,20,0.6); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+  .rango__barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--aqua), var(--cyan)); }
+  .rango__falta { display: block; margin-top: 7px; font-size: 0.72rem; color: var(--moon); }
+
+  .insig { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .insig__i { width: clamp(44px, 4.4vw, 56px); }
+  .insig__i img { width: 100%; height: auto; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+
+  @media (max-width: 1080px) {
+    .mir__cols { grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); }
+    .mir__lado--izq { grid-row: 2; grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; position: static; }
+    .mir__lado--izq .widget { flex: 1; min-width: 200px; }
+  }
+
+  /* Móvil y apaisado: una sola columna, el feed manda. El velo lo cierra el layout
+     con su padding inferior en móvil, así que el contenido no queda bajo la barra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .mir__cols { grid-template-columns: 1fr; }
+    .mir__lado { position: static; }
+    .mir__feed { grid-row: 1; }
+    .mir__lado--izq { grid-row: 2; grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+    .mir__lado--izq .widget { flex: 1; min-width: 200px; }
+    .mir__lado--der { grid-row: 3; }
+    .hero__body { flex-wrap: wrap; }
+    .hero__acc { width: 100%; }
+    .hero__b { width: 100%; justify-content: center; }
+  }
+
+  /* Apaisado (poca altura): la hero card no puede comerse la pantalla. */
+  @media (max-height: 480px) {
+    .hero__cover { height: clamp(96px, 30vh, 150px); }
+    .hero__ava { margin-top: clamp(-40px, -8vh, -52px); width: clamp(72px, 16vh, 96px); height: clamp(72px, 16vh, 96px); }
+    .hero__tab { padding-top: 11px; padding-bottom: 11px; }
+    .mir__cols { padding-top: clamp(14px, 2vh, 20px); }
+  }
+
+  /* Móvil estrecho: pila los widgets del lado izquierdo y aprieta el composer. */
+  @media (max-width: 380px) {
+    .mir__lado--izq .widget { flex-basis: 100%; }
+    .composer { grid-template-columns: 36px 1fr; gap: 10px; padding: 10px 12px; }
+    .composer__ava { width: 36px; height: 36px; }
+    .composer__b { grid-column: 1 / -1; justify-self: start; }
+    .rejilla { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  }
+</style>

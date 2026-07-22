@@ -1,0 +1,421 @@
+---
+// El Reproductor (P3b): la página de una lección, con la ANATOMÍA REAL de lección de
+// LearnDash (focus mode), aterrizada al universo (Marcos valida la parte WP; provisional):
+//
+//   · Barra lateral de navegación del curso: título del curso, barra de progreso con %, y la
+//     lista de lecciones con sus TRES estados (completada = check, en curso = donut, bloqueada
+//     = anillo + candado), con la actual marcada. (Curso individual, Brain wiki.)
+//   · Contenido: miga de pan (Curso › Lección), título, el contenido (vídeo), Materiales (el
+//     recurso), el Reto (la tercera pieza de cada lección de Club, CONTENIDO 200), el botón
+//     Marcar como completada (el Mark Complete) y navegación anterior / siguiente lección.
+//
+// Club es UN curso ("Primer Ciclo de la Fortaleza") con 12 lecciones, una por intervención
+// (sección 11). Una página por lección (getStaticPaths) para que la Biblioteca lleve a cada
+// una y el conmutador enseñe cualquiera. Las acciones del plugin no navegan: avisan.
+import Fortaleza from '../../layouts/Fortaleza.astro';
+import { intervenciones, sendas, pasosDe } from '../../data/demo.js';
+
+export function getStaticPaths() {
+  return intervenciones.map((i) => ({ params: { n: String(i.n) } }));
+}
+
+const CURSO = 'Primer Ciclo de la Fortaleza';
+const { n } = Astro.params;
+const clase = intervenciones.find((i) => i.n === Number(n))!;
+// El Cierre (intervencion 12) no es una senda: es transversal a las tres. Como en
+// biblioteca.astro, cae a --mist en vez de reventar por buscar una senda que no existe.
+const esCierre = clase.senda === 'Cierre';
+const senda = sendas[clase.senda] ?? { color: 'var(--mist)', nombre: 'Cierre del ciclo' };
+
+const estadoLeccion = (i: any) => (i.estado === 'fortalecida' ? 'completada' : i.estado === 'activa' ? 'en-curso' : 'bloqueada');
+const completadas = intervenciones.filter((i) => i.estado === 'fortalecida').length;
+const pct = Math.round((completadas / intervenciones.length) * 100);
+
+const prev = intervenciones.find((i) => i.n === clase.n - 1);
+const next = intervenciones.find((i) => i.n === clase.n + 1);
+const bloqueada = clase.estado === 'bloqueada';
+const progresionHecha = pasosDe(clase).includes('progresion');
+const CONTENIDO_PF = 10;
+const RECURSO_PF = 15;
+---
+
+<Fortaleza title={`${clase.titulo}, Club de la Asesoría`} activa="/biblioteca">
+  <div class="lms">
+    <!-- BARRA LATERAL: navegación del curso (LearnDash). -->
+    <aside class="lms__nav" aria-label="Navegación del curso">
+      <div class="curso">
+        <span class="curso__k">Curso</span>
+        <b class="curso__t">{CURSO}</b>
+        <div class="curso__barra" role="img" aria-label={`${completadas} de ${intervenciones.length} lecciones completadas`}>
+          <span class="curso__fill" style={`width:${pct}%`}></span>
+        </div>
+        <span class="curso__pct">{completadas} de {intervenciones.length} · {pct}%</span>
+      </div>
+
+      <ol class="lecciones">
+        {intervenciones.map((i) => {
+          const e = estadoLeccion(i);
+          const actual = i.n === clase.n;
+          const Caja = e === 'bloqueada' ? 'span' : 'a';
+          return (
+            <li class={`lecc lecc--${e}${actual ? ' is-actual' : ''}`}>
+              <Caja class="lecc__l" href={e === 'bloqueada' ? undefined : `/reproductor/${i.n}`} aria-current={actual ? 'page' : undefined}>
+                <span class="lecc__ic" aria-hidden="true">
+                  {e === 'completada' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="var(--night-1,#0b111b)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>}
+                  {e === 'en-curso' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="rgba(232,169,63,0.3)" stroke-width="2.4"/><path d="M12 2.5a9.5 9.5 0 0 1 8.2 4.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>}
+                  {e === 'bloqueada' && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8.5" y="11" width="7" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 11v-1.4a2 2 0 0 1 4 0V11" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>}
+                </span>
+                <span class="lecc__n"><b>{i.n}.</b> {i.titulo}</span>
+              </Caja>
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
+
+    <!-- CONTENIDO DE LA LECCIÓN. -->
+    <div class="lms__main">
+      <nav class="miga" aria-label="Ruta">
+        <a href="/mapa">{CURSO}</a>
+        <span aria-hidden="true">›</span>
+        <span class="miga__aqui">{clase.titulo}</span>
+      </nav>
+
+      <span class="lms__senda" style={`--senda:${senda.color}`}>Lección {clase.n} · {esCierre ? 'Cierre del ciclo' : `Senda del ${clase.senda}`}</span>
+      <h1 class="display lms__t">{clase.titulo}</h1>
+
+      {bloqueada ? (
+        <div class="cerrada">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <b>Esta lección aún no está disponible</b>
+          <p>Se libera en su mes. Ve completando las intervenciones en orden; esta llegará cuando toque.</p>
+        </div>
+      ) : (
+        <>
+          <div class="visor" style={`--senda:${senda.color}`}>
+            <img class="visor__poster" src="/assets/mapa-escenas/ui/biblioteca-fondo.webp" alt="" width="2752" height="1536" loading="lazy" />
+            <span class="visor__scrim" aria-hidden="true"></span>
+            <button class="visor__play" type="button" aria-label="Reproducir la clase" data-integracion="learndash:reproducir" data-aviso="El vídeo se reproduce cuando la clase esté conectada con la plataforma.">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+              <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Reproducir</span>
+            </button>
+            <span class="visor__dur">Contenido principal · +{CONTENIDO_PF} PF</span>
+          </div>
+
+          <p class="lms__desc">{clase.sinopsis}</p>
+
+          <!-- MATERIALES (el recurso de Biblioteca, +15). -->
+          <section class="materiales">
+            <h2 class="lms__h">Materiales</h2>
+            <div class="material">
+              <span class="material__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3v5h5M14 3l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+              <span class="material__d">
+                <b>Recurso de Biblioteca</b>
+                <span class="material__q">La plantilla para aplicar lo que ves en la clase.</span>
+              </span>
+              <span class="material__pf">+{RECURSO_PF} PF</span>
+              <button class="btn-linea material__b" type="button" data-integracion="learndash:descargar-recurso" data-aviso="El recurso se descarga cuando la Biblioteca esté conectada." data-augmented-ui="l-clip-y r-clip-y">
+                Descargar
+                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Descargar</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- EL RETO (tercera pieza de cada lección de Club, CONTENIDO 200): vive en la Torre. -->
+          <a class="reto" href="/torre-retos">
+            <span class="reto__k">Reto de esta intervención</span>
+            <b class="reto__t">{clase.reto}</b>
+            <span class="reto__ir">Hacerlo en la Torre<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </a>
+
+          <!-- MARK COMPLETE (la firma de LearnDash). -->
+          <div class="completar">
+            {progresionHecha ? (
+              <span class="completar__hecho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Lección completada</span>
+            ) : (
+              <button class="btn completar__b" type="button" data-integracion="learndash:marcar-completada" data-aviso="La lección se marca completada cuando la Biblioteca esté conectada." data-augmented-ui="l-clip-y r-clip-y">
+                Marcar como completada
+                <span class="pista" role="tooltip" aria-live="polite" data-augmented-ui="tl-clip br-clip border">Completar</span>
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      <!-- NAVEGACIÓN anterior / siguiente lección. -->
+      <nav class="lecc-nav" aria-label="Navegación entre lecciones">
+        {prev ? (
+          <a class="lecc-nav__b lecc-nav__b--prev" href={`/reproductor/${prev.n}`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><span class="lecc-nav__k">Anterior</span><b>{prev.titulo}</b></span>
+          </a>
+        ) : <span></span>}
+
+        {next ? (
+          next.estado === 'bloqueada' ? (
+            <span class="lecc-nav__b lecc-nav__b--next is-lock" aria-disabled="true">
+              <span><span class="lecc-nav__k">Siguiente</span><b>Se abre en su mes</b></span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
+          ) : (
+            <a class="lecc-nav__b lecc-nav__b--next" href={`/reproductor/${next.n}`}>
+              <span><span class="lecc-nav__k">Siguiente</span><b>{next.titulo}</b></span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          )
+        ) : <span></span>}
+      </nav>
+    </div>
+  </div>
+</Fortaleza>
+
+<script>
+  import { estadoDemo, estadoIntervencion } from '../../scripts/demo-director.js';
+
+  // EL CONMUTADOR DE DEMO. El build renderiza el rango 3 (F=4 fortalecidas); esto re-deriva,
+  // sobre el DOM ya pintado, lo que depende del numero de fortalecidas F: la lista lateral de
+  // las 12 lecciones (estado, icono y si navega), la barra de progreso del curso y el boton
+  // de "Siguiente" de la navegacion. En F=4 no cambia nada (mismo estado que el build).
+  //
+  // LO QUE NO SE PUEDE RE-DERIVAR: la vista CENTRAL de la leccion actual. El build fija UNA
+  // de las dos (contenido O la tarjeta "cerrada") segun su estado; la otra no esta en el DOM.
+  // Si al cambiar de rango la leccion actual cruzase de una vista a la otra, no se puede
+  // construir sin inventar contenido, asi que se deja como esta (ver informe/constraints).
+  (() => {
+    const F = estadoDemo().fortalecidas;
+
+    // Los tres iconos de estado de leccion, identicos a los que pinta el build.
+    const ICONO = {
+      completada: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="var(--night-1,#0b111b)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      'en-curso': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="rgba(232,169,63,0.3)" stroke-width="2.4"/><path d="M12 2.5a9.5 9.5 0 0 1 8.2 4.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+      bloqueada: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8.5" y="11" width="7" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 11v-1.4a2 2 0 0 1 4 0V11" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+    };
+    // Del estado de intervencion (director) al nombre de clase de leccion (LearnDash).
+    const aLeccion = (e: string) => (e === 'fortalecida' ? 'completada' : e === 'activa' ? 'en-curso' : 'bloqueada');
+
+    // (1) LISTA LATERAL. Cada <li> es la leccion n = idx+1. Se re-deriva su clase de estado y
+    // su icono; y si cruza entre bloqueada y abierta, se cambia el envoltorio entre <span>
+    // (no navega) y <a href> (navega), conservando su contenido y su aria-current de "actual".
+    const lis = [...document.querySelectorAll('.lecciones .lecc')];
+    lis.forEach((li, idx) => {
+      const n = idx + 1;
+      const e = aLeccion(estadoIntervencion(n, F));
+      const actual = li.classList.contains('is-actual');
+      li.className = 'lecc lecc--' + e + (actual ? ' is-actual' : '');
+
+      let link = li.querySelector('.lecc__l') as HTMLElement | null;
+      if (!link) return;
+      const quiereEnlace = e !== 'bloqueada';
+      const esEnlace = link.tagName === 'A';
+      if (quiereEnlace !== esEnlace) {
+        const nuevo = document.createElement(quiereEnlace ? 'a' : 'span');
+        nuevo.className = 'lecc__l';
+        let hijo: ChildNode | null;
+        while ((hijo = link.firstChild)) nuevo.appendChild(hijo);
+        if (quiereEnlace) nuevo.setAttribute('href', '/reproductor/' + n);
+        link.replaceWith(nuevo);
+        link = nuevo;
+      } else if (quiereEnlace) {
+        link.setAttribute('href', '/reproductor/' + n);
+      }
+      if (actual) link.setAttribute('aria-current', 'page');
+      const ic = link.querySelector('.lecc__ic');
+      if (ic) ic.innerHTML = ICONO[e];
+    });
+
+    // (2) BARRA DE PROGRESO DEL CURSO. completadas = F, % = round(F/12*100). El texto y el
+    // aria-label conservan el mismo formato que el build ("F de 12 · %").
+    const pct = Math.round((F / 12) * 100);
+    const fill = document.querySelector('.curso__fill') as HTMLElement | null;
+    if (fill) fill.style.width = pct + '%';
+    const pctTxt = document.querySelector('.curso__pct');
+    if (pctTxt) pctTxt.textContent = F + ' de 12 · ' + pct + '%';
+    const barra = document.querySelector('.curso__barra');
+    if (barra) barra.setAttribute('aria-label', F + ' de 12 lecciones completadas');
+
+    // (3) NAVEGACION "SIGUIENTE". Vive en las dos vistas (contenido y cerrada), asi que si se
+    // puede re-derivar. La actual es el <li> is-actual; la siguiente, la de despues. Si su
+    // estado cruza entre bloqueada y abierta, se reconstruye el boton (enlace <-> candado).
+    const sig = document.querySelector('.lecc-nav__b--next');
+    if (sig) {
+      const actualIdx = lis.findIndex((li) => li.classList.contains('is-actual'));
+      const nSig = actualIdx + 2; // actualIdx+1 es la leccion actual; la siguiente es +1
+      if (nSig >= 1 && nSig <= 12) {
+        const bloq = estadoIntervencion(nSig, F) === 'bloqueada';
+        const estaBloq = sig.classList.contains('is-lock');
+        if (bloq !== estaBloq) {
+          const FLECHA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          const CANDADO = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+          if (bloq) {
+            // A candado: la etiqueta fija que ya usa el build para el siguiente cerrado.
+            const span = document.createElement('span');
+            span.className = 'lecc-nav__b lecc-nav__b--next is-lock';
+            span.setAttribute('aria-disabled', 'true');
+            span.innerHTML = '<span><span class="lecc-nav__k">Siguiente</span><b>Se abre en su mes</b></span>' + CANDADO;
+            sig.replaceWith(span);
+          } else {
+            // A enlace: el titulo se lee de su leccion en la lista lateral, no se inventa.
+            const liSig = lis[nSig - 1];
+            const bruto = liSig ? (liSig.querySelector('.lecc__n')?.textContent || '') : '';
+            const titulo = bruto.replace(/^\s*\d+\.\s*/, '').trim();
+            const a = document.createElement('a');
+            a.className = 'lecc-nav__b lecc-nav__b--next';
+            a.setAttribute('href', '/reproductor/' + nSig);
+            a.innerHTML = '<span><span class="lecc-nav__k">Siguiente</span><b>' + titulo + '</b></span>' + FLECHA;
+            sig.replaceWith(a);
+          }
+        }
+      }
+    }
+  })();
+</script>
+
+<style is:global>
+  .lms {
+    max-width: 1240px; margin: 0 auto;
+    display: grid; grid-template-columns: clamp(260px, 24vw, 320px) minmax(0, 1fr);
+    gap: clamp(20px, 3vw, 44px); align-items: start;
+  }
+
+  /* ---- Barra lateral: navegación del curso ---- */
+  .lms__nav {
+    position: sticky; top: calc(var(--alto-shell) + 16px);
+    background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.6));
+    box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12);
+    border-radius: 4px; overflow: hidden;
+  }
+  .curso { padding: clamp(14px, 1.6vw, 20px); border-bottom: 1px solid rgba(194,205,214,0.12); }
+  .curso__k { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--mist); }
+  .curso__t { display: block; margin: 5px 0 12px; font-family: var(--serif, serif); font-size: 1.05rem; color: var(--bone); line-height: 1.2; }
+  .curso__barra { height: 6px; border-radius: 3px; background: rgba(9,13,20,0.6); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+  .curso__fill { display: block; height: 100%; background: linear-gradient(90deg, var(--aqua), var(--cyan)); }
+  .curso__pct { display: block; margin-top: 7px; font-size: 0.72rem; color: var(--moon); }
+
+  .lecciones { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; }
+  .lecc__l { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 4px; text-decoration: none; color: inherit; }
+  a.lecc__l { transition: background 0.15s ease; }
+  a.lecc__l:hover { background: rgba(28,42,58,0.55); }
+  .lecc__ic { width: 22px; height: 22px; }
+  .lecc__ic svg { width: 100%; height: 100%; }
+  .lecc--completada .lecc__ic { color: var(--aqua); }
+  .lecc--en-curso .lecc__ic { color: var(--amber); }
+  .lecc--bloqueada .lecc__ic { color: rgba(194,205,214,0.35); }
+  .lecc__n { font-size: 0.82rem; line-height: 1.3; color: var(--moon); }
+  .lecc__n b { color: var(--mist); font-weight: 600; }
+  .lecc--completada .lecc__n { color: var(--bone); }
+  .lecc--bloqueada .lecc__n { color: var(--mist); }
+  .lecc--bloqueada .lecc__l { cursor: default; }
+  .lecc.is-actual .lecc__l { background: linear-gradient(90deg, rgba(95,208,224,0.16), transparent 80%); position: relative; }
+  .lecc.is-actual.lecc--en-curso .lecc__l { background: linear-gradient(90deg, rgba(232,169,63,0.16), transparent 80%); }
+  .lecc.is-actual .lecc__l::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; background: var(--aqua); border-radius: 2px; }
+  .lecc.is-actual.lecc--en-curso .lecc__l::before { background: var(--amber); }
+  .lecc.is-actual .lecc__n { font-weight: 600; color: var(--bone); }
+
+  /* ---- Contenido de la lección ---- */
+  .lms__main { min-width: 0; }
+  .miga { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--mist); margin-bottom: clamp(10px, 1.4vh, 16px); }
+  .miga a { color: var(--moon); text-decoration: none; }
+  .miga a:hover { color: var(--bone); }
+  .miga__aqui { color: var(--mist); }
+
+  .lms__senda { display: inline-block; font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--senda, var(--aqua)); }
+  .lms__t { margin: 6px 0 clamp(14px, 2vh, 20px); font-size: clamp(1.6rem, 2.6vw, 2.3rem); color: var(--bone); line-height: 1.06; }
+
+  .visor {
+    position: relative; aspect-ratio: 16 / 9; width: 100%;
+    display: grid; place-items: center; overflow: hidden; border-radius: 3px;
+    background: linear-gradient(160deg, rgba(20,32,46,0.9), rgba(9,13,20,0.95));
+    box-shadow: inset 0 0 0 1px rgba(194,205,214,0.14), 0 24px 50px rgba(0,0,0,0.5);
+  }
+  /* Póster de la escena (la Biblioteca): que el visor no salga vacío. Atenuado y velado. */
+  .visor__poster { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; opacity: 0.6; }
+  .visor__scrim {
+    position: absolute; inset: 0; z-index: 1;
+    background:
+      radial-gradient(60% 60% at 50% 46%, color-mix(in srgb, var(--senda, var(--aqua)) 16%, transparent), transparent 70%),
+      radial-gradient(120% 100% at 50% 50%, rgba(9,13,20,0.35), rgba(9,13,20,0.8) 92%);
+  }
+  .visor__play {
+    position: relative; z-index: 2; width: clamp(64px, 7vw, 84px); height: clamp(64px, 7vw, 84px); display: grid; place-items: center; cursor: pointer;
+    color: var(--bone); background: rgba(9,13,20,0.5); border: 1px solid rgba(230,238,245,0.55); border-radius: 50%;
+    backdrop-filter: blur(2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+  .visor__play svg { width: 42%; height: 42%; margin-left: 8%; }
+  .visor__play:hover { transform: scale(1.06); background: color-mix(in srgb, var(--senda, var(--aqua)) 30%, rgba(9,13,20,0.5)); border-color: var(--senda, var(--aqua)); }
+  .visor__dur { position: absolute; z-index: 2; bottom: 12px; right: 14px; font-size: 0.7rem; color: var(--moon); text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
+
+  .lms__desc { margin: clamp(16px, 2.2vh, 22px) 0 0; font-size: clamp(0.96rem, 1.15vw, 1.08rem); line-height: 1.62; color: var(--moon); max-width: 68ch; }
+
+  .lms__h { margin: clamp(22px, 3vh, 32px) 0 12px; font-family: var(--serif, serif); font-size: 1.05rem; font-weight: 600; color: var(--bone); }
+
+  /* Materiales: el recurso descargable. */
+  .material { display: grid; grid-template-columns: 40px 1fr auto auto; align-items: center; gap: clamp(10px, 1.4vw, 16px); padding: 12px 14px; border-radius: 4px; background: rgba(20,32,46,0.5); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); }
+  .material__ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 4px; background: rgba(95,208,224,0.1); color: var(--aqua); }
+  .material__ic svg { width: 20px; height: 20px; }
+  .material__d { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .material__d b { font-size: 0.9rem; color: var(--bone); }
+  .material__q { font-size: 0.78rem; color: var(--mist); line-height: 1.35; }
+  .material__pf { font-size: 0.74rem; font-weight: 600; color: var(--aqua); white-space: nowrap; }
+  .material__b { padding: 9px 18px; font-size: 0.78rem; }
+
+  /* El reto (a la Torre). */
+  .reto {
+    display: block; text-decoration: none; color: inherit; position: relative;
+    margin-top: clamp(16px, 2.2vh, 22px); padding: clamp(15px, 1.8vw, 20px);
+    background: linear-gradient(160deg, rgba(44,33,15,0.5), rgba(9,13,20,0.66));
+    box-shadow: inset 0 0 0 1px rgba(232,169,63,0.4);
+    clip-path: polygon(11px 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%, 0 11px);
+    transition: background 0.2s ease;
+  }
+  .reto:hover { background: linear-gradient(160deg, rgba(52,39,17,0.66), rgba(9,13,20,0.66)); }
+  .reto:hover .reto__ir svg { transform: translateX(3px); }
+  .reto__k { display: block; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--amber-2, #f2c471); }
+  .reto__t { display: block; margin: 5px 0 8px; font-family: var(--serif, serif); font-size: 1.04rem; color: var(--bone); line-height: 1.3; }
+  .reto__ir { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; color: var(--amber); }
+  .reto__ir svg { width: 15px; height: 15px; transition: transform 0.2s ease; }
+
+  /* Mark Complete. */
+  .completar { margin-top: clamp(22px, 3vh, 32px); padding-top: clamp(18px, 2.4vh, 26px); border-top: 1px solid rgba(194,205,214,0.14); display: flex; justify-content: center; }
+  .completar__b { padding: 13px 30px; font-size: 0.9rem; }
+  .completar__hecho { display: inline-flex; align-items: center; gap: 9px; font-size: 0.92rem; color: color-mix(in srgb, var(--aqua) 75%, var(--moon)); }
+  .completar__hecho svg { width: 20px; height: 20px; }
+
+  /* Lección bloqueada. */
+  .cerrada { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: clamp(40px, 8vh, 90px) 20px; background: linear-gradient(160deg, rgba(24,30,40,0.5), rgba(9,13,20,0.6)); border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(194,205,214,0.1); }
+  .cerrada svg { width: 40px; height: 40px; color: var(--mist); opacity: 0.7; }
+  .cerrada b { font-size: 1.05rem; color: var(--moon); }
+  .cerrada p { margin: 0; max-width: 44ch; font-size: 0.88rem; line-height: 1.55; color: var(--mist); }
+
+  /* Navegación anterior / siguiente. */
+  .lecc-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: clamp(24px, 3.4vh, 40px); }
+  .lecc-nav__b { display: flex; align-items: center; gap: 11px; padding: 13px 16px; border-radius: 4px; text-decoration: none; color: inherit; background: rgba(20,32,46,0.5); box-shadow: inset 0 0 0 1px rgba(194,205,214,0.12); transition: background 0.18s ease; }
+  a.lecc-nav__b:hover { background: rgba(28,42,58,0.7); }
+  .lecc-nav__b svg { width: 20px; height: 20px; flex: none; color: var(--mist); }
+  .lecc-nav__b--next { justify-content: flex-end; text-align: right; }
+  .lecc-nav__k { display: block; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mist); }
+  .lecc-nav__b b { font-size: 0.86rem; color: var(--moon); font-weight: 600; }
+  .lecc-nav__b.is-lock { opacity: 0.6; cursor: default; }
+
+  /* Colapso a una columna: móvil, tablet en vertical y apaisado (poca altura).
+     El contenido va a ancho completo y PRIMERO (la lección que se abrió se ve al
+     entrar, sin scroll); la navegación del curso fluye debajo, también a ancho
+     completo. Así la lección no queda enterrada bajo la lista de lecciones. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .lms { grid-template-columns: 1fr; }
+    .lms__main { order: 0; }
+    .lms__nav { position: static; order: 1; }
+    .lecciones { max-height: none; overflow: visible; }
+  }
+  @media (max-width: 560px) {
+    .material { grid-template-columns: 40px 1fr; }
+    .material__pf, .material__b { grid-column: 2; justify-self: start; }
+    .lecc-nav { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 380px) {
+    .curso__t { font-size: 0.98rem; }
+    .lecc__n { font-size: 0.8rem; }
+    .lecc-nav__b { padding: 12px 13px; }
+    .completar__b { padding: 13px 22px; }
+  }
+</style>

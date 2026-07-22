@@ -7,37 +7,40 @@
 //
 // Lo que falta va EN SILUETA, no escondido: ver el hueco es lo que dice que hay camino.
 import Fortaleza from '../layouts/Fortaleza.astro';
-import { asesora, intervenciones, ganadasDe, logrosGlobales, arquetipos } from '../data/demo.js';
+import { asesora, intervenciones, pasosDe, tieneInsignia, logrosGlobales, arquetipos, PF, NOMBRES_INSIGNIA } from '../data/demo.js';
 
 const A = '/assets/emblemas-insignias/ui';
 
 const arquetipo = arquetipos.find((a) => a.tuyo);
 if (!arquetipo) throw new Error('El asesor pide el arquetipo del Test de Player y ninguno esta marcado como tuyo en demo.js.');
 
-// Las 36, en filas de tres: cada fila es SU intervencion. Agrupadas y no en una rejilla
-// suelta porque las tres cuentan la misma historia (recorri, ejecute, sello).
+// LAS 36, en filas de tres: cada fila es SU intervencion, con sus tres pasos (Progresion,
+// Reto de Torre, Evolucion). Agrupadas y no en una rejilla suelta porque las tres cuentan
+// la misma historia: recorri, ejecute, selle. Lo ganado se DERIVA del estado con pasosDe(),
+// no se escribe a mano. El nombre del sello es intervencion.insignia (el que usa la Torre);
+// los de Progresion y Reto salen de NOMBRES_INSIGNIA.
 const TIPOS = [
-  { clave: 'progresion', nombre: 'Progresión', dir: 'progresion', pf: 40 },
-  { clave: 'accion', nombre: 'Acción', dir: 'accion', pf: 100 },
-  { clave: 'sello', nombre: 'Sello de Fortaleza', dir: 'sellos', pf: 150 },
+  { paso: 'progresion', nombre: 'Progresión',   dir: 'progresion', suf: 'progresion', pf: PF.progresion },
+  { paso: 'reto',       nombre: 'Reto de Torre', dir: 'accion',    suf: 'accion',     pf: PF.reto },
+  { paso: 'evolucion',  nombre: 'Evolución',    dir: 'sellos',    suf: 'sello',      pf: PF.evolucion },
 ];
-
 const filas = intervenciones.map((i) => {
-  const ganadas = ganadasDe(i);
+  const ganados = pasosDe(i);
+  const nombres = { progresion: NOMBRES_INSIGNIA[i.n].progresion, reto: NOMBRES_INSIGNIA[i.n].reto, evolucion: i.insignia };
   return {
     ...i,
     piezas: TIPOS.map((t) => ({
-      ...t,
-      nombre: t.nombre,
-      insignia: i.insignias[t.clave as keyof typeof i.insignias],
-      img: `${A}/insignias-intervencion/${t.dir}/insignia-i${String(i.n).padStart(2, '0')}-${t.clave === 'sello' ? 'sello' : t.clave}.webp`,
-      ganada: ganadas.includes(t.clave),
+      tier: t.nombre,
+      insignia: nombres[t.paso],
+      pf: t.pf,
+      img: `${A}/insignias-intervencion/${t.dir}/insignia-i${String(i.n).padStart(2, '0')}-${t.suf}.webp`,
+      ganada: ganados.includes(t.paso),
     })),
   };
 });
 
 const insigniasGanadas = filas.reduce((n, f) => n + f.piezas.filter((p) => p.ganada).length, 0);
-const habilidadesGanadas = intervenciones.filter((i) => ganadasDe(i).length === 3);
+const habilidadesGanadas = intervenciones.filter(tieneInsignia);
 const hitosGanados = logrosGlobales.filter((l) => l.ganado).length;
 
 const F_AZULEJO = 'tl-clip br-clip border';
@@ -45,8 +48,8 @@ const F_RANURA = 'tl-clip tr-clip bl-clip br-clip border';
 
 const pestanas = [
   { id: 'insignias', nombre: 'Insignias', n: `${insigniasGanadas}/36` },
-  { id: 'habilidades', nombre: 'Habilidades', n: `${habilidadesGanadas.length}/12` },
-  { id: 'hitos', nombre: 'Hitos del ciclo', n: `${hitosGanados}/6` },
+  { id: 'habilidades', nombre: 'Habilidades', n: `${habilidadesGanadas.length}/${intervenciones.length}` },
+  { id: 'hitos', nombre: 'Hitos del ciclo', n: `${hitosGanados}/${logrosGlobales.length}` },
 ];
 ---
 
@@ -55,12 +58,12 @@ const pestanas = [
        Vive fuera de las pestanas porque no cambia al cambiar de pestana. -->
   <header class="yo">
     <span class="figura yo__fig">
-      <img src={asesora.avatar} alt={`Tu avatar como ${asesora.rango}`} width="433" height="580" />
+      <img src={asesora.avatar} alt={`Tu avatar como ${asesora.rango}`} width="433" height="580" data-yo-cara />
     </span>
 
     <div class="yo__d">
-      <h1 class="display yo__r">{asesora.rango}</h1>
-      <p class="yo__sub">{asesora.fortalecidas} de {asesora.totalIntervenciones} intervenciones fortalecidas</p>
+      <h1 class="display yo__r" data-yo-rango>{asesora.rango}</h1>
+      <p class="yo__sub"><span data-yo-fort>{asesora.fortalecidas}</span> de {asesora.totalIntervenciones} intervenciones fortalecidas</p>
 
       <div class="barra" aria-hidden="true">
         {intervenciones.map((i) => (
@@ -68,7 +71,7 @@ const pestanas = [
         ))}
       </div>
       <p class="yo__falta">
-        Te faltan <b>{asesora.faltanParaSiguiente}</b> para {asesora.rangoSiguiente}.
+        Te faltan <b data-yo-faltan>{asesora.faltanParaSiguiente}</b> para <span data-yo-rango-sig>{asesora.rangoSiguiente}</span>.
         El rango no sube por puntos: sube por intervenciones fortalecidas.
       </p>
 
@@ -108,8 +111,10 @@ const pestanas = [
       ))}
     </div>
 
-    <!-- INSIGNIAS: las 36, en filas de tres. Cada fila es su intervencion. -->
+    <!-- INSIGNIAS: las 36, en doce filas de tres. Cada fila es una intervención con sus
+         tres pasos (Progresión, Reto de Torre, Evolución). -->
     <div class="panel" id="panel-insignias" role="tabpanel" aria-labelledby="tab-insignias" data-panel="insignias">
+      <p class="col__ayuda">Tres insignias por intervención: la Progresión al ver la clase, el Reto de Torre al aplicarlo y la Evolución al dejarla reparada. Treinta y seis en total.</p>
       <ol class="ins">
         {filas.map((f) => (
           <li class={`ins__f ins__f--${f.estado}`}>
@@ -119,10 +124,11 @@ const pestanas = [
               {f.piezas.map((p) => (
                 <span class={`pieza${p.ganada ? ' is-ganada' : ''}`} tabindex="0">
                   <img src={p.img} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
-                  <span class="sr-only">{p.nombre}: {p.insignia}. {p.ganada ? 'Conseguida' : 'Pendiente'}</span>
+                  <span class="sr-only">{p.tier}: {p.insignia}. {p.ganada ? 'Conseguida' : 'Pendiente'}</span>
                   <span class="pista" role="tooltip" data-augmented-ui="tl-clip br-clip border">
-                    <b>{p.insignia}</b>
-                    {p.nombre} de la intervención {f.n}. +{p.pf} PF.
+                    <b class="pista__t">{p.insignia}</b>
+                    {p.tier} de <b>{f.titulo}</b>.
+                    <i class="pista__pf">+{p.pf} PF</i>
                     {!p.ganada && <i class="pista__no">Aún no la tienes</i>}
                   </span>
                 </span>
@@ -136,10 +142,10 @@ const pestanas = [
     <!-- HABILIDADES: una por intervencion fortalecida. No se ganan sueltas: son lo que
          te llevas de haber cerrado la intervencion entera. -->
     <div class="panel" id="panel-habilidades" role="tabpanel" aria-labelledby="tab-habilidades" data-panel="habilidades" hidden>
-      <p class="col__ayuda">Cada intervención fortalecida deja una capacidad nueva. No se ganan sueltas: son lo que te llevas de haber cerrado las tres insignias.</p>
+      <p class="col__ayuda">Cada intervención reparada deja una capacidad nueva. No se ganan sueltas: son lo que te llevas de haber cerrado la intervención entera.</p>
       <ul class="habs">
         {intervenciones.map((i) => {
-          const ganada = ganadasDe(i).length === 3;
+          const ganada = tieneInsignia(i);
           return (
             <li class={`hab${ganada ? ' is-ganada' : ''}`} tabindex="0">
               <img src={`${A}/habilidades/habilidad-${i.habilidad.slug}.webp`} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
@@ -154,17 +160,32 @@ const pestanas = [
       </ul>
     </div>
 
-    <!-- HITOS: los seis grandes del primer ciclo -->
+    <!-- HITOS: los seis grandes del ciclo. Son los momentos que marcan el ciclo entero,
+         asi que van en cartas, con su mensaje, y no en renglones. -->
     <div class="panel" id="panel-hitos" role="tabpanel" aria-labelledby="tab-hitos" data-panel="hitos" hidden>
+      <p class="col__ayuda">Los seis momentos que marcan el ciclo. No se ganan reparando una grieta suelta: los cruza la fortaleza entera al avanzar.</p>
       <ul class="hitos-c">
         {logrosGlobales.map((l) => (
-          <li class={`hito-c${l.ganado ? ' is-ganado' : ''}`}>
-            <img src={`${A}/logros-generales/${l.slug}.webp`} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
-            <div class="hito-c__d">
+          <li class={`hito-c${l.ganado ? ' is-ganado' : ''}`} data-augmented-ui="tl-clip br-clip border">
+            <span class="hito-c__medalla">
+              <img src={`${A}/logros-generales/${l.slug}.webp`} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
+            </span>
+            <div class="hito-c__body">
               <b class="hito-c__n">{l.nombre}</b>
               <span class="hito-c__c">{l.comoSeGana}</span>
+              <p class="hito-c__msg">{l.mensaje}</p>
+              <div class="hito-c__pie">
+                {l.ganado ? (
+                  <span class="hito-c__estado is-si">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Conseguido
+                  </span>
+                ) : (
+                  <span class="hito-c__estado">Pendiente</span>
+                )}
+                <span class="hito-c__pf">+{l.pf} PF</span>
+              </div>
             </div>
-            <span class="hito-c__pf">+{l.pf} PF</span>
             <span class="sr-only">{l.ganado ? 'Conseguido' : 'Pendiente'}</span>
           </li>
         ))}
@@ -175,7 +196,49 @@ const pestanas = [
 
 <script>
   import { montarPestanas } from '../scripts/pestanas.js';
+  import { estadoDemo } from '../scripts/demo-director.js';
   montarPestanas();
+
+  // El conmutador de demo enciende la coleccion segun el rango. El build renderiza rango 3
+  // (13/36); esto la vuelve a derivar del numero de fortalecidas (0..12) que elija la demo.
+  // Insignia por intervencion: n<=F fortalecida (3 pasos), n=F+1 activa (solo Progresion),
+  // el resto bloqueada. Habilidad: al fortalecer. Hitos: por umbral de fortalecidas.
+  (() => {
+    const F = estadoDemo().fortalecidas;
+
+    document.querySelectorAll('.ins__f').forEach((fila, idx) => {
+      const n = idx + 1;
+      let estado, on;
+      if (n <= F) { estado = 'fortalecida'; on = [true, true, true]; }
+      else if (n === F + 1 && F < 12) { estado = 'activa'; on = [true, false, false]; }
+      else { estado = 'bloqueada'; on = [false, false, false]; }
+      fila.className = 'ins__f ins__f--' + estado;
+      fila.querySelectorAll('.pieza').forEach((p, i) => p.classList.toggle('is-ganada', on[i]));
+    });
+
+    document.querySelectorAll('.hab').forEach((h, idx) => h.classList.toggle('is-ganada', idx + 1 <= F));
+
+    // Umbral de fortalecidas de cada hito, en el orden del DOM (entrada, mapa, reparacion,
+    // grieta, tramo, cierre).
+    const UMBRAL = [0, 0, 1, 1, 3, 12];
+    const OK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Conseguido';
+    document.querySelectorAll('.hito-c').forEach((li, idx) => {
+      const ganado = F >= UMBRAL[idx];
+      li.classList.toggle('is-ganado', ganado);
+      const pie = li.querySelector('.hito-c__estado');
+      if (pie) { pie.className = 'hito-c__estado' + (ganado ? ' is-si' : ''); if (ganado) pie.innerHTML = OK; else pie.textContent = 'Pendiente'; }
+    });
+
+    const insG = F * 3 + (F < 12 ? 1 : 0);
+    const hitG = UMBRAL.filter((u) => F >= u).length;
+    const setTab = (id, v, tot) => { const t = document.querySelector(`[data-tab=${id}] .tab__n`); if (t) t.textContent = `${v}/${tot}`; };
+    setTab('insignias', insG, 36);
+    setTab('habilidades', F, 12);
+    setTab('hitos', hitG, 6);
+
+    // En rango maximo no queda nada por subir: la linea de "te faltan" sobra.
+    if (F >= 12) document.querySelectorAll('.yo__falta').forEach((el) => { el.hidden = true; });
+  })();
 </script>
 
 <style is:global>
@@ -254,53 +317,63 @@ const pestanas = [
 
   .col__ayuda { margin: 0 0 14px; max-width: 70ch; font-size: 0.76rem; line-height: 1.5; color: var(--mist); }
 
-  /* INSIGNIAS: 12 filas, una por intervencion, en DOS columnas de seis.
-     En una sola columna el titulo se estiraba a los 1400px del ancho y los medallones se
-     iban al borde: el ojo cruzaba media pagina para saber si la tenias. Y en vertical
-     eran 12 filas, o sea scroll, que es justo lo que el sistema no quiere aqui. */
+  /* LA PARED DE INSIGNIAS: 36, en doce filas de tres. Las filas caen por COLUMNAS (6 filas,
+     dos columnas): por filas bajaria 1,3,5 por la izquierda y son una secuencia; asi baja
+     1-6 y luego 7-12. El titulo va a ancho FIJO (no 1fr) para que los tres medallones caigan
+     siempre en el mismo sitio y las doce filas se lean de una pasada. */
   .ins {
     list-style: none; margin: 0; padding: 0;
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    /* Por COLUMNAS, no por filas: son una secuencia numerada, y por filas bajaba
-       1,3,5,7... por la izquierda. Asi baja 1-6 y luego 7-12, como una lista de dos
-       columnas de toda la vida. El orden del DOM sigue siendo 1..12. */
+    display: grid;
     grid-template-rows: repeat(6, auto);
     grid-auto-flow: column;
     gap: 3px clamp(20px, 3vw, 48px);
   }
   .ins__f {
-    /* El titulo va a ancho FIJO y no a 1fr: con 1fr se estiraba hasta el borde de su
-       columna y dejaba medio palmo de vacio entre el nombre y sus medallones, o sea que
-       el ojo tenia que cruzarlo para saber si la tenias. Fijo, los tres caen siempre en
-       el mismo sitio y las doce filas se leen de una pasada. */
     display: grid; grid-template-columns: 26px minmax(0, 30ch) auto; align-items: center; gap: 12px;
-    padding: 3px 10px;
+    padding: 5px 10px;
     border-left: 2px solid rgba(194,205,214,0.16);
   }
-  .ins__f--fortalecida { border-left-color: var(--amber); }
-  .ins__f--activa { border-left-color: var(--cyan); background: rgba(63,169,201,0.07); }
+  /* Color por estado (canon): oro para lo fortalecido (trofeo), ambar para la del mes (la
+     accion de ahora), mist para lo bloqueado. La barra de arriba es medidor de progreso y
+     sigue en cian, que es otro lenguaje (hecho-en-lista, no trofeo). */
+  .ins__f--fortalecida { border-left-color: var(--gold); }
+  .ins__f--activa { border-left-color: var(--amber); background: rgba(232,169,63,0.08); }
   .ins__f--bloqueada { opacity: 0.55; }
   .ins__n { font-family: var(--display); font-size: 0.86rem; color: var(--mist); text-align: center; }
-  .ins__f--fortalecida .ins__n { color: var(--amber); }
-  .ins__f--activa .ins__n { color: var(--aqua); }
+  .ins__f--fortalecida .ins__n { color: var(--gold); }
+  .ins__f--activa .ins__n { color: var(--amber); }
   .ins__t { font-size: 0.78rem; color: var(--moon); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ins__p { display: flex; gap: 7px; }
 
   /* La pieza: la insignia. Ganada, arde. Pendiente, en SILUETA, que es lo que dice que
      hay camino: esconderla no contaria nada. */
-  .pieza { position: relative; display: block; width: 38px; height: 38px; }
-  .pieza img { width: 100%; height: 100%; object-fit: contain; }
+  .pieza { position: relative; display: block; width: clamp(48px, 3.6vw, 56px); height: clamp(48px, 3.6vw, 56px); }
+  .pieza img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.18s ease; }
   .pieza:not(.is-ganada) img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
   .pieza.is-ganada img { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
   .pieza:hover img, .pieza:focus-visible img { transform: scale(1.12); }
-  .pieza img { transition: transform 0.18s ease; }
+  .pista__pf { display: block; margin-top: 3px; font-style: normal; font-size: 0.66rem; color: var(--amber); }
   .pista__no { display: block; margin-top: 3px; font-style: normal; font-size: 0.66rem; color: var(--mist); }
-  .pista b { display: block; color: var(--bone); margin-bottom: 2px; }
+  /* La cabecera del tooltip (el nombre de la insignia) va en bloque; las negritas DENTRO de
+     la frase (el titulo) van en linea, para que el punto no caiga solo en su renglon. */
+  .pista__t { display: block; color: var(--bone); margin-bottom: 2px; }
+  .pista b { color: var(--bone); }
 
   /* HABILIDADES */
   .habs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(8px, 1vw, 16px); }
-  .hab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; padding: 10px 6px; }
-  .hab img { width: clamp(48px, 5vw, 68px); height: auto; object-fit: contain; transition: transform 0.18s ease; }
+  .hab {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center; padding: 14px 8px 12px; border-radius: 10px;
+    background: linear-gradient(180deg, rgba(194,205,214,0.03), transparent);
+    box-shadow: inset 0 0 0 1px rgba(194,205,214,0.06);
+    transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .hab.is-ganada {
+    background: linear-gradient(180deg, rgba(63,169,201,0.07), rgba(63,169,201,0.01));
+    box-shadow: inset 0 0 0 1px rgba(95,208,224,0.16);
+  }
+  .hab:hover, .hab:focus-visible { box-shadow: inset 0 0 0 1px rgba(95,208,224,0.3); outline: none; }
+  .hab img { width: clamp(62px, 6vw, 84px); height: auto; object-fit: contain; transition: transform 0.18s ease; }
   .hab:not(.is-ganada) img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
   .hab.is-ganada img { filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6)); }
   .hab:hover img, .hab:focus-visible img { transform: scale(1.08); }
@@ -308,32 +381,106 @@ const pestanas = [
   .hab.is-ganada .hab__n { color: var(--bone); }
 
   /* HITOS DEL CICLO */
-  .hitos-c { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .hito-c {
-    display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 13px;
-    padding: 10px 13px;
-    border-left: 2px solid rgba(194,205,214,0.16);
+  /* Seis (CONTENIDO 4.3 B). En cartas horizontales, dos por fila: medalla a la izquierda,
+     y a la derecha el nombre, como se gana, el mensaje y al pie el estado y el PF. El
+     ganado arde en ambar; el pendiente queda en penumbra. Horizontal y no vertical para
+     que las seis quepan sin scroll largo. */
+  .hitos-c {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(10px, 1.4vw, 16px);
   }
-  .hito-c.is-ganado { border-left-color: var(--amber); }
-  .hito-c img { width: 48px; height: 48px; object-fit: contain; }
-  .hito-c:not(.is-ganado) img { filter: grayscale(1) brightness(0.42); opacity: 0.6; }
-  .hito-c__d { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .hito-c__n { font-size: 0.8rem; font-weight: 600; color: var(--moon); }
+  .hito-c {
+    --aug-tl: 10px; --aug-br: 10px;
+    --aug-border-all: 1px;
+    --aug-border-bg: rgba(194,205,214,0.16);
+    display: flex; align-items: flex-start; gap: clamp(11px, 1.3vw, 16px);
+    padding: clamp(11px, 1.2vw, 15px) clamp(14px, 1.5vw, 19px);
+    background: linear-gradient(180deg, rgba(20,32,46,0.5), rgba(9,13,20,0.34));
+  }
+  .hito-c.is-ganado {
+    --aug-border-bg: rgba(214,164,74,0.42);
+    background: linear-gradient(180deg, rgba(38,31,17,0.5), rgba(14,11,7,0.4));
+  }
+  /* La medalla, con su halo cuando arde */
+  .hito-c__medalla { position: relative; flex: none; display: grid; place-items: center; }
+  .hito-c.is-ganado .hito-c__medalla::before {
+    content: ''; position: absolute; inset: -16%;
+    background: radial-gradient(circle, rgba(214,164,74,0.28), transparent 68%);
+  }
+  .hito-c img { position: relative; width: clamp(66px, 6vw, 88px); height: auto; object-fit: contain; }
+  .hito-c:not(.is-ganado) img { filter: grayscale(1) brightness(0.44); opacity: 0.6; }
+  .hito-c.is-ganado img { filter: drop-shadow(0 5px 15px rgba(214,164,74,0.35)); }
+  .hito-c__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .hito-c__n { font-family: var(--serif, serif); font-size: clamp(0.98rem, 1.2vw, 1.12rem); line-height: 1.2; color: var(--moon); }
   .hito-c.is-ganado .hito-c__n { color: var(--bone); }
-  .hito-c__c { font-size: 0.7rem; line-height: 1.35; color: var(--mist); }
-  .hito-c__pf { font-size: 0.72rem; color: var(--mist); white-space: nowrap; }
+  .hito-c__c {
+    font-size: 0.66rem; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--mist);
+  }
+  .hito-c__msg {
+    margin: 3px 0 0; font-size: 0.76rem; line-height: 1.42; color: var(--mist);
+  }
+  .hito-c.is-ganado .hito-c__msg { color: var(--moon); }
+  /* El pie: estado a la izquierda, PF a la derecha, sobre una linea que los ata */
+  .hito-c__pie {
+    margin-top: 8px; width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(194,205,214,0.1);
+  }
+  .hito-c.is-ganado .hito-c__pie { border-top-color: rgba(214,164,74,0.22); }
+  .hito-c__estado {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 600; color: var(--mist);
+  }
+  .hito-c__estado.is-si { color: var(--amber); }
+  .hito-c__estado svg { width: 14px; height: 14px; }
+  .hito-c__prog { flex: 1; display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+  .hito-c__prog-t { font-size: 0.72rem; font-weight: 600; color: var(--aqua); }
+  .hito-c__barra { width: 100%; max-width: 120px; height: 4px; border-radius: 2px; background: rgba(194,205,214,0.14); overflow: hidden; }
+  .hito-c__barra span { display: block; height: 100%; border-radius: 2px; background: var(--cyan); }
+  .hito-c__pf { font-size: 0.78rem; font-weight: 600; color: var(--mist); white-space: nowrap; }
   .hito-c.is-ganado .hito-c__pf { color: var(--amber); }
-  .hito-c:not(.is-ganado) { opacity: 0.62; }
 
   @media (max-width: 1100px) {
     .habs { grid-template-columns: repeat(4, 1fr); }
   }
-  @media (max-width: 860px) {
-    .yo { flex-direction: column; align-items: flex-start; }
+
+  /* MOVIL Y APAISADO. Esta pantalla sobreescribe el padding-bottom de .contenido, asi que
+     la holgura de la barra inferior (64px) hay que devolverla aqui a mano o el ultimo
+     renglon queda bajo la barra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido:has(.yo) { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px); }
+
+    .yo { flex-direction: column; align-items: flex-start; gap: clamp(10px, 2vh, 18px); }
+    /* La figura, atada al ALTO: en pantallas bajas se encoge y no se come el sitio. */
+    .yo__fig img { height: clamp(180px, 30vh, 240px); }
+
+    .tab { padding: 12px 15px; }
+
     .habs { grid-template-columns: repeat(3, 1fr); }
     .hitos-c { grid-template-columns: 1fr; }
-    .ins { grid-template-columns: 1fr; }
-    .ins__f { grid-template-columns: 22px 1fr; }
+
+    /* El muro de 36 baja a UNA columna de doce filas, no dos apretadas: se corta el
+       auto-flow por columnas y cada fila apila su titulo y sus tres medallones. */
+    .ins { grid-auto-flow: row; grid-template-rows: auto; grid-template-columns: 1fr; gap: 10px 0; }
+    .ins__f { grid-template-columns: 22px 1fr; gap: 6px 12px; padding: 8px 10px; }
+    .ins__t { white-space: normal; }
     .ins__p { grid-column: 1 / -1; }
+  }
+
+  /* APAISADO (poca altura): el header vuelve a fila para no gastar el alto apilando, y la
+     figura se hace pequena. Reutiliza el vertical, no monta layout aparte. */
+  @media (max-height: 480px) {
+    .yo { flex-direction: row; align-items: center; gap: clamp(14px, 3vw, 26px); }
+    .yo__fig img { height: clamp(120px, 40vh, 178px); }
+  }
+
+  /* MOVIL ESTRECHO: el arquetipo no se estrangula. */
+  @media (max-width: 380px) {
+    .arq { gap: 10px; padding: 11px 12px; }
+    .arq__otros { gap: 2px; }
+    .arq__otros img { width: 22px; height: 22px; }
   }
 </style>

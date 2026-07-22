@@ -1,0 +1,487 @@
+---
+// La Torre de Retos (P6). La Zona de Acción del sistema: donde se implementa.
+//
+// SON DOCE RETOS, uno por intervencion (mecanicas-gamificacion, 2026-07-20). El documento
+// no deja lugar a dudas: las doce filas de la Matriz de Sistema (seccion 8) llevan su
+// "Completar Reto de Torre", las doce insignias se disparan con "Completar tema Reto de
+// Torre - <nombre>" (3.1), y la estructura de LearnDash da a cada leccion sus tres temas,
+// "Contenido principal, recurso de Biblioteca, Reto de Torre" (seccion 11).
+//
+// Antes esto ensenaba cinco (las que CONTENIDO 5.2 situa en la Torre) y la pantalla se
+// quedaba vacia siete meses de doce. Era una lectura mia de la columna "Espacio
+// principal", que dice donde TRANSCURRE la intervencion, no donde vive su reto.
+//
+// Aqui esta la otra mitad de cada intervencion: el contenido se ve en la Biblioteca
+// (Progresion, +25 PF) y el reto se ejecuta aqui (Accion, +40 PF). Cursos y retos no son
+// dos cosas distintas: son dos pasos de lo mismo. Por eso la Torre nunca esta vacia.
+//
+// Sin titulo ni parrafo de explicacion: el HUD ya dice donde estas, y la Torre se explica
+// sola. La escena va de FONDO a pantalla completa, no en una carta, y los retos encima.
+import Fortaleza from '../layouts/Fortaleza.astro';
+import { intervenciones, activa, PF, pasosDe } from '../data/demo.js';
+
+// El MODO manda el aspecto de la tarjeta destacada: mes (el reto abierto) | hecho | bloqueada.
+const modoDe = (i) => (i.n === activa.n ? 'mes' : pasosDe(i).includes('reto') ? 'hecho' : 'bloqueada');
+const retos = intervenciones.map((i) => ({
+  ...i,
+  // El tramo se enciende con el RETO hecho, no con la intervencion cerrada: esta es la
+  // pantalla del paso 2, y confundirlo con el 3 seria contar otra cosa.
+  hecho: pasosDe(i).includes('reto'),
+  enMarcha: i.n === activa.n,
+  modo: modoDe(i),
+}));
+
+// Las doce en orden. Se pueden intercambiar (Mati, 2026-07-20): la de arriba es la
+// SELECCIONADA, no siempre la del mes. Al cargar, la seleccionada es el reto del mes.
+const vivo = retos.find((r) => r.enMarcha);
+if (!vivo) throw new Error('La Torre pide el reto de la intervención activa y no esta en intervenciones.');
+const hechos = retos.filter((r) => r.hecho).length;
+
+// Lo explica Nara, que para eso es la guia, y no una caja de aviso flotando.
+const diceNara = `El Rebelde ha apagado las luces de esta Torre y ha girado los espejos para que tu señal se pierda en la niebla. El contenido ya lo recorriste: ahora toca el reto. Ejecútalo y su tramo vuelve a encenderse.`;
+
+const F_CARTA = 'tl-clip br-clip border';
+
+// Kicker y CTA por modo, en un sitio. El JS los reusa al cambiar de selección.
+const KICKER = { mes: 'El reto de este mes', hecho: 'Reto completado', bloqueada: 'Aún cerrado' };
+const CTA = { mes: 'Hacer el reto', hecho: '', bloqueada: '' };
+
+const ETIQUETA = {
+  fortalecida: 'Completado',
+  activa: 'Abierto',
+  bloqueada: 'Bloqueado',
+};
+type Estado = keyof typeof ETIQUETA;
+---
+
+<Fortaleza title="La Torre de Retos, Club de la Asesoría" activa="/torre-retos">
+  <div class="torre">
+    <!-- LA ESCENA, DE FONDO. El mecanismo ya trae pintada su barra vertical de tramos:
+         los retos de la derecha son esa misma barra, contada con el estado de verdad. -->
+    <div class="torre__escena" aria-hidden="true">
+      <img class="torre__im" src="/assets/mapa-escenas/ui/torre-retos-fondo.webp" alt="" width="2752" height="1536" />
+    </div>
+    <!-- El velo: la escena se apaga hacia la derecha para que los retos se lean. Sin el,
+         la piedra clara de los muros se come el texto. -->
+    <div class="torre__velo" aria-hidden="true"></div>
+
+    <!-- LA GUIA. Nara ocupa el lado que la escena deja libre y explica ella lo que pasa:
+         es la guia del programa, no una caja de aviso flotando en una esquina. Figura
+         entera y cita firmada, igual que en el Patio: es una voz, no un objeto. -->
+    <aside class="torre__guia" aria-label="Aviso de Nara">
+      <span class="figura figura--luz torre__fig">
+        <img src="/assets/personajes/ui/nara.webp" alt="Nara, la guardiana de la fortaleza" width="184" height="580" />
+        <!-- El orbe respira: la unica luz viva del universo no puede estar congelada -->
+        <span class="aura" aria-hidden="true"></span>
+      </span>
+      <div class="torre__dice">
+        <p class="cita torre__txt">{diceNara}</p>
+        <p class="torre__firma">Nara, guardiana de la fortaleza</p>
+      </div>
+    </aside>
+
+    <section class="torre__retos" aria-label="Los retos de la Torre">
+      <!-- LA TARJETA DESTACADA: el reto SELECCIONADO, grande. Su aspecto cambia por modo
+           (mes / hecho / bloqueada). El JS la rellena al elegir de la rejilla; nace con el
+           reto del mes, así funciona aunque el JS no llegue. -->
+      <article class={`destacado destacado--${vivo.modo}`} id="destacado" data-modo={vivo.modo} data-augmented-ui="tl-clip br-clip border" aria-live="polite">
+        <!-- Eyebrow de badges: el estado (cambia con la selección) y la posición en la
+             subida. Sin la cifra gigante template: el número vive dentro de su badge. -->
+        <div class="destacado__badges">
+          <span class="badge badge--estado" data-k>{KICKER[vivo.modo as keyof typeof KICKER]}</span>
+          <span class="badge badge--pos"><b data-num>{String(vivo.n).padStart(2, '0')}</b> / {intervenciones.length}</span>
+        </div>
+        <div class="destacado__top">
+          <img class="destacado__im" data-im src={`/assets/emblemas-insignias/ui/insignias-intervencion/accion/insignia-i${String(vivo.n).padStart(2, '0')}-accion.webp`} alt="" aria-hidden="true" width="256" height="256" />
+          <div class="destacado__ti">
+            <b class="destacado__t" data-t>{vivo.titulo}</b>
+            <span class="destacado__i" data-i>Repara: {vivo.insignia}</span>
+          </div>
+        </div>
+        <p class="destacado__a" data-a>{vivo.reto}</p>
+        <div class="destacado__pie">
+          <div class="destacado__meta">
+            <span class="badge badge--paso">Acción</span>
+            <span class="badge badge--pf"><img src="/assets/moneda/ui/pf.webp" alt="" aria-hidden="true" width="270" height="512" />+{PF.reto} PF</span>
+          </div>
+          <a class="btn-linea destacado__btn" data-btn href="/dashboard" data-augmented-ui="l-clip-y r-clip-y">{CTA[vivo.modo as keyof typeof CTA]}</a>
+          <span class="destacado__ok" data-ok hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Completado
+          </span>
+          <span class="destacado__lock" data-lock hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            Se abre en su mes
+          </span>
+        </div>
+      </article>
+
+      <!-- LA ESCALERA. Los doce tramos en vertical, uno sobre otro, unidos por el riel que
+           asciende: es la barra de progreso de la Torre del brief, hecha de peldaños. El
+           número sube de 1 a 12 como las plantas de una torre. Cada peldaño es un botón que
+           sube el reto a la tarjeta. -->
+      <div class="escalera">
+        <p class="escalera__k">La subida <b>{hechos}/{retos.length}</b></p>
+        <ol class="peldanos">
+          {retos.map((r) => (
+            <li>
+              <button
+                type="button"
+                class={`peldano peldano--${r.estado}${r.enMarcha ? ' is-sel' : ''}`}
+                data-n={r.n} data-modo={r.modo}
+                data-titulo={r.titulo} data-reto={r.reto} data-insignia={r.insignia}
+                aria-pressed={r.enMarcha ? 'true' : 'false'}
+                title={`${r.n}. ${r.titulo}`}
+              >
+                <span class="peldano__riel" aria-hidden="true"></span>
+                <span class="peldano__n">{r.n}</span>
+                <img class="peldano__im" src={`/assets/emblemas-insignias/ui/insignias-intervencion/accion/insignia-i${String(r.n).padStart(2, '0')}-accion.webp`} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />
+                <b class="peldano__t">{r.titulo}</b>
+                {r.hecho ? (
+                  <svg class="peldano__ic peldano__ic--ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                ) : r.enMarcha ? (
+                  <svg class="peldano__ic peldano__ic--vivo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
+                ) : (
+                  <svg class="peldano__ic peldano__ic--lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                )}
+                <span class="sr-only">{ETIQUETA[r.estado as Estado]}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  </div>
+</Fortaleza>
+
+<style is:global>
+  /* A PANTALLA COMPLETA, como el mapa: el layout mete el contenido en una columna con su
+     margen y la Torre tiene que salirse y ocupar la ventana entera. El margen negativo la
+     sube hasta el techo (el HUD flota encima, no ocupa). */
+  .contenido:has(.torre) { padding: 0; }
+  .contenido > .torre {
+    width: 100vw; max-width: 100vw;
+    margin-left: 50%; transform: translateX(-50%);
+    margin-top: calc(var(--alto-shell) * -1 - 26px);
+    height: 100svh;
+    position: relative; overflow: hidden;
+    /* La guia a la izquierda y los retos a la derecha, cada uno en su borde: la escena
+       respira por el medio, que es justo donde esta el mecanismo. */
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: clamp(16px, 2vw, 32px);
+  }
+
+  .torre__escena { position: absolute; inset: 0; }
+  .torre__im {
+    position: absolute; inset: 0;
+    display: block; width: 100%; height: 100%;
+    object-fit: cover;
+    /* El fuste a la izquierda: asi el mecanismo se ve entero y los retos caen sobre el
+       muro, no encima de los engranajes. */
+    object-position: 34% center;
+  }
+  /* Con menos movimiento no hay video: se queda la escena quieta, que ya lo cuenta */
+
+  /* Dos velos, porque ahora hay contenido en los dos lados y el mecanismo en medio:
+     uno apaga la derecha (los retos) y otro el pie (donde Nara habla). El centro se deja
+     limpio a proposito: es la Torre, y es lo que se ha venido a ver. */
+  .torre__velo {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to left, rgba(9,13,20,0.95) 0%, rgba(9,13,20,0.86) 34%, rgba(9,13,20,0.34) 62%, transparent 84%),
+      linear-gradient(to top, rgba(9,13,20,0.88) 0%, rgba(9,13,20,0.42) 24%, transparent 46%);
+  }
+
+  /* LA GUIA. Al pie del lado libre, que es donde estaria de verdad: al pie de su Torre.
+     Mismo padding lateral que el HUD y las pestañas del mapa. */
+  .torre__guia {
+    position: relative; flex: none;
+    display: flex; align-items: flex-end; gap: clamp(10px, 1.2vw, 18px);
+    max-width: min(460px, 38vw);
+    margin: 0 0 clamp(20px, 4vh, 44px) clamp(14px, 3vw, 32px);
+  }
+  .torre__fig { align-self: flex-end; }
+  .torre__fig img {
+    display: block; width: auto; height: clamp(230px, 38vh, 380px);
+  }
+  /* El aura se coloca a mano en cada sitio: va sobre el orbe de Nara, y donde cae depende
+     de a que tamaño se pinte la figura. */
+  .torre__fig .aura { left: 51%; top: 44.5%; width: 30%; }
+
+  .torre__dice { padding-bottom: clamp(16px, 3vh, 34px); }
+  .torre__txt {
+    margin: 0;
+    font-size: clamp(0.95rem, 1.15vw, 1.1rem); line-height: 1.62; color: var(--moon);
+    /* La voz de Nara no va en caja: flota sobre la escena, como en el Patio. La sombra la
+       despega de la piedra sin tener que meterle un panel debajo. */
+    text-shadow: 0 2px 14px rgba(9,13,20,0.95), 0 1px 3px rgba(9,13,20,0.9);
+  }
+  .torre__firma {
+    margin: 0.9rem 0 0; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--mist);
+    text-shadow: 0 1px 8px rgba(9,13,20,0.9);
+  }
+
+  /* EL PANEL. Arriba el reto seleccionado grande, abajo la escalera de los doce. Pensado
+     para caber sin scroll; si la ventana es muy baja, el panel scrollea por dentro en vez
+     de desbordar bajo el HUD (el padre alinea abajo, así que el exceso se saldría arriba). */
+  .torre__retos {
+    position: relative; flex: none;
+    width: min(600px, 46vw);
+    margin-right: clamp(14px, 3vw, 32px);
+    padding: calc(var(--alto-shell) + 10px) 0 clamp(16px, 2.4vh, 26px);
+    display: flex; flex-direction: column; gap: clamp(12px, 1.8vh, 20px);
+    max-height: 100svh; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    /* Reserva el hueco del scrollbar siempre: sin esto, cuando aparece la barra vertical
+       reduce el ancho y los hijos (100%) se desbordan 16px a la derecha (el scroll-x que
+       vio Mati). Con el hueco reservado, el ancho no salta. */
+    scrollbar-gutter: stable; padding-right: 4px;
+    scrollbar-width: thin; scrollbar-color: rgba(194,205,214,0.2) transparent;
+  }
+
+  .entra .destacado { animation: entra-vivo 0.55s ease-out both; }
+  .entra .escalera { animation: entra-vivo 0.55s ease-out 0.12s both; }
+  @keyframes entra-vivo { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  .entra .torre__guia { animation: entra-guia 0.6s ease-out both; }
+  @keyframes entra-guia { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* LA TARJETA DESTACADA. Con la forma cortada de la casa (augmented-ui). Su color cambia
+     con el MODO seleccionado: mes (ámbar), hecho (cian), bloqueada (gris). */
+  /* La carta protagonista comparte el material de piedra del sistema (grano + sombra), para
+     que lea como objeto labrado y no como rectangulo tintado. Chaflan al canon (--corte). */
+  .destacado {
+    --aug-tl: var(--corte); --aug-br: var(--corte);
+    --aug-border-all: 1px; --aug-border-bg: rgba(var(--acento-rgb), 0.55);
+    --acento: var(--amber); --acento-rgb: 232,169,63;
+    position: relative; display: block; padding: clamp(18px, 2.2vw, 26px);
+    background-color: rgba(9,13,20,0.72);
+    background-image: var(--grano), linear-gradient(125deg, rgba(var(--acento-rgb), 0.16), rgba(9,13,20,0.42) 55%, rgba(9,13,20,0.86));
+    filter: drop-shadow(0 16px 30px rgba(0,0,0,0.7));
+    transition: background-color 0.35s ease;
+  }
+  .destacado--mes { --acento: var(--amber); --acento-rgb: 232,169,63; }
+  .destacado--hecho { --acento: var(--aqua); --acento-rgb: 95,208,224; }
+  .destacado--bloqueada { --acento: var(--mist); --acento-rgb: 138,154,170; background-image: var(--grano), linear-gradient(125deg, rgba(34,44,56,0.5), rgba(9,13,20,0.86)); }
+
+  /* LOS BADGES. Píldoras chaflanadas: el estado (cambia con el modo) y la posición. */
+  .destacado__badges { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; font-size: 0.64rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.09em; white-space: nowrap;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+  .badge--estado { color: var(--night-1, #0b111b); background: var(--acento); }
+  .destacado--bloqueada .badge--estado { color: var(--moon); background: rgba(138,154,170,0.28); }
+  .badge--pos { color: var(--acento); background: rgba(var(--acento-rgb), 0.12); border: 1px solid rgba(var(--acento-rgb), 0.3); letter-spacing: 0.04em; }
+  .badge--pos b { font-family: var(--display, serif); font-weight: 600; }
+
+  .destacado__top { display: flex; align-items: center; gap: clamp(14px, 1.6vw, 20px); margin-top: clamp(14px, 1.8vh, 20px); }
+  .destacado__im { width: clamp(64px, 6.6vw, 88px); height: auto; object-fit: contain; flex: none; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+  .destacado--bloqueada .destacado__im { filter: grayscale(1) brightness(0.55); opacity: 0.85; }
+  .destacado__ti { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .destacado__t { font-family: var(--serif, serif); font-size: clamp(1.35rem, 2vw, 1.75rem); font-weight: 600; color: var(--bone); line-height: 1.08; }
+  .destacado--bloqueada .destacado__t { color: var(--moon); }
+  .destacado__i { font-size: 0.74rem; letter-spacing: 0.02em; color: var(--acento); }
+  .destacado__a { margin: clamp(13px, 1.8vh, 18px) 0 0; font-size: clamp(0.88rem, 1.1vw, 1rem); line-height: 1.58; color: var(--moon); }
+  .destacado__pie {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-top: clamp(16px, 2.2vh, 22px); padding-top: clamp(13px, 1.8vh, 18px);
+    border-top: 1px solid rgba(var(--acento-rgb), 0.18);
+  }
+  .destacado__meta { display: flex; align-items: center; gap: 8px; }
+  .badge--paso { color: var(--moon); background: rgba(194,205,214,0.1); border: 1px solid rgba(194,205,214,0.2); }
+  .badge--pf { color: var(--acento); background: rgba(var(--acento-rgb), 0.12); border: 1px solid rgba(var(--acento-rgb), 0.3); }
+  .badge--pf img { width: auto; height: 15px; display: block; margin: -2px 0; }
+  .destacado--bloqueada .badge--pf img { filter: grayscale(1) brightness(0.7); }
+  .destacado__btn { flex: none; padding: 11px 24px; font-size: 0.82rem; --aug-border-bg: rgba(var(--acento-rgb), 0.85); color: var(--acento); background: rgba(var(--acento-rgb), 0.14); }
+  .destacado__ok, .destacado__lock { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .destacado__ok { color: var(--aqua); }
+  .destacado__lock { color: var(--mist); }
+  .destacado__btn[hidden], .destacado__ok[hidden], .destacado__lock[hidden] { display: none; }
+
+  /* LA ESCALERA. Los doce peldaños en vertical, unidos por el riel que asciende. Cada uno
+     es un botón: número (la planta), emblema (el nodo), título, estado. */
+  .escalera__k { margin: 0 0 6px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--mist); }
+  .escalera__k b { color: var(--aqua); }
+  .peldanos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+  .peldano {
+    position: relative;
+    width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+    display: grid; grid-template-columns: 26px 28px 1fr auto; align-items: center; gap: 12px;
+    padding: 4px 12px; background: transparent; border: 0;
+    transition: background 0.15s ease;
+  }
+  /* El riel: la línea vertical que enhebra los peldaños. Pasa por la columna del emblema y
+     se extiende de un peldaño al siguiente (top:-50%..bottom:-50% cubre el hueco). El
+     primero y el último la recortan para que no sobresalga de la torre. */
+  /* left = padding(12) + col-número(26) + gap(12) + medio-emblema(14) = 64px */
+  .peldano__riel { position: absolute; left: 64px; top: 0; bottom: -1px; width: 2px; transform: translateX(-1px); background: rgba(194,205,214,0.14); z-index: 0; }
+  .peldano:first-child .peldano__riel { top: 50%; }
+  .peldano:last-child .peldano__riel { bottom: 50%; }
+  .peldano--fortalecida .peldano__riel { background: linear-gradient(180deg, rgba(95,208,224,0.7), rgba(63,169,201,0.5)); }
+  .peldano--activa .peldano__riel { background: linear-gradient(180deg, var(--amber), rgba(232,169,63,0.4)); }
+
+  .peldano:hover { background: rgba(28,42,58,0.5); border-radius: 4px; }
+  .peldano:focus-visible { outline: 2px solid var(--aqua); outline-offset: -2px; border-radius: 4px; }
+
+  .peldano__n { position: relative; z-index: 1; font-family: var(--display, serif); font-size: 1.05rem; color: var(--mist); text-align: center; }
+  .peldano--fortalecida .peldano__n { color: var(--aqua); }
+  .peldano--activa .peldano__n { color: var(--amber); font-weight: 600; }
+  .peldano--bloqueada .peldano__n { color: rgba(194,205,214,0.35); }
+
+  /* El emblema es el NODO sobre el riel: fondo oscuro para que el riel no lo cruce por
+     encima, y un aro del color de su estado. */
+  .peldano__im {
+    position: relative; z-index: 1; width: 30px; height: 30px; object-fit: contain;
+    background: radial-gradient(circle, var(--night-2, #0e1622) 55%, transparent 72%);
+  }
+  .peldano--bloqueada .peldano__im { filter: grayscale(1) brightness(0.5); opacity: 0.7; }
+  .peldano--activa .peldano__im { filter: grayscale(1) brightness(0.6); }
+
+  .peldano__t { font-size: 0.82rem; font-weight: 600; color: var(--moon); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peldano--fortalecida .peldano__t { color: var(--bone); }
+  .peldano--bloqueada .peldano__t { color: var(--mist); }
+  .peldano__ic { width: 15px; height: 15px; flex: none; }
+  .peldano__ic--ok { color: var(--aqua); }
+  .peldano__ic--vivo { color: var(--amber); }
+  .peldano__ic--lock { color: rgba(194,205,214,0.35); }
+
+  /* El seleccionado: un realce a la izquierda (el peldaño donde estás), no una caja entera. */
+  .peldano.is-sel { background: linear-gradient(90deg, rgba(var(--sel-rgb, 95,208,224), 0.14), transparent 70%); border-radius: 4px; }
+  .peldano.is-sel::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; background: var(--aqua); }
+  .peldano.is-sel.peldano--activa { --sel-rgb: 232,169,63; }
+  .peldano.is-sel.peldano--activa::before { background: var(--amber); }
+
+  /* MOVIL Y APAISADO. En cuanto aparece la barra inferior (max-width 860) o la altura
+     aprieta (apaisado, max-height 480), se abandona el modelo de 100svh con scroll interno:
+     la Torre crece con su contenido y scrollea la PAGINA. La escena sigue a sangre de fondo
+     (absoluta, cubre toda la columna); encima cae una sola pila: el reto destacado, la
+     escalera de los doce y, al pie, la voz de Nara. La figura se retira (encogida no es ella,
+     es una pegatina) y su voz se queda, que es lo que explica por que la Torre esta como
+     esta. El velo cierra entero para que el texto se lea sobre la piedra. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .contenido > .torre {
+      height: auto; min-height: 100svh; overflow: visible;
+      flex-direction: column; justify-content: flex-start; align-items: stretch;
+      gap: 0;
+      /* La barra inferior tapa 64px. La holgura se pone aqui porque la Torre anula el
+         padding-bottom que el layout da a .contenido en movil (.contenido:has(.torre)). */
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 18px);
+    }
+    .torre__velo { background: rgba(9,13,20,0.9); }
+
+    .torre__retos {
+      order: 1; width: auto; margin: 0;
+      max-height: none; min-height: 0; overflow: visible;
+      /* El padding-top despeja el HUD; sin scroll interno ya no hace falta reservar barra. */
+      padding: calc(var(--alto-shell) + 12px) clamp(14px, 4vw, 26px) 0;
+      gap: clamp(12px, 2vh, 18px);
+    }
+
+    /* La escalera con objetivos tactiles comodos: cada peldano por encima de 40px de alto.
+       Solo cambia el padding vertical: el horizontal y el gap se dejan igual para que el riel
+       (calculado sobre la columna del emblema) siga cayendo en su sitio. */
+    .peldano { padding: 9px 12px; }
+    /* Los titulos largos refluyen a dos lineas en vez de cortarse con puntos suspensivos. */
+    .peldano__t { white-space: normal; line-height: 1.18; }
+
+    /* El pie del destacado: si no cabe en una linea (320), el CTA baja a su propia linea y
+       ocupa todo el ancho, asi "Hacer el reto" no se corta. */
+    .destacado__pie { flex-wrap: wrap; }
+    .destacado__btn { flex: 1 1 100%; text-align: center; }
+
+    .torre__guia {
+      order: 2; max-width: none;
+      margin: clamp(14px, 3vh, 22px) clamp(14px, 4vw, 26px) 0;
+    }
+    .torre__fig { display: none; }
+    .torre__dice { padding-bottom: 0; }
+  }
+
+  /* MOVIL ESTRECHO (320-380): el destacado se aprieta un punto para que su pie respire. */
+  @media (max-width: 380px) {
+    .destacado { padding: 15px 14px; }
+    .destacado__top { gap: 12px; margin-top: 12px; }
+  }
+</style>
+
+<script>
+  import { estadoDemo } from '../scripts/demo-director.js';
+
+  // EL SELECTOR. Al clicar un tramo, ese reto sube a la tarjeta destacada, que cambia de
+  // aspecto según su modo (mes/hecho/bloqueada). Mismo patrón que la Biblioteca.
+  const KICKER = { mes: 'El reto de este mes', hecho: 'Reto completado', bloqueada: 'Aún cerrado' };
+  const CTA = { mes: 'Hacer el reto', hecho: '', bloqueada: '' };
+
+  const destacado = document.getElementById('destacado');
+  const peldanos = [...document.querySelectorAll('.peldano')];
+  const N = (n) => `/assets/emblemas-insignias/ui/insignias-intervencion/accion/insignia-i${String(n).padStart(2, '0')}-accion.webp`;
+
+  const seleccionar = (peldano) => {
+    if (!destacado || !(peldano instanceof HTMLElement)) return;
+    const { n, modo, titulo, reto, insignia } = peldano.dataset;
+    const m = modo || 'bloqueada';
+    destacado.className = `destacado destacado--${m}`;
+    destacado.dataset.modo = m;
+    destacado.querySelector('[data-num]').textContent = String(n).padStart(2, '0');
+    destacado.querySelector('[data-k]').textContent = KICKER[m] || '';
+    destacado.querySelector('[data-t]').textContent = titulo || '';
+    destacado.querySelector('[data-i]').textContent = `Repara: ${insignia || ''}`;
+    destacado.querySelector('[data-a]').textContent = reto || '';
+    destacado.querySelector('[data-im]').src = N(n);
+
+    // Un solo indicador de pie según el modo: botón (mes), check (hecho), candado (bloqueada).
+    const btn = destacado.querySelector('[data-btn]');
+    const ok = destacado.querySelector('[data-ok]');
+    const lock = destacado.querySelector('[data-lock]');
+    btn.hidden = m !== 'mes';
+    ok.hidden = m !== 'hecho';
+    lock.hidden = m !== 'bloqueada';
+    if (m === 'mes') btn.textContent = CTA.mes;
+
+    peldanos.forEach((t) => { t.setAttribute('aria-pressed', String(t === peldano)); t.classList.toggle('is-sel', t === peldano); });
+  };
+  peldanos.forEach((t) => t.addEventListener('click', () => seleccionar(t)));
+
+  // EL CONMUTADOR DE DEMO. El build pinta el rango 3 (F=4: la activa es la 5). Al cambiar de
+  // rango re-derivo el estado PROFUNDO de la Torre por F = fortalecidas, sin rebuildar: cada
+  // peldaño vuelve a su estado (fortalecida/activa/bloqueada) y modo (hecho/mes/bloqueada),
+  // su tramo se reenciende o se apaga (lo hace la clase peldano--<estado> vía CSS, que colorea
+  // riel, número y emblema), se recuenta la subida y la tarjeta destacada se re-selecciona
+  // sobre el reto del mes (n===F+1). Regla idéntica al build: n<=F reto hecho, n===F+1 el del
+  // mes, el resto bloqueado. Solo re-derivo ESTADOS, iconos y contadores; el texto de cada
+  // reto ya vive en su peldaño (data-titulo/reto/insignia) y no se toca. En r5 (F=12) no hay
+  // activa: la destacada se apoya en el último reto (el más alto de la Torre), ya completado.
+  const ETIQUETA = { fortalecida: 'Completado', activa: 'Abierto', bloqueada: 'Bloqueado' };
+  const ICONO = {
+    hecho: '<svg class="peldano__ic peldano__ic--ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    mes: '<svg class="peldano__ic peldano__ic--vivo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>',
+    bloqueada: '<svg class="peldano__ic peldano__ic--lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+  };
+
+  const F = estadoDemo().fortalecidas;
+  peldanos.forEach((peldano, idx) => {
+    const n = idx + 1;
+    let estado, modo;
+    if (n <= F) { estado = 'fortalecida'; modo = 'hecho'; }
+    else if (n === F + 1 && F < 12) { estado = 'activa'; modo = 'mes'; }
+    else { estado = 'bloqueada'; modo = 'bloqueada'; }
+    // La clase peldano--<estado> reenciende (o apaga) riel, número y emblema por CSS.
+    peldano.className = `peldano peldano--${estado}`;
+    peldano.setAttribute('data-modo', modo);   // lo relee seleccionar() por su dataset.modo
+    peldano.setAttribute('aria-pressed', 'false');
+    const ic = peldano.querySelector('.peldano__ic');
+    if (ic) ic.outerHTML = ICONO[modo];       // check (hecho) / disco (mes) / candado (bloqueada)
+    const sr = peldano.querySelector('.sr-only');
+    if (sr) sr.textContent = ETIQUETA[estado];
+  });
+
+  // La subida: tantos tramos hechos como fortalecidas (el reto se gana con la intervención).
+  const contador = document.querySelector('.escalera__k b');
+  if (contador) contador.textContent = `${F}/${peldanos.length}`;
+
+  // La destacada se re-selecciona: el reto del mes (n===F+1) o, si ya no hay activa, el último.
+  const objetivo = F < 12 ? peldanos[F] : peldanos[peldanos.length - 1];
+  if (objetivo) seleccionar(objetivo);
+</script>

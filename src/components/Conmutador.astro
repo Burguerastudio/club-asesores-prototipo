@@ -1,0 +1,161 @@
+---
+// EL CONMUTADOR DE DEMO (docs/DESIGN.md). Andamio del prototipo, no producto: una pestana
+// discreta abajo a la izquierda que deja saltar entre los cinco rangos y la figura sin
+// rebuildar. Vive en el layout, asi que esta en todas las pantallas. El cerebro (que
+// arrastra cada rango) es src/scripts/demo-director.js.
+import { RANGOS } from '../scripts/demo-director.js';
+const ETIQUETA = { 1: 'Base', 2: 'en Guardia', 3: 'Constructor', 4: 'Estratega', 5: 'Fortalecido' };
+---
+
+<div class="conm" data-conm>
+  <button class="conm__tab" type="button" data-conm-tab aria-expanded="false" aria-controls="conm-panel">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="7" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <line x1="7" y1="10.4" x2="7" y2="19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      <line x1="7" y1="5.6" x2="7" y2="3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      <circle cx="17" cy="16" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <line x1="17" y1="13.6" x2="17" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      <line x1="17" y1="18.4" x2="17" y2="21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+    </svg>
+    <span>Demo</span>
+  </button>
+
+  <div class="conm__panel" id="conm-panel" data-conm-panel hidden>
+    <p class="conm__t">Conmutador de demo <span>Solo para ver los distintos estados en la demo. No estará en el producto final.</span></p>
+
+    <div class="conm__g">
+      <span class="conm__l">Rango del asesor</span>
+      <div class="conm__seg conm__seg--v" role="group" aria-label="Rango">
+        {RANGOS.map((r) => (
+          <button type="button" class="conm__op" data-rango={r.r}>
+            <b>{r.r}</b> {ETIQUETA[r.r]}
+            <i class="conm__op-n">{r.fortalecidas}/12</i>
+          </button>
+        ))}
+      </div>
+      <p class="conm__ayuda">Rango 1 es la fortaleza recién entregada (estado vacío); rango 5, el ciclo cerrado.</p>
+    </div>
+
+    <div class="conm__g">
+      <span class="conm__l">Figura</span>
+      <div class="conm__seg" role="group" aria-label="Figura">
+        <button type="button" class="conm__op" data-figura="asesora">Asesora</button>
+        <button type="button" class="conm__op" data-figura="asesor">Asesor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { leerRango, guardarRango, leerFigura, guardarFigura } from '../scripts/demo-director.js';
+
+  const raiz = document.querySelector('[data-conm]');
+  if (raiz) {
+    const tab = raiz.querySelector('[data-conm-tab]');
+    const panel = raiz.querySelector('[data-conm-panel]');
+    const LLAVE_ABIERTO = 'conm-abierto';
+
+    const abrir = (v) => {
+      panel.hidden = !v;
+      tab.setAttribute('aria-expanded', v ? 'true' : 'false');
+      raiz.classList.toggle('is-abierto', v);
+      try { sessionStorage.setItem(LLAVE_ABIERTO, v ? '1' : '0'); } catch {}
+    };
+
+    // Marca los botones activos segun el estado guardado.
+    const marcar = () => {
+      const r = leerRango(), f = leerFigura();
+      raiz.querySelectorAll('[data-rango]').forEach((b) =>
+        b.classList.toggle('is-on', Number(b.getAttribute('data-rango')) === r));
+      raiz.querySelectorAll('[data-figura]').forEach((b) =>
+        b.classList.toggle('is-on', b.getAttribute('data-figura') === f));
+    };
+    marcar();
+
+    tab.addEventListener('click', () => abrir(panel.hidden));
+
+    // Cambiar rango o figura: se guarda y se recarga, para que cada pantalla vuelva a
+    // aplicar su estado desde cero (lo global lo hace el director; lo suyo, cada pagina).
+    raiz.querySelectorAll('[data-rango]').forEach((b) =>
+      b.addEventListener('click', () => { guardarRango(Number(b.getAttribute('data-rango'))); location.reload(); }));
+    raiz.querySelectorAll('[data-figura]').forEach((b) =>
+      b.addEventListener('click', () => { guardarFigura(b.getAttribute('data-figura')); location.reload(); }));
+
+    // La pestana se queda abierta al recargar, para poder encadenar cambios.
+    try { if (sessionStorage.getItem(LLAVE_ABIERTO) === '1') abrir(true); } catch {}
+  }
+</script>
+
+<style>
+  /* Botón flotante pegado al borde izquierdo, centrado en vertical y siempre presente. */
+  .conm { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 70; font-family: var(--sans); }
+
+  .conm__tab {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 13px 9px; border: 0; cursor: pointer;
+    color: var(--moon); background: rgba(9, 13, 20, 0.86);
+    box-shadow: inset 0 0 0 1px rgba(194, 205, 214, 0.22);
+    border-radius: 0 11px 11px 0; backdrop-filter: blur(6px);
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    transition: color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .conm__tab svg { width: 18px; height: 18px; }
+  .conm__tab:hover, .conm.is-abierto .conm__tab { color: var(--aqua); background: rgba(9, 13, 20, 0.96); box-shadow: inset 0 0 0 1px var(--cyan); }
+
+  .conm__panel {
+    position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); width: 260px;
+    padding: 15px; border-radius: 10px;
+    background: rgba(9, 13, 20, 0.94); backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 0 1px rgba(95, 208, 224, 0.28), 0 18px 44px rgba(0, 0, 0, 0.55);
+  }
+  .conm__t {
+    margin: 0 0 12px; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--bone);
+  }
+  .conm__t span { display: block; margin-top: 2px; font-weight: 400; font-size: 0.64rem; letter-spacing: 0.02em; text-transform: none; color: var(--mist); }
+
+  .conm__g { margin-top: 13px; }
+  .conm__l { display: block; margin-bottom: 6px; font-size: 0.64rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--mist); }
+
+  .conm__seg { display: flex; gap: 5px; }
+  .conm__seg--v { flex-direction: column; }
+
+  .conm__op {
+    display: flex; align-items: center; gap: 7px;
+    flex: 1; padding: 7px 10px; border: 0; cursor: pointer; text-align: left;
+    color: var(--moon); background: rgba(194, 205, 214, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(194, 205, 214, 0.12);
+    border-radius: 6px; font: inherit; font-size: 0.76rem;
+    transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  }
+  .conm__op b { font-weight: 700; color: var(--mist); }
+  .conm__op-n { margin-left: auto; font-style: normal; font-size: 0.66rem; color: var(--mist); }
+  .conm__op:hover { background: rgba(63, 169, 201, 0.14); color: var(--bone); }
+  .conm__op.is-on {
+    color: var(--bone); background: linear-gradient(180deg, rgba(63, 169, 201, 0.28), rgba(63, 169, 201, 0.08));
+    box-shadow: inset 0 0 0 1px var(--cyan);
+  }
+  .conm__op.is-on b, .conm__op.is-on .conm__op-n { color: var(--aqua); }
+
+  .conm__ayuda { margin: 8px 0 0; font-size: 0.66rem; line-height: 1.45; color: var(--mist); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .conm__tab, .conm__op { transition: none; }
+  }
+
+  /* En movil/apaisado la pestana se aparta del centro (donde tapaba contenido) y sube justo
+     encima de la barra de navegacion inferior; el panel abre hacia arriba en vez de al lado,
+     para no salirse por el borde superior en pantallas cortas. */
+  @media (max-width: 860px), (max-height: 480px) {
+    .conm { top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); transform: none; }
+    /* Icono solo (sin "Demo") y compacto: en pantalla pequena la pestana apenas roza el
+       contenido pegado al borde izquierdo. Sigue siendo andamio, se retira en la entrega. */
+    .conm__tab { flex-direction: row; padding: 8px; gap: 0; }
+    .conm__tab span { display: none; }
+    .conm__panel {
+      top: auto; bottom: calc(100% + 8px); left: 0; transform: none;
+      width: min(240px, calc(100vw - 24px));
+      max-height: 70vh; overflow-y: auto;
+    }
+  }
+</style>
